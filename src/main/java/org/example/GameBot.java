@@ -69,7 +69,7 @@ public class GameBot extends TelegramLongPollingBot {
             Map<String, Integer> winnersCount = new HashMap<>();
 
             for (var stat : stats) {
-                String winner = stat.get("победитель").asText();
+                String winner = "@"+stat.get("победитель").asText();
                 winnersCount.put(winner, winnersCount.getOrDefault(winner, 0) + 1);
             }
 
@@ -114,7 +114,7 @@ public class GameBot extends TelegramLongPollingBot {
             String winner = new ArrayList<>(chatPlayers).get(new Random().nextInt(chatPlayers.size()));
             ObjectNode newStat = objectMapper.createObjectNode();
             newStat.put("дата", today.toString());
-            newStat.put("победитель", winner);
+            newStat.put("победитель", "@" + winner);
 
             stats.add(newStat);
             objectMapper.writeValue(statsFile, stats);
