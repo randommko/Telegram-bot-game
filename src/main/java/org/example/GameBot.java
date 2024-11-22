@@ -1,5 +1,6 @@
 package org.example;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -11,14 +12,17 @@ import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Paths;
 import java.time.LocalDate;
 import java.util.*;
+import java.util.Random;
 
 public class GameBot extends TelegramLongPollingBot {
 
     private static final String RESPONSES_FILE = "responses.json"; // Файл с фразами
     private final Map<Long, Set<String>> players = new HashMap<>(); // Участники по чатам
     private final ObjectMapper objectMapper = new ObjectMapper();
+    private static final Random random = new Random();
 
     @Override
     public String getBotUsername() {
@@ -32,7 +36,7 @@ public class GameBot extends TelegramLongPollingBot {
 
 
     private boolean CheckMessage(String text) {
-        return ((!text.equals("/start")) || (!text.equals("/stats")) || (!text.equals("/reg_me")));
+        return ((!text.equals("/start")) || (!text.equals("/stats")) || (!text.equals("/reg_me")) || (!text.equals("/bot_info")));
     }
     @Override
     public void onUpdateReceived(Update update) {
@@ -46,6 +50,7 @@ public class GameBot extends TelegramLongPollingBot {
                 case "/reg_me" -> registerPlayer(chatId, message.getFrom().getUserName());
                 case "/stats" -> sendStats(chatId);
                 case "/start" -> startGame(chatId);
+                case "/bot_info" -> botInfo(chatId);
                 default -> sendMessage(chatId, "Неизвестная команда.");
             }
         }
@@ -81,6 +86,13 @@ public class GameBot extends TelegramLongPollingBot {
         } catch (IOException e) {
             sendMessage(chatId, "Ошибка при чтении статистики.");
         }
+    }
+
+    private void botInfo(Long chatId) {
+        sendMessage(chatId, "Этот бот создан для определения пидора дня в чате! Команды:" +
+                "\n/reg_me - добаавляет пользователя в игру" +
+                "\n/stats - статистика за все время" +
+                "\n/start - запускает поиска пидора в чате");
     }
 
     private void startGame(Long chatId) {
@@ -119,7 +131,7 @@ public class GameBot extends TelegramLongPollingBot {
             stats.add(newStat);
             objectMapper.writeValue(statsFile, stats);
 
-            sendMessage(chatId, "Победитель сегодняшней игры: " + winner + "!");
+            sendMessage(chatId, "Победитель сегодняшней игры: " + "@" + winner + "!");
         } catch (Exception e) {
             sendMessage(chatId, "Произошла ошибка при запуске игры.");
         }
@@ -127,12 +139,31 @@ public class GameBot extends TelegramLongPollingBot {
 
     private List<String> getRandomResponses() {
         try {
-            ArrayNode responses = (ArrayNode) objectMapper.readTree(new File(RESPONSES_FILE));
-            List<String> randomResponses = new ArrayList<>();
-            for (int i = 0; i < 3; i++) {
-                randomResponses.add(responses.get(new Random().nextInt(responses.size())).asText());
+//            ArrayNode responses = (ArrayNode) objectMapper.readTree(new File(RESPONSES_FILE));
+//            List<String> randomResponses = new ArrayList<>();
+//            for (int i = 0; i < 3; i++) {
+//                randomResponses.add(responses.get(new Random().nextInt(responses.size())).asText());
+//            }
+//            return randomResponses;
+
+            // Читаем JSON из файла
+            ObjectMapper mapper = new ObjectMapper();
+            JsonNode root = mapper.readTree(Paths.get(RESPONSES_FILE).toFile());
+
+            // Список для хранения выбранных фраз
+            List<String> responses = new ArrayList<>();
+
+            // Перебираем все блоки (ключи)
+            for (JsonNode block : root) {
+                // Получаем случайную фразу из текущего блока
+                if (block.isArray()) {
+                    int randomIndex = random.nextInt(block.size());
+                    responses.add(block.get(randomIndex).asText());
+                }
             }
-            return randomResponses;
+
+            return responses;
+
         } catch (IOException e) {
             return List.of("Подготовка...", "Скоро узнаем...", "Держитесь крепче...");
         }
