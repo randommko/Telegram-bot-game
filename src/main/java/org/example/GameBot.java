@@ -11,7 +11,6 @@ import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
 import java.time.LocalDate;
 import java.util.*;
 
@@ -31,10 +30,15 @@ public class GameBot extends TelegramLongPollingBot {
         return "7332966399:AAFegCTK2sv6sw3KOrEuEvHXU2Lsx55tFoY"; // Замените на токен вашего бота
     }
 
+
+    private boolean CheckMessage(String text) {
+        return ((!text.equals("/start")) || (!text.equals("/stats")) || (!text.equals("/reg_me")));
+    }
     @Override
     public void onUpdateReceived(Update update) {
-        if (update.hasMessage()) {
-            Message message = update.getMessage();
+        Message message = update.getMessage();
+        System.out.println("Получено сообщение из чата " + message.getChat().getTitle() +": "+ message.getText());
+        if (update.hasMessage() & CheckMessage(message.getText())) {
             String command = message.getText();
             Long chatId = message.getChatId();
 
