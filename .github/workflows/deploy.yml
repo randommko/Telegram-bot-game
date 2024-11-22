@@ -1,0 +1,52 @@
+name: Build and Deploy Java Application
+
+on:
+  push:
+    branches:
+      - main # Укажите нужную ветку, например, "main" или "master"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v2
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v2
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Build with Maven
+        run: mvn clean install -DskipTests
+
+      - name: Deploy to VPS
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H ${{ secrets.SERVER_IP }} >> ~/.ssh/known_hosts
+          scp target/telegram-bot-1.0.jar ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }}:/usr/bin/tg_bot/
+          ssh ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }} << 'EOF'
+            # Завершение текущих процессов приложения
+            pgrep -f '/usr/bin/tg_bot/telegram-bot-1.0.jar' | xargs -r kill -9
+          
+            # Запуск нового процесса приложения
+            nohup java -jar /usr/bin/tg_bot/telegram-bot-1.0.jar \
+              ${{ secrets.TOKEN_TG_BOT }} \
+              ${{ secrets.DB_ADDR_TG_BOT }} \
+              ${{ secrets.DB_USER_TG_BOT }} \
+              ${{ secrets.DB_PASS_TG_BOT }} \
+              > /var/log/telegram-bot.log 2>&1 &
+          
+              echo "Deployment complete."
+          EOF
+
+        env:
+          PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          BOT_TOKEN: ${{ secrets.TOKEN_TG_BOT }}
+          DB_ADDR: ${{ secrets.DB_ADDR_TG_BOT }}
+          DB_USER: ${{ secrets.DB_USER_TG_BOT }}
+          DB_PASS: ${{ secrets.DB_PASS_TG_BOT }}
