@@ -19,7 +19,7 @@ import java.util.Random;
 
 public class GameBot extends TelegramLongPollingBot {
 
-    private static final String RESPONSES_FILE = "responses.json"; // Файл с фразами
+    private static final String RESPONSES_FILE = "src/main/resources/responses.json"; // Файл с фразами
     private final Map<Long, Set<String>> players = new HashMap<>(); // Участники по чатам
     private final ObjectMapper objectMapper = new ObjectMapper();
     private static final Random random = new Random();
@@ -31,6 +31,7 @@ public class GameBot extends TelegramLongPollingBot {
 
     @Override
     public String getBotToken() {
+        //TODO: сделать токен бота параметром при запуске
         return "7332966399:AAFegCTK2sv6sw3KOrEuEvHXU2Lsx55tFoY"; // Замените на токен вашего бота
     }
 
@@ -58,7 +59,7 @@ public class GameBot extends TelegramLongPollingBot {
 
     private void registerPlayer(Long chatId, String username) {
         players.computeIfAbsent(chatId, k -> new HashSet<>()).add(username);
-        sendMessage(chatId, "Игрок " + username + " зарегистрирован!");
+        sendMessage(chatId, "Игрок @" + username + " зарегистрирован!");
     }
 
     private void sendStats(Long chatId) {
@@ -123,21 +124,22 @@ public class GameBot extends TelegramLongPollingBot {
                 Thread.sleep(1000);
             }
 
-            String winner = new ArrayList<>(chatPlayers).get(new Random().nextInt(chatPlayers.size()));
+            String winner = "@" + new ArrayList<>(chatPlayers).get(new Random().nextInt(chatPlayers.size()));
             ObjectNode newStat = objectMapper.createObjectNode();
             newStat.put("дата", today.toString());
-            newStat.put("победитель", "@" + winner);
+            newStat.put("победитель", winner);
 
             stats.add(newStat);
             objectMapper.writeValue(statsFile, stats);
 
-            sendMessage(chatId, "Победитель сегодняшней игры: " + "@" + winner + "!");
+            sendMessage(chatId, "Победитель сегодняшней игры: " + winner + "!");
         } catch (Exception e) {
             sendMessage(chatId, "Произошла ошибка при запуске игры.");
         }
     }
 
     private List<String> getRandomResponses() {
+        //TODO: вынести в отдельный класс с утилитами второстепенные функции
         try {
 //            ArrayNode responses = (ArrayNode) objectMapper.readTree(new File(RESPONSES_FILE));
 //            List<String> randomResponses = new ArrayList<>();
@@ -149,18 +151,24 @@ public class GameBot extends TelegramLongPollingBot {
             // Читаем JSON из файла
             ObjectMapper mapper = new ObjectMapper();
             JsonNode root = mapper.readTree(Paths.get(RESPONSES_FILE).toFile());
+            JsonNode firstMsg = root.get("firstMsg");
+            JsonNode secondMsg = root.get("secondMsg");
+            JsonNode thirdMsg = root.get("thirdMsg");
+//            JsonNode winMsg = root.get("winMsg");
 
             // Список для хранения выбранных фраз
             List<String> responses = new ArrayList<>();
 
-            // Перебираем все блоки (ключи)
-            for (JsonNode block : root) {
-                // Получаем случайную фразу из текущего блока
-                if (block.isArray()) {
-                    int randomIndex = random.nextInt(block.size());
-                    responses.add(block.get(randomIndex).asText());
-                }
-            }
+            int randomIndex;
+
+            randomIndex = random.nextInt(firstMsg.size());
+            responses.add(firstMsg.get(randomIndex).asText());
+
+            randomIndex = random.nextInt(secondMsg.size());
+            responses.add(secondMsg.get(randomIndex).asText());
+
+            randomIndex = random.nextInt(thirdMsg.size());
+            responses.add(thirdMsg.get(randomIndex).asText());
 
             return responses;
 

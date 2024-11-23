@@ -12,6 +12,7 @@ public class Main {
 
             // Регистрируем бота
             botsApi.registerBot(new GameBot());
+            //TODO: добавить проливку команд бота
 
             System.out.println("Бот успешно запущен!");
         } catch (TelegramApiException e) {
