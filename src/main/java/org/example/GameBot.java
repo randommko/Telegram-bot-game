@@ -37,7 +37,20 @@ public class GameBot extends TelegramLongPollingBot {
 
 
     private boolean CheckMessage(String text) {
-        return ((!text.equals("/start")) || (!text.equals("/stats")) || (!text.equals("/reg_me")) || (!text.equals("/bot_info")));
+
+        if (text.equals("/start")) {
+            return true;
+        }
+
+        if (text.equals("/stats")) {
+            return true;
+        }
+
+        if (text.equals("/reg_me")) {
+            return true;
+        }
+
+        return text.equals("/bot_info");
     }
     @Override
     public void onUpdateReceived(Update update) {
@@ -90,10 +103,11 @@ public class GameBot extends TelegramLongPollingBot {
     }
 
     private void botInfo(Long chatId) {
-        sendMessage(chatId, "Этот бот создан для определения пидора дня в чате! Команды:" +
-                "\n/reg_me - добаавляет пользователя в игру" +
-                "\n/stats - статистика за все время" +
-                "\n/start - запускает поиска пидора в чате");
+        sendMessage(chatId, """
+                Этот бот создан для определения пидора дня в чате! Команды:
+                /reg_me - добаавляет пользователя в игру
+                /stats - статистика за все время
+                /start - запускает поиска пидора в чате""");
     }
 
     private void startGame(Long chatId) {
