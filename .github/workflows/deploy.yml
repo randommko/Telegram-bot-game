@@ -29,7 +29,7 @@ jobs:
           chmod 600 ~/.ssh/id_rsa
           ssh-keyscan -H 45.141.103.51 >> ~/.ssh/known_hosts
           scp target/telegram-bot-1.0.jar root@45.141.103.51:/usr/bin/tg_bot/
-          ssh root@45.141.103.51 'nohup java -jar /usr/bin/tg_bot/telegram-bot-1.0.jar' ${{ secrets.TOKEN_TG_BOT }} > /dev/null 2>&1 &
+          ssh root@45.141.103.51 'nohup java -jar /usr/bin/tg_bot/telegram-bot-1.0.jar ${{ secrets.TOKEN_TG_BOT }} > /var/log/telegram-bot.log 2>&1 &'
         env:
           PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
           BOT_TOKEN: ${{ secrets.TOKEN_TG_BOT }}
