@@ -10,6 +10,7 @@ public class Main {
             // Создаем объект TelegramBotsApi
             TelegramBotsApi botsApi = new TelegramBotsApi(DefaultBotSession.class);
 
+
             // Регистрируем бота
             botsApi.registerBot(new GameBot());
             //TODO: добавить проливку команд бота
