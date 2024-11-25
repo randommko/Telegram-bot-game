@@ -19,6 +19,11 @@ import java.util.Random;
 
 public class GameBot extends TelegramLongPollingBot {
 
+    private final String botToken;
+
+    public GameBot(String botToken) {
+        this.botToken = botToken;
+    }
     private static final String RESPONSES_FILE = "src/main/resources/responses.json"; // Файл с фразами
     private final Map<Long, Set<String>> players = new HashMap<>(); // Участники по чатам
     private final ObjectMapper objectMapper = new ObjectMapper();
@@ -32,7 +37,7 @@ public class GameBot extends TelegramLongPollingBot {
     @Override
     public String getBotToken() {
         //TODO: сделать токен бота параметром при запуске
-        return "7332966399:AAFegCTK2sv6sw3KOrEuEvHXU2Lsx55tFoY"; // Замените на токен вашего бота
+        return botToken; // Замените на токен вашего бота
     }
 
 
