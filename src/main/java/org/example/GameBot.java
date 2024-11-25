@@ -54,19 +54,19 @@ public class GameBot extends TelegramLongPollingBot {
 
     private boolean CheckMessage(String text) {
 
-        if (text.equals("/start")) {
+        if (text.equals("/start") || text.equals("/start@ChatGamePidor_Bot")) {
             return true;
         }
 
-        if (text.equals("/stats")) {
+        if (text.equals("/stats") || text.equals("/stats@ChatGamePidor_Bot")) {
             return true;
         }
 
-        if (text.equals("/reg_me")) {
+        if (text.equals("/reg_me") || text.equals("/reg_me@ChatGamePidor_Bot")) {
             return true;
         }
 
-        return text.equals("/bot_info");
+        return (text.equals("/bot_info") || text.equals("/bot_info@ChatGamePidor_Bot"));
     }
     @Override
     public void onUpdateReceived(Update update) {
@@ -78,9 +78,13 @@ public class GameBot extends TelegramLongPollingBot {
 
             switch (command) {
                 case "/reg_me" -> registerPlayer(chatId, message.getFrom().getUserName());
+                case "/reg_me@ChatGamePidor_Bot" -> registerPlayer(chatId, message.getFrom().getUserName());
                 case "/stats" -> sendStats(chatId);
+                case "/stats@ChatGamePidor_Bot" -> sendStats(chatId);
                 case "/start" -> startGame(chatId);
+                case "/start@ChatGamePidor_Bot" -> startGame(chatId);
                 case "/bot_info" -> botInfo(chatId);
+                case "/bot_info@ChatGamePidor_Bot" -> botInfo(chatId);
                 default -> sendMessage(chatId, "Неизвестная команда.");
             }
         }
@@ -142,7 +146,6 @@ public class GameBot extends TelegramLongPollingBot {
     private void startGame(Long chatId) {
 
         LocalDate today = LocalDate.now();
-        //        Set<String> chatPlayers = new HashSet<>();
 
         Set<String> chatPlayers;
         chatPlayers = new HashSet<>();
