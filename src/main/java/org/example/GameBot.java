@@ -10,10 +10,8 @@ import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.ResultSet;
-import java.sql.Statement;
+import java.sql.*;
+import java.sql.Date;
 
 import java.io.File;
 import java.io.IOException;
@@ -22,45 +20,26 @@ import java.time.LocalDate;
 import java.util.*;
 import java.util.Random;
 
+import static java.sql.DriverManager.getConnection;
+
 public class GameBot extends TelegramLongPollingBot {
 
     private final String botToken;
-    private final String DB_SERVER_URL;
-    private final String DB_USER;
-    private final String DB_PASS;
+
+    private DataSourceConfig dataSourceConfig;
+
 
     public GameBot(String botToken, String DB_SERVER_URL, String DB_USER, String DB_PASS) {
         this.botToken = botToken;
-        this.DB_SERVER_URL = DB_SERVER_URL;
-        this.DB_USER = DB_USER;
-        this.DB_PASS = DB_PASS;
+        dataSourceConfig = new DataSourceConfig(DB_SERVER_URL, DB_USER, DB_PASS);
     }
     private static final String RESPONSES_FILE = "src/main/resources/responses.json"; // Файл с фразами
     private final Map<Long, Set<String>> players = new HashMap<>(); // Участники по чатам
+
     private final ObjectMapper objectMapper = new ObjectMapper();
     private static final Random random = new Random();
 
-    public boolean testDBConn() {
-        try (Connection conn = DriverManager.getConnection(DB_SERVER_URL, DB_USER, DB_PASS);
-             Statement stmt = conn.createStatement()) {
 
-            // Выполнение запроса SELECT
-            String query = "select *\n" +
-                    "from public.messages m ;";
-            ResultSet rs = stmt.executeQuery(query);
-
-            // Обработка результатов запроса
-            while (rs.next()) {
-                String group = rs.getString("group_num");
-                String text = rs.getString("text");
-                System.out.println("Text: " + text + ", Group: " + group);
-            }
-
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return true;
-    }
     @Override
     public String getBotUsername() {
         return "Pidor Bot Game"; // Замените на имя вашего бота
@@ -108,8 +87,21 @@ public class GameBot extends TelegramLongPollingBot {
     }
 
     private void registerPlayer(Long chatId, String username) {
-        players.computeIfAbsent(chatId, k -> new HashSet<>()).add(username);
-        sendMessage(chatId, "Игрок @" + username + " зарегистрирован!");
+        String insertQuery = "INSERT INTO public.pidor_players (chat_id, user_name) VALUES (?, ?) ON CONFLICT (chat_id, user_name) DO NOTHING";
+        try (Connection connection = dataSourceConfig.getDataSource().getConnection()) {
+            PreparedStatement preparedStatement = connection.prepareStatement(insertQuery);
+
+            preparedStatement.setLong(1, chatId);
+            preparedStatement.setString(2, "@" + username);
+            preparedStatement.executeUpdate();
+            //connection.commit(); // Фиксируем изменения
+
+            sendMessage(chatId, "Игрок @" + username + " зарегистрирован!");
+        } catch (SQLException e) {
+            e.printStackTrace();
+            sendMessage(chatId, "Произошла ошибка при регистрации игрока @" + username);
+        }
+
     }
 
     private void sendStats(Long chatId) {
@@ -148,43 +140,88 @@ public class GameBot extends TelegramLongPollingBot {
     }
 
     private void startGame(Long chatId) {
-        File statsFile = getStatsFile(chatId);
+
         LocalDate today = LocalDate.now();
+        //        Set<String> chatPlayers = new HashSet<>();
 
-        try {
-            ArrayNode stats = statsFile.exists()
-                    ? (ArrayNode) objectMapper.readTree(statsFile)
-                    : objectMapper.createArrayNode();
+        Set<String> chatPlayers;
+        chatPlayers = new HashSet<>();
 
-            for (var stat : stats) {
-                if (stat.get("дата").asText().equals(today.toString())) {
-                    sendMessage(chatId, "Сегодня игра уже состоялась. Победитель: " + stat.get("победитель").asText());
-                    return;
+        try (Connection connection = dataSourceConfig.getDataSource().getConnection()) {
+            // Проверяем, была ли уже игра сегодня
+            String checkQuery = "SELECT winner_user_name FROM public.pidor_stats WHERE chat_id = ? AND date = ?";
+            try (PreparedStatement checkStmt = connection.prepareStatement(checkQuery)) {
+                checkStmt.setLong(1, chatId);
+                checkStmt.setDate(2, Date.valueOf(today));
+                try (ResultSet resultSet = checkStmt.executeQuery()) {
+                    if (resultSet.next()) {
+                        String winner = resultSet.getString("winner_user_name");
+                        sendMessage(chatId, "Сегодня игра уже состоялась. Победитель: " + winner);
+                        return;
+                    }
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+                sendMessage(chatId, "Произошла ошибка при запуске игры.");
+            }
+
+        // Проверяем наличие зарегистрированных игроков
+
+        try (Connection getPlayersConn = dataSourceConfig.getDataSource().getConnection()) {
+            // Запрос к базе данных для получения списка игроков по chat_id
+            String query = "SELECT user_name FROM public.pidor_players WHERE chat_id = ?";
+
+            PreparedStatement stmt = getPlayersConn.prepareStatement(query);
+
+            // Устанавливаем параметр для chat_id
+            stmt.setLong(1, chatId);
+
+            // Выполняем запрос
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    // Добавляем имя игрока в список
+                    chatPlayers.add(rs.getString("user_name"));
                 }
             }
 
-            Set<String> chatPlayers = players.get(chatId);
-            if (chatPlayers == null || chatPlayers.isEmpty()) {
+            } catch (Exception e) {
+                e.printStackTrace();
+                sendMessage(chatId, "Произошла ошибка при запуске игры.");
+            }
+
+
+
+            // Проверяем, есть ли зарегистрированные игроки
+            if (chatPlayers.isEmpty()) {
                 sendMessage(chatId, "Нет зарегистрированных игроков.");
                 return;
             }
 
+
+            // Отправляем случайные ответы
             List<String> responses = getRandomResponses();
             for (String response : responses) {
                 sendMessage(chatId, response);
                 Thread.sleep(1000);
             }
 
-            String winner = "@" + new ArrayList<>(chatPlayers).get(new Random().nextInt(chatPlayers.size()));
-            ObjectNode newStat = objectMapper.createObjectNode();
-            newStat.put("дата", today.toString());
-            newStat.put("победитель", winner);
+            // Определяем победителя
+            String winner = new ArrayList<>(chatPlayers).get(new Random().nextInt(chatPlayers.size()));
 
-            stats.add(newStat);
-            objectMapper.writeValue(statsFile, stats);
+            // Сохраняем результат в БД
+            String insertQuery = "INSERT INTO public.pidor_stats (chat_id, date, winner_user_name) VALUES (?, ?, ?)";
+            try (PreparedStatement insertStmt = connection.prepareStatement(insertQuery)) {
+                insertStmt.setLong(1, chatId);
+                insertStmt.setDate(2, Date.valueOf(today));
+                insertStmt.setString(3, winner);
+                insertStmt.executeUpdate();
+                //connection.commit(); // Фиксируем изменения
+            }
 
+            // Сообщаем о победителе
             sendMessage(chatId, "Победитель сегодняшней игры: " + winner + "!");
         } catch (Exception e) {
+            e.printStackTrace();
             sendMessage(chatId, "Произошла ошибка при запуске игры.");
         }
     }
@@ -192,13 +229,6 @@ public class GameBot extends TelegramLongPollingBot {
     private List<String> getRandomResponses() {
         //TODO: вынести в отдельный класс с утилитами второстепенные функции
         try {
-//            ArrayNode responses = (ArrayNode) objectMapper.readTree(new File(RESPONSES_FILE));
-//            List<String> randomResponses = new ArrayList<>();
-//            for (int i = 0; i < 3; i++) {
-//                randomResponses.add(responses.get(new Random().nextInt(responses.size())).asText());
-//            }
-//            return randomResponses;
-
             // Читаем JSON из файла
             ObjectMapper mapper = new ObjectMapper();
             JsonNode root = mapper.readTree(Paths.get(RESPONSES_FILE).toFile());
