@@ -10,6 +10,11 @@ import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.ResultSet;
+import java.sql.Statement;
+
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Paths;
@@ -20,15 +25,42 @@ import java.util.Random;
 public class GameBot extends TelegramLongPollingBot {
 
     private final String botToken;
+    private final String DB_SERVER_URL;
+    private final String DB_USER;
+    private final String DB_PASS;
 
-    public GameBot(String botToken) {
+    public GameBot(String botToken, String DB_SERVER_URL, String DB_USER, String DB_PASS) {
         this.botToken = botToken;
+        this.DB_SERVER_URL = DB_SERVER_URL;
+        this.DB_USER = DB_USER;
+        this.DB_PASS = DB_PASS;
     }
     private static final String RESPONSES_FILE = "src/main/resources/responses.json"; // Файл с фразами
     private final Map<Long, Set<String>> players = new HashMap<>(); // Участники по чатам
     private final ObjectMapper objectMapper = new ObjectMapper();
     private static final Random random = new Random();
 
+    public boolean testDBConn() {
+        try (Connection conn = DriverManager.getConnection(DB_SERVER_URL, DB_USER, DB_PASS);
+             Statement stmt = conn.createStatement()) {
+
+            // Выполнение запроса SELECT
+            String query = "select *\n" +
+                    "from public.messages m ;";
+            ResultSet rs = stmt.executeQuery(query);
+
+            // Обработка результатов запроса
+            while (rs.next()) {
+                String group = rs.getString("group_num");
+                String text = rs.getString("text");
+                System.out.println("Text: " + text + ", Group: " + group);
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return true;
+    }
     @Override
     public String getBotUsername() {
         return "Pidor Bot Game"; // Замените на имя вашего бота
