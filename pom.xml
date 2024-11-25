@@ -42,7 +42,7 @@
                 <configuration>
                     <archive>
                         <manifest>
-                            <mainClass>com.example.Main</mainClass> <!-- Замените на ваш класс -->
+                            <mainClass>org.example.Main</mainClass> <!-- Замените на ваш класс -->
                         </manifest>
                     </archive>
                 </configuration>
