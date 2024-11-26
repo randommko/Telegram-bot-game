@@ -1,8 +1,5 @@
 package org.example;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ArrayNode;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Message;
@@ -12,36 +9,26 @@ import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import java.sql.*;
 import java.sql.Date;
 
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.Paths;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.time.LocalDate;
 import java.util.*;
 import java.util.Random;
 
 public class GameBot extends TelegramLongPollingBot {
-
     private final String botToken;
+    private static final Logger logger = LoggerFactory.getLogger(GameBot.class);
 
-    private final DataSourceConfig dataSourceConfig;
-
-
-    public GameBot(String botToken, DataSourceConfig dataSourceConfig) {
+    public GameBot(String botToken) {
         this.botToken = botToken;
-        this.dataSourceConfig = dataSourceConfig;
+
     }
-    private static final String RESPONSES_FILE = "src/main/resources/responses.json"; // Файл с фразами
-    //private final Map<Long, Set<String>> players = new HashMap<>(); // Участники по чатам
-
-    private final ObjectMapper objectMapper = new ObjectMapper();
-    private static final Random random = new Random();
-
 
     @Override
     public String getBotUsername() {
         return "Pidor Bot Game"; // Замените на имя вашего бота
     }
-
     @Override
     public String getBotToken() {
         //TODO: сделать токен бота параметром при запуске
@@ -89,46 +76,56 @@ public class GameBot extends TelegramLongPollingBot {
 
     private void registerPlayer(String chatId, String username) {
         String insertQuery = "INSERT INTO public.pidor_players (chat_id, user_name) VALUES (?, ?) ON CONFLICT (chat_id, user_name) DO NOTHING";
-        try (Connection connection = dataSourceConfig.getDataSource().getConnection()) {
+        try (Connection connection = DataSourceConfig.getDataSource().getConnection()) {
             PreparedStatement preparedStatement = connection.prepareStatement(insertQuery);
 
             preparedStatement.setString(1, chatId);
             preparedStatement.setString(2, "@" + username);
             preparedStatement.executeUpdate();
-            //connection.commit(); // Фиксируем изменения
 
             sendMessage(chatId, "Игрок @" + username + " зарегистрирован!");
         } catch (SQLException e) {
-            e.printStackTrace();
+            logger.error("Ошибка при регистрации игрока в БД: ", e);
             sendMessage(chatId, "Произошла ошибка при регистрации игрока @" + username);
         }
 
     }
 
     private void sendStats(String chatId) {
-        File file = getStatsFile(chatId);
-        if (!file.exists()) {
-            sendMessage(chatId, "Статистика пуста.");
-            return;
-        }
+        String query = "SELECT winner_user_name, COUNT(*) AS count " +
+                "FROM public.pidor_stats " +
+                "WHERE chat_id = ? " +
+                "GROUP BY winner_user_name";
 
-        try {
-            ArrayNode stats = (ArrayNode) objectMapper.readTree(file);
-            StringBuilder statsMessage = new StringBuilder("Статистика:\n");
-            Map<String, Integer> winnersCount = new HashMap<>();
+        Map<String, Integer> winnersCount = new HashMap<>();
 
-            for (var stat : stats) {
-                String winner = "@"+stat.get("победитель").asText();
-                winnersCount.put(winner, winnersCount.getOrDefault(winner, 0) + 1);
+        try (Connection connection = DataSourceConfig.getDataSource().getConnection()) {
+             PreparedStatement preparedStatement = connection.prepareStatement(query);
+
+            preparedStatement.setString(1, chatId);
+            ResultSet resultSet = preparedStatement.executeQuery();
+
+            while (resultSet.next()) {
+                String winner = resultSet.getString("winner_user_name");
+                int count = resultSet.getInt("count");
+                winnersCount.put(winner, count);
             }
 
+            if (winnersCount.isEmpty()) {
+                sendMessage(chatId, "Статистика пуста.");
+                return;
+            }
+
+            StringBuilder statsMessage = new StringBuilder("Статистика пидоров:\n");
             winnersCount.forEach((winner, count) ->
                     statsMessage.append(winner).append(": ").append(count).append("\n")
             );
 
             sendMessage(chatId, statsMessage.toString());
-        } catch (IOException e) {
-            sendMessage(chatId, "Ошибка при чтении статистики.");
+
+        } catch (SQLException e) {
+            logger.error("Ошибка при получении статистики из БД: ", e);
+            sendMessage(chatId, "Ошибка при получении статистики.");
         }
     }
 
@@ -147,7 +144,7 @@ public class GameBot extends TelegramLongPollingBot {
         Set<String> chatPlayers;
         chatPlayers = new HashSet<>();
 
-        try (Connection connection = dataSourceConfig.getDataSource().getConnection()) {
+        try (Connection connection = DataSourceConfig.getDataSource().getConnection()) {
             // Проверяем, была ли уже игра сегодня
             String checkQuery = "SELECT winner_user_name FROM public.pidor_stats WHERE chat_id = ? AND date = ?";
             try (PreparedStatement checkStmt = connection.prepareStatement(checkQuery)) {
@@ -161,13 +158,13 @@ public class GameBot extends TelegramLongPollingBot {
                     }
                 }
             } catch (Exception e) {
-                e.printStackTrace();
+                logger.error("Ошибка при приверке состоявшейся игры: ", e);
                 sendMessage(chatId, "Произошла ошибка при запуске игры.");
             }
 
         // Проверяем наличие зарегистрированных игроков
 
-        try (Connection getPlayersConn = dataSourceConfig.getDataSource().getConnection()) {
+        try (Connection getPlayersConn = DataSourceConfig.getDataSource().getConnection()) {
             // Запрос к базе данных для получения списка игроков по chat_id
             String query = "SELECT user_name FROM public.pidor_players WHERE chat_id = ?";
 
@@ -185,18 +182,15 @@ public class GameBot extends TelegramLongPollingBot {
             }
 
             } catch (Exception e) {
-                e.printStackTrace();
+                logger.error("Ошибка получения списка игроков из БД: ", e);
                 sendMessage(chatId, "Произошла ошибка при запуске игры.");
             }
-
-
 
             // Проверяем, есть ли зарегистрированные игроки
             if (chatPlayers.isEmpty()) {
                 sendMessage(chatId, "Нет зарегистрированных игроков.");
                 return;
             }
-
 
             // Отправляем случайные ответы
             List<String> responses = getRandomResponses();
@@ -215,26 +209,23 @@ public class GameBot extends TelegramLongPollingBot {
                 insertStmt.setDate(2, Date.valueOf(today));
                 insertStmt.setString(3, winner);
                 insertStmt.executeUpdate();
-                //connection.commit(); // Фиксируем изменения
             }
 
             // Сообщаем о победителе
             sendMessage(chatId, "Победитель сегодняшней игры: " + winner + "!");
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("Произошла ошибка при сохранении победителя в БД: ", e);
             sendMessage(chatId, "Произошла ошибка при запуске игры.");
         }
     }
 
     private List<String> getRandomResponses() {
-        //TODO: перенести на postgress
         // SQL запрос для выборки случайного текста из группы
         String sql = "SELECT text FROM public.messages WHERE group_num = ? ORDER BY RANDOM() LIMIT 1";
 
         List<String> responses = new ArrayList<>();
-        //        Random random = new Random();
 
-        try (Connection conn = dataSourceConfig.getDataSource().getConnection()) {
+        try (Connection conn = DataSourceConfig.getDataSource().getConnection()) {
             for (int groupNum = 1; groupNum <= 3; groupNum++) {
                 try (PreparedStatement stmt = conn.prepareStatement(sql)) {
                     stmt.setInt(1, groupNum);
@@ -249,15 +240,12 @@ public class GameBot extends TelegramLongPollingBot {
                 }
             }
         } catch (Exception e) {
+            logger.error("Произошла ошибка при поулчении текста сообщений из БД: ", e);
             // В случае ошибки возвращаем предопределённые ответы
             return List.of("Подготовка...", "Скоро узнаем...", "Держитесь крепче...");
         }
 
         return responses;
-    }
-
-    private File getStatsFile(String chatId) {
-        return new File("stats_" + chatId + ".json");
     }
 
     private void sendMessage(String chatId, String text) {
@@ -267,7 +255,7 @@ public class GameBot extends TelegramLongPollingBot {
         try {
             execute(message);
         } catch (TelegramApiException e) {
-            e.printStackTrace();
+            logger.error("Ошибка при отправке сообщения: ", e);
         }
     }
 }
