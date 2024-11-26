@@ -27,14 +27,12 @@ public class GameBot extends TelegramLongPollingBot {
 
     @Override
     public String getBotUsername() {
-        return "Pidor Bot Game"; // Замените на имя вашего бота
+        return "Пидорвикторина"; // Замените на имя вашего бота
     }
     @Override
     public String getBotToken() {
-        //TODO: сделать токен бота параметром при запуске
-        return botToken; // Замените на токен вашего бота
+        return botToken;
     }
-
 
     private boolean CheckMessage(String text) {
 
@@ -61,21 +59,17 @@ public class GameBot extends TelegramLongPollingBot {
             String chatId = String.valueOf(message.getChatId());
 
             switch (command) {
-                case "/reg_me" -> registerPlayer(chatId, message.getFrom().getUserName());
-                case "/reg_me@ChatGamePidor_Bot" -> registerPlayer(chatId, message.getFrom().getUserName());
-                case "/stats" -> sendStats(chatId);
-                case "/stats@ChatGamePidor_Bot" -> sendStats(chatId);
-                case "/start" -> startGame(chatId);
-                case "/start@ChatGamePidor_Bot" -> startGame(chatId);
-                case "/bot_info" -> botInfo(chatId);
-                case "/bot_info@ChatGamePidor_Bot" -> botInfo(chatId);
+                case "/reg_me", "/reg_me@ChatGamePidor_Bot" -> registerPlayer(chatId, message.getFrom().getUserName());
+                case "/stats", "/stats@ChatGamePidor_Bot" -> sendStats(chatId);
+                case "/start", "/start@ChatGamePidor_Bot" -> startGame(chatId);
+                case "/bot_info", "/bot_info@ChatGamePidor_Bot", "/help", "/help@ChatGamePidor_Bot" -> botInfo(chatId);
                 default -> sendMessage(chatId, "Неизвестная команда.");
             }
         }
     }
 
     private void registerPlayer(String chatId, String username) {
-        String insertQuery = "INSERT INTO public.pidor_players (chat_id, user_name) VALUES (?, ?) ON CONFLICT (chat_id, user_name) DO NOTHING";
+        String insertQuery = "INSERT INTO public.pi dor_players (chat_id, user_name) VALUES (?, ?) ON CONFLICT (chat_id, user_name) DO NOTHING";
         try (Connection connection = DataSourceConfig.getDataSource().getConnection()) {
             PreparedStatement preparedStatement = connection.prepareStatement(insertQuery);
 
@@ -93,7 +87,7 @@ public class GameBot extends TelegramLongPollingBot {
 
     private void sendStats(String chatId) {
         String query = "SELECT winner_user_name, COUNT(*) AS count " +
-                "FROM public.pidor_stats " +
+                "FROM public.pi dor_stats " +
                 "WHERE chat_id = ? " +
                 "GROUP BY winner_user_name";
 
@@ -153,7 +147,7 @@ public class GameBot extends TelegramLongPollingBot {
                 try (ResultSet resultSet = checkStmt.executeQuery()) {
                     if (resultSet.next()) {
                         String winner = resultSet.getString("winner_user_name");
-                        sendMessage(chatId, "Сегодня игра уже состоялась. Победитель: " + winner);
+                        sendMessage(chatId, "Сегодня игра уже состоялась. Пидор дня: " + winner);
                         return;
                     }
                 }
