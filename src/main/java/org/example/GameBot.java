@@ -90,7 +90,7 @@ public class GameBot extends TelegramLongPollingBot {
                 if (resultSet.next()) {
                     // Если запись найдена, возвращаем существующее значение
                     int size = resultSet.getInt("size");
-                    sendMessage(chatId, "The legendary cocksize of @" + username + " is " + size + "cm");
+                    sendMessage(chatId, phraseSelection(size, username));
                 } else {
                     // Если записи нет, генерируем случайный размер и сохраняем его
                     int randomSize = new Random().nextInt(50); // Генерация числа от 0 до 49
@@ -101,7 +101,7 @@ public class GameBot extends TelegramLongPollingBot {
                         insertStmt.setDate(3, Date.valueOf(currentDate));
                         insertStmt.executeUpdate();
                     }
-                    sendMessage(chatId, "The legendary cocksize of @" + username + " is " + randomSize + "cm");
+                    sendMessage(chatId, phraseSelection(randomSize, username));
                 }
             }
         } catch (SQLException e) {
@@ -109,8 +109,20 @@ public class GameBot extends TelegramLongPollingBot {
         }
     }
 
-    private String phraseSelection(int size) {
-        return "sad";
+    private String phraseSelection(int size, String username) {
+        if (size >= 0 && size <= 5) {
+            return "The legendary cocksize of @" + username + " is " + size + "cm\uD83D\uDC4E";
+        } else if (size >= 6 && size <= 10) {
+            return "The mighty cocksize of @" + username + " is " + size + "cm\uD83D\uDE22";
+        } else if (size >= 11 && size <= 20) {
+            return "The epic cocksize of @" + username + " is " + size + "cm\uD83D\uDE0D";
+        } else if (size >= 21 && size <= 30) {
+            return "The majestic cocksize of @" + username + " is " + size + "cm\uD83D\uDE0E";
+        } else if (size >= 31 && size <= 40) {
+            return "The legendary cocksize of @" + username + " is " + size + "cm\uD83E\uDD21";
+        } else if (size >= 41 && size <= 50) {
+            return "The mythical cocksize of @" + username + " is " + size + "cm\uD83D\uDD25";
+        } else return "NO FUCKING WAY! Cocksize @" + username + " is " + size + "cm\uD83D\uDC80";
     }
 
     private void registerPlayer(String chatId, String username) {
