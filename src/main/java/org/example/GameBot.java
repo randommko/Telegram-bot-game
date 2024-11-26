@@ -3,7 +3,6 @@ package org.example;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Message;
@@ -20,18 +19,16 @@ import java.time.LocalDate;
 import java.util.*;
 import java.util.Random;
 
-import static java.sql.DriverManager.getConnection;
-
 public class GameBot extends TelegramLongPollingBot {
 
     private final String botToken;
 
-    private DataSourceConfig dataSourceConfig;
+    private final DataSourceConfig dataSourceConfig;
 
 
-    public GameBot(String botToken, String DB_SERVER_URL, String DB_USER, String DB_PASS) {
+    public GameBot(String botToken, DataSourceConfig dataSourceConfig) {
         this.botToken = botToken;
-        dataSourceConfig = new DataSourceConfig(DB_SERVER_URL, DB_USER, DB_PASS);
+        this.dataSourceConfig = dataSourceConfig;
     }
     private static final String RESPONSES_FILE = "src/main/resources/responses.json"; // Файл с фразами
     //private final Map<Long, Set<String>> players = new HashMap<>(); // Участники по чатам
@@ -231,34 +228,32 @@ public class GameBot extends TelegramLongPollingBot {
 
     private List<String> getRandomResponses() {
         //TODO: перенести на postgress
-        try {
-            // Читаем JSON из файла
-            ObjectMapper mapper = new ObjectMapper();
-            JsonNode root = mapper.readTree(Paths.get(RESPONSES_FILE).toFile());
-            JsonNode firstMsg = root.get("firstMsg");
-            JsonNode secondMsg = root.get("secondMsg");
-            JsonNode thirdMsg = root.get("thirdMsg");
-//            JsonNode winMsg = root.get("winMsg");
+        // SQL запрос для выборки случайного текста из группы
+        String sql = "SELECT text FROM public.messages WHERE group_num = ? ORDER BY RANDOM() LIMIT 1";
 
-            // Список для хранения выбранных фраз
-            List<String> responses = new ArrayList<>();
+        List<String> responses = new ArrayList<>();
+        //        Random random = new Random();
 
-            int randomIndex;
-
-            randomIndex = random.nextInt(firstMsg.size());
-            responses.add(firstMsg.get(randomIndex).asText());
-
-            randomIndex = random.nextInt(secondMsg.size());
-            responses.add(secondMsg.get(randomIndex).asText());
-
-            randomIndex = random.nextInt(thirdMsg.size());
-            responses.add(thirdMsg.get(randomIndex).asText());
-
-            return responses;
-
-        } catch (IOException e) {
+        try (Connection conn = dataSourceConfig.getDataSource().getConnection()) {
+            for (int groupNum = 1; groupNum <= 3; groupNum++) {
+                try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+                    stmt.setInt(1, groupNum);
+                    try (ResultSet rs = stmt.executeQuery()) {
+                        if (rs.next()) {
+                            responses.add(rs.getString("text"));
+                        } else {
+                            // Если в группе нет записей, добавляем запасной текст
+                            responses.add("Запасной текст для группы " + groupNum);
+                        }
+                    }
+                }
+            }
+        } catch (Exception e) {
+            // В случае ошибки возвращаем предопределённые ответы
             return List.of("Подготовка...", "Скоро узнаем...", "Держитесь крепче...");
         }
+
+        return responses;
     }
 
     private File getStatsFile(String chatId) {
