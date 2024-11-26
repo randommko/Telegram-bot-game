@@ -63,8 +63,42 @@ public class GameBot extends TelegramLongPollingBot {
                 case "/stats", "/stats@ChatGamePidor_Bot" -> sendStats(chatId);
                 case "/start", "/start@ChatGamePidor_Bot" -> startGame(chatId);
                 case "/bot_info", "/bot_info@ChatGamePidor_Bot", "/help", "/help@ChatGamePidor_Bot" -> botInfo(chatId);
+                case "/cocksize" -> cockSize(message.getFrom().getUserName());
                 default -> sendMessage(chatId, "Неизвестная команда.");
             }
+        }
+    }
+
+    private void cockSize(String username) {
+        LocalDate currentDate = LocalDate.now();
+
+        try (Connection connection = DataSourceConfig.getDataSource().getConnection()) {
+            // Проверяем, есть ли запись для текущей даты
+            String checkQuery = "SELECT size FROM cocksize_stats WHERE user_name = ? AND date = ?";
+            try (PreparedStatement checkStmt = connection.prepareStatement(checkQuery)) {
+                checkStmt.setString(1, username);
+                checkStmt.setDate(2, Date.valueOf(currentDate));
+                ResultSet resultSet = checkStmt.executeQuery();
+
+                if (resultSet.next()) {
+                    // Если запись найдена, возвращаем существующее значение
+                    int size = resultSet.getInt("size");
+                    System.out.println("My cock size is " + size + "см");
+                } else {
+                    // Если записи нет, генерируем случайный размер и сохраняем его
+                    int randomSize = new Random().nextInt(50); // Генерация числа от 0 до 49
+                    String insertQuery = "INSERT INTO cocksize_stats (user_name, size, date) VALUES (?, ?, ?)";
+                    try (PreparedStatement insertStmt = connection.prepareStatement(insertQuery)) {
+                        insertStmt.setString(1, username);
+                        insertStmt.setInt(2, randomSize);
+                        insertStmt.setDate(3, Date.valueOf(currentDate));
+                        insertStmt.executeUpdate();
+                    }
+                    System.out.println("Новый размер для " + username + ": " + randomSize + " см");
+                }
+            }
+        } catch (SQLException e) {
+            logger.error("Ошибка при записи в БД длинны члена: ", e);
         }
     }
 
