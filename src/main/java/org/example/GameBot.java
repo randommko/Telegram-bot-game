@@ -141,7 +141,7 @@ public class GameBot extends TelegramLongPollingBot {
             else preparedStatement.setString(3, "-");
             preparedStatement.executeUpdate();
 
-            sendMessage(chatId, "Игрок @" + username + " зарегистрирован!");
+            sendMessage(chatId, "Игрок @" + username + " зарегистрирован! ");
         } catch (SQLException e) {
             logger.error("Ошибка при регистрации игрока в БД: ", e.toString());
             sendMessage(chatId, "Произошла ошибка при регистрации игрока @" + username + "\n" + e.getMessage());
