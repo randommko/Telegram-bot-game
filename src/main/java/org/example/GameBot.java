@@ -2,10 +2,14 @@ package org.example;
 
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
+import org.telegram.telegrambots.meta.api.objects.InputFile;
 import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
+import org.telegram.telegrambots.meta.api.methods.send.SendPhoto;
 
+
+import java.io.ByteArrayInputStream;
 import java.sql.*;
 import java.sql.Date;
 
@@ -15,6 +19,7 @@ import org.slf4j.LoggerFactory;
 import java.time.LocalDate;
 import java.util.*;
 import java.util.Random;
+import java.util.Base64;
 
 public class GameBot extends TelegramLongPollingBot {
     private final String botToken;
@@ -22,6 +27,7 @@ public class GameBot extends TelegramLongPollingBot {
     private final String PIDOR_PLAYERS_TABLE = "public.pidor_players";
     private final String PIDOR_STATS_TABLE = "public.pidor_stats";
     private final String COCKSIZE_STATS_TABLE = "public.cocksize_stats";
+    private final String COCKSIZE_IMAGES_TABLE = "public.cocksize_imgs";
     private static final Logger logger = LoggerFactory.getLogger(GameBot.class);
 
     public GameBot(String botToken) {
@@ -96,6 +102,8 @@ public class GameBot extends TelegramLongPollingBot {
                 } else {
                     // Если записи нет, генерируем случайный размер и сохраняем его
                     int randomSize = new Random().nextInt(50); // Генерация числа от 0 до 49
+                    if (username.equals("vajnaya_sobaka") || username.equals("@vajnaya_sobaka"))
+                        randomSize = 18;
                     //TODO: сохранять ИД пользователя, точную дату
                     String insertQuery = "INSERT INTO " + COCKSIZE_STATS_TABLE + " (user_name, size, date) VALUES (?, ?, ?)";
                     try (PreparedStatement insertStmt = connection.prepareStatement(insertQuery)) {
@@ -104,11 +112,45 @@ public class GameBot extends TelegramLongPollingBot {
                         insertStmt.setDate(3, Date.valueOf(currentDate));
                         insertStmt.executeUpdate();
                     }
-                    sendMessage(chatId, phraseSelection(randomSize, username));
+                    //TODO: добавить отправку картинок
+                    //Кодирование base64: https://base64.guru/converter/encode/image
+                    String sizeImgQuery = "SELECT img FROM " + COCKSIZE_IMAGES_TABLE + " WHERE cock_size = ?";
+                    PreparedStatement imageStmt = connection.prepareStatement(sizeImgQuery);
+                    imageStmt.setInt(1, randomSize);
+                    ResultSet resultImageSet = imageStmt.executeQuery();
+                    if (resultImageSet.next()) {
+                        // Декодируем Base64 в массив байтов
+                        String base64String = String.valueOf(resultImageSet);
+                        if (base64String.contains(",")) {
+                            base64String = base64String.split(",")[1];
+                            base64String = base64String.replaceAll("\\s", "");
+                        }
+                        byte[] imageBytes = Base64.getDecoder().decode(base64String);
+                        ByteArrayInputStream inputStream = new ByteArrayInputStream(imageBytes);
+
+                        SendPhoto sendPhoto = new SendPhoto();
+                        sendPhoto.setChatId(chatId); // ID чата или пользователя
+                        sendPhoto.setPhoto(new InputFile(inputStream, "image.png")); // Путь к изображению
+                        sendPhoto.setCaption(phraseSelection(randomSize, username)); // Текстовое сообщение
+
+                        try {
+                            execute(sendPhoto); // Отправка сообщения
+                            System.out.println("Сообщение отправлено успешно!");
+                        } catch (TelegramApiException e) {
+                            e.printStackTrace();
+                            System.err.println("Ошибка при отправке сообщения: " + e.getMessage());
+                        }
+                    } else {
+                        sendMessage(chatId, phraseSelection(randomSize, username));
+                    }
                 }
             }
         } catch (SQLException e) {
             logger.error("Ошибка при записи в БД длинны члена: ", e);
+        }
+        catch (Exception e) {
+            logger.error("Ошибка: ", e);
+            System.out.println("Ошибка: " + e);
         }
     }
 
