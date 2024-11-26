@@ -70,7 +70,7 @@ public class GameBot extends TelegramLongPollingBot {
                 case "/stats", "/stats@ChatGamePidor_Bot" -> sendStats(chatId);
                 case "/start", "/start@ChatGamePidor_Bot" -> startGame(chatId);
                 case "/bot_info", "/bot_info@ChatGamePidor_Bot", "/help", "/help@ChatGamePidor_Bot" -> botInfo(chatId);
-                case "/cocksize" -> cockSize(chatId, message.getFrom().getUserName());
+                case "/cocksize", "/cocksize@ChatGamePidor_Bot" -> cockSize(chatId, message.getFrom().getUserName());
                 default -> sendMessage(chatId, "Неизвестная команда.");
             }
         }
