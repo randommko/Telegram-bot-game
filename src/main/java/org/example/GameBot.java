@@ -64,13 +64,15 @@ public class GameBot extends TelegramLongPollingBot {
         if (update.hasMessage() & CheckMessage(message.getText())) {
             String command = message.getText();
             String chatId = String.valueOf(message.getChatId());
+            String chatName = String.valueOf(message.getChat().getTitle());
+            String userName = String.valueOf(message.getFrom().getUserName());
 
             switch (command) {
-                case "/reg_me", "/reg_me@ChatGamePidor_Bot" -> registerPlayer(chatId, message.getFrom().getUserName());
+                case "/reg_me", "/reg_me@ChatGamePidor_Bot" -> registerPlayer(chatId, userName, chatName);
                 case "/stats", "/stats@ChatGamePidor_Bot" -> sendStats(chatId);
-                case "/start", "/start@ChatGamePidor_Bot" -> startGame(chatId);
+                case "/start", "/start@ChatGamePidor_Bot" -> startGame(chatId, chatName);
                 case "/bot_info", "/bot_info@ChatGamePidor_Bot", "/help", "/help@ChatGamePidor_Bot" -> botInfo(chatId);
-                case "/cocksize", "/cocksize@ChatGamePidor_Bot" -> cockSize(chatId, message.getFrom().getUserName());
+                case "/cocksize", "/cocksize@ChatGamePidor_Bot" -> cockSize(chatId, userName);
                 default -> sendMessage(chatId, "Неизвестная команда.");
             }
         }
@@ -94,6 +96,7 @@ public class GameBot extends TelegramLongPollingBot {
                 } else {
                     // Если записи нет, генерируем случайный размер и сохраняем его
                     int randomSize = new Random().nextInt(50); // Генерация числа от 0 до 49
+                    //TODO: сохранять ИД пользователя, точную дату
                     String insertQuery = "INSERT INTO " + COCKSIZE_STATS_TABLE + " (user_name, size, date) VALUES (?, ?, ?)";
                     try (PreparedStatement insertStmt = connection.prepareStatement(insertQuery)) {
                         insertStmt.setString(1, username);
@@ -125,19 +128,23 @@ public class GameBot extends TelegramLongPollingBot {
         } else return "NO FUCKING WAY! Cocksize @" + username + " is " + size + "cm\uD83D\uDC80";
     }
 
-    private void registerPlayer(String chatId, String username) {
-        String insertQuery = "INSERT INTO " + PIDOR_PLAYERS_TABLE + " (chat_id, user_name) VALUES (?, ?) ON CONFLICT (chat_id, user_name) DO NOTHING";
+    private void registerPlayer(String chatId, String username, String chatName) {
+        String insertQuery = "INSERT INTO " + PIDOR_PLAYERS_TABLE + " (chat_id, user_name, chat_name) VALUES (?, ?, ?) ON CONFLICT (chat_id, user_name) DO NOTHING";
+        //TODO: Сохранять название чата, ид пользователя
         try (Connection connection = DataSourceConfig.getDataSource().getConnection()) {
             PreparedStatement preparedStatement = connection.prepareStatement(insertQuery);
 
             preparedStatement.setString(1, chatId);
             preparedStatement.setString(2, "@" + username);
+            if (chatName != null)
+                preparedStatement.setString(3, chatName);
+            else preparedStatement.setString(3, "-");
             preparedStatement.executeUpdate();
 
             sendMessage(chatId, "Игрок @" + username + " зарегистрирован!");
         } catch (SQLException e) {
-            logger.error("Ошибка при регистрации игрока в БД: ", e);
-            sendMessage(chatId, "Произошла ошибка при регистрации игрока @" + username);
+            logger.error("Ошибка при регистрации игрока в БД: ", e.toString());
+            sendMessage(chatId, "Произошла ошибка при регистрации игрока @" + username + "\n" + e.getMessage());
         }
 
     }
@@ -188,7 +195,7 @@ public class GameBot extends TelegramLongPollingBot {
                 /start - запускает поиска пидора в чате""");
     }
 
-    private void startGame(String chatId) {
+    private void startGame(String chatId, String chatName) {
 
         LocalDate today = LocalDate.now();
 
@@ -204,6 +211,7 @@ public class GameBot extends TelegramLongPollingBot {
                 try (ResultSet resultSet = checkStmt.executeQuery()) {
                     if (resultSet.next()) {
                         String winner = resultSet.getString("winner_user_name");
+                        //TODO: поправить сообщение, брать из БД
                         sendMessage(chatId, "Сегодня игра уже состоялась. Пидор дня: " + winner);
                         return;
                     }
@@ -254,15 +262,18 @@ public class GameBot extends TelegramLongPollingBot {
             String winner = new ArrayList<>(chatPlayers).get(new Random().nextInt(chatPlayers.size()));
 
             // Сохраняем результат в БД
-            String insertQuery = "INSERT INTO " + PIDOR_STATS_TABLE + " (chat_id, date, winner_user_name) VALUES (?, ?, ?)";
+            String insertQuery = "INSERT INTO " + PIDOR_STATS_TABLE + " (chat_id, date, winner_user_name, chat_name) VALUES (?, ?, ?, ?)";
+            //TODO: сохранять ИД участника, название чата, точное время розыгрыша
             try (PreparedStatement insertStmt = connection.prepareStatement(insertQuery)) {
                 insertStmt.setString(1, chatId);
                 insertStmt.setDate(2, Date.valueOf(today));
                 insertStmt.setString(3, winner);
+                insertStmt.setString(4, chatName);
                 insertStmt.executeUpdate();
             }
 
             // Сообщаем о победителе
+            //TODO: поправить сообщение, брать из БД
             sendMessage(chatId, "Победитель сегодняшней игры: " + winner + "!");
         } catch (Exception e) {
             logger.error("Произошла ошибка при сохранении победителя в БД: ", e);
