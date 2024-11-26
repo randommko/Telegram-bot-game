@@ -34,7 +34,7 @@ public class GameBot extends TelegramLongPollingBot {
         dataSourceConfig = new DataSourceConfig(DB_SERVER_URL, DB_USER, DB_PASS);
     }
     private static final String RESPONSES_FILE = "src/main/resources/responses.json"; // Файл с фразами
-    private final Map<Long, Set<String>> players = new HashMap<>(); // Участники по чатам
+    //private final Map<Long, Set<String>> players = new HashMap<>(); // Участники по чатам
 
     private final ObjectMapper objectMapper = new ObjectMapper();
     private static final Random random = new Random();
@@ -74,7 +74,7 @@ public class GameBot extends TelegramLongPollingBot {
         System.out.println("Получено сообщение из чата " + message.getChat().getTitle() +": "+ message.getText());
         if (update.hasMessage() & CheckMessage(message.getText())) {
             String command = message.getText();
-            Long chatId = message.getChatId();
+            String chatId = String.valueOf(message.getChatId());
 
             switch (command) {
                 case "/reg_me" -> registerPlayer(chatId, message.getFrom().getUserName());
@@ -90,12 +90,12 @@ public class GameBot extends TelegramLongPollingBot {
         }
     }
 
-    private void registerPlayer(Long chatId, String username) {
+    private void registerPlayer(String chatId, String username) {
         String insertQuery = "INSERT INTO public.pidor_players (chat_id, user_name) VALUES (?, ?) ON CONFLICT (chat_id, user_name) DO NOTHING";
         try (Connection connection = dataSourceConfig.getDataSource().getConnection()) {
             PreparedStatement preparedStatement = connection.prepareStatement(insertQuery);
 
-            preparedStatement.setLong(1, chatId);
+            preparedStatement.setString(1, chatId);
             preparedStatement.setString(2, "@" + username);
             preparedStatement.executeUpdate();
             //connection.commit(); // Фиксируем изменения
@@ -108,7 +108,7 @@ public class GameBot extends TelegramLongPollingBot {
 
     }
 
-    private void sendStats(Long chatId) {
+    private void sendStats(String chatId) {
         File file = getStatsFile(chatId);
         if (!file.exists()) {
             sendMessage(chatId, "Статистика пуста.");
@@ -135,7 +135,7 @@ public class GameBot extends TelegramLongPollingBot {
         }
     }
 
-    private void botInfo(Long chatId) {
+    private void botInfo(String chatId) {
         sendMessage(chatId, """
                 Этот бот создан для определения пидора дня в чате! Команды:
                 /reg_me - добаавляет пользователя в игру
@@ -143,7 +143,7 @@ public class GameBot extends TelegramLongPollingBot {
                 /start - запускает поиска пидора в чате""");
     }
 
-    private void startGame(Long chatId) {
+    private void startGame(String chatId) {
 
         LocalDate today = LocalDate.now();
 
@@ -154,7 +154,7 @@ public class GameBot extends TelegramLongPollingBot {
             // Проверяем, была ли уже игра сегодня
             String checkQuery = "SELECT winner_user_name FROM public.pidor_stats WHERE chat_id = ? AND date = ?";
             try (PreparedStatement checkStmt = connection.prepareStatement(checkQuery)) {
-                checkStmt.setLong(1, chatId);
+                checkStmt.setString(1, chatId);
                 checkStmt.setDate(2, Date.valueOf(today));
                 try (ResultSet resultSet = checkStmt.executeQuery()) {
                     if (resultSet.next()) {
@@ -177,7 +177,7 @@ public class GameBot extends TelegramLongPollingBot {
             PreparedStatement stmt = getPlayersConn.prepareStatement(query);
 
             // Устанавливаем параметр для chat_id
-            stmt.setLong(1, chatId);
+            stmt.setString(1, chatId);
 
             // Выполняем запрос
             try (ResultSet rs = stmt.executeQuery()) {
@@ -214,7 +214,7 @@ public class GameBot extends TelegramLongPollingBot {
             // Сохраняем результат в БД
             String insertQuery = "INSERT INTO public.pidor_stats (chat_id, date, winner_user_name) VALUES (?, ?, ?)";
             try (PreparedStatement insertStmt = connection.prepareStatement(insertQuery)) {
-                insertStmt.setLong(1, chatId);
+                insertStmt.setString(1, chatId);
                 insertStmt.setDate(2, Date.valueOf(today));
                 insertStmt.setString(3, winner);
                 insertStmt.executeUpdate();
@@ -230,7 +230,7 @@ public class GameBot extends TelegramLongPollingBot {
     }
 
     private List<String> getRandomResponses() {
-        //TODO: вынести в отдельный класс с утилитами второстепенные функции
+        //TODO: перенести на postgress
         try {
             // Читаем JSON из файла
             ObjectMapper mapper = new ObjectMapper();
@@ -261,11 +261,11 @@ public class GameBot extends TelegramLongPollingBot {
         }
     }
 
-    private File getStatsFile(Long chatId) {
+    private File getStatsFile(String chatId) {
         return new File("stats_" + chatId + ".json");
     }
 
-    private void sendMessage(Long chatId, String text) {
+    private void sendMessage(String chatId, String text) {
         SendMessage message = new SendMessage();
         message.setChatId(chatId);
         message.setText(text);
