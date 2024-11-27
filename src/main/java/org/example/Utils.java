@@ -3,12 +3,11 @@ package org.example;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.ByteArrayInputStream;
 import java.sql.*;
+import java.sql.Date;
 import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 public class Utils {
     public static final String MESSAGES_TABLE = "public.messages";
@@ -172,5 +171,21 @@ public class Utils {
         } catch (Exception e) {
             logger.error("Ошибка при записи в БД длинны члена: ", e);
         }
+    }
+
+    public static String getCockSizeImage(Integer size) {
+        //Кодирование base64: https://base64.guru/converter/encode/image
+        String selectQuery = "SELECT img FROM " + COCKSIZE_IMAGES_TABLE + " WHERE cock_size = ?";
+        try (Connection connection = DataSourceConfig.getDataSource().getConnection()) {
+            try (PreparedStatement insertStmt = connection.prepareStatement(selectQuery)) {
+                insertStmt.setInt(1, size);
+                ResultSet resultImageSet = insertStmt.executeQuery();
+                if (resultImageSet.next())
+                    return resultImageSet.getString("img");
+            }
+        } catch (Exception e) {
+            logger.error("Ошибка при записи в БД длинны члена: ", e);
+        }
+        return null;
     }
 }
