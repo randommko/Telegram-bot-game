@@ -130,7 +130,7 @@ public class Utils {
         return chatPlayers;
     }
 
-    public static Integer getPlayerCockSize(String username) {
+    public static int getPlayerCockSize(String username) {
         LocalDate currentDate = LocalDate.now();
         try (Connection connection = DataSourceConfig.getDataSource().getConnection()) {
             // Проверяем, есть ли запись для текущей даты
@@ -144,7 +144,7 @@ public class Utils {
         } catch (Exception e) {
             logger.error("Ошибка при поиске в БД длинны члена: ", e);
         }
-        return null;
+        return -1;
     }
 
     public static void setPidorWinner(String chatId, String winner, String chatName) {
