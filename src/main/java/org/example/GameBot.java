@@ -8,7 +8,6 @@ import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import org.telegram.telegrambots.meta.api.methods.send.SendPhoto;
 
-import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.sql.*;
 
@@ -23,7 +22,7 @@ import static org.example.Utils.*;
 
 public class GameBot extends TelegramLongPollingBot {
     private final String botToken;
-    private static final String RESOURCES_PATH = "resources/";
+    private static final String RESOURCES_PATH = "/bin/tg_bot/resources";
     private static final Logger logger = LoggerFactory.getLogger(GameBot.class);
 
     public GameBot(String botToken) {
@@ -88,7 +87,7 @@ public class GameBot extends TelegramLongPollingBot {
 
             sendMessage(chatId, "Игрок @" + username + " зарегистрирован! ");
         } catch (SQLException e) {
-            logger.error("Ошибка при регистрации игрока в БД: ", e.toString());
+            logger.error("Ошибка при регистрации игрока в БД: " + e);
             sendMessage(chatId, "Произошла ошибка при регистрации игрока @" + username + "\n" + e.getMessage());
         }
     }
