@@ -126,10 +126,26 @@ public class Utils {
         return chatPlayers;
     }
 
-    public static void setCockSizeWinner(String chatId, String winner, String chatName) {
+    public static Integer getPlayerCockSize(String username) {
+        LocalDate currentDate = LocalDate.now();
+        try (Connection connection = DataSourceConfig.getDataSource().getConnection()) {
+            // Проверяем, есть ли запись для текущей даты
+            String checkQuery = "SELECT size FROM " + COCKSIZE_STATS_TABLE + " WHERE user_name = ? AND date = ?";
+            try (PreparedStatement checkStmt = connection.prepareStatement(checkQuery)) {
+                checkStmt.setString(1, username);
+                checkStmt.setDate(2, Date.valueOf(currentDate));
+                ResultSet resultSet = checkStmt.executeQuery();
+                return resultSet.getInt("size");
+            }
+        } catch (Exception e) {
+            logger.error("Ошибка при поиске в БД длинны члена: ", e);
+        }
+        return null;
+    }
+
+    public static void setPidorWinner(String chatId, String winner, String chatName) {
         LocalDate today = LocalDate.now();
         String insertQuery = "INSERT INTO " + PIDOR_STATS_TABLE + " (chat_id, date, winner_user_name, chat_name) VALUES (?, ?, ?, ?)";
-        //TODO: сохранять ИД участника, название чата, точное время розыгрыша
         try (Connection connection = DataSourceConfig.getDataSource().getConnection()) {
             try (PreparedStatement insertStmt = connection.prepareStatement(insertQuery)) {
                 insertStmt.setString(1, chatId);
@@ -140,6 +156,21 @@ public class Utils {
             }
         } catch (Exception e) {
             logger.error("Ошибка при приверке состоявшейся игры: ", e);
+        }
+    }
+
+    public static void setCockSizeWinner (String username, Integer size) {
+        LocalDate today = LocalDate.now();
+        String insertQuery = "INSERT INTO " + COCKSIZE_STATS_TABLE + " (user_name, size, date) VALUES (?, ?, ?)";
+        try (Connection connection = DataSourceConfig.getDataSource().getConnection()) {
+            try (PreparedStatement insertStmt = connection.prepareStatement(insertQuery)) {
+                insertStmt.setString(1, username);
+                insertStmt.setInt(2, size);
+                insertStmt.setDate(3, Date.valueOf(today));
+                insertStmt.executeUpdate();
+            }
+        } catch (Exception e) {
+            logger.error("Ошибка при записи в БД длинны члена: ", e);
         }
     }
 }
