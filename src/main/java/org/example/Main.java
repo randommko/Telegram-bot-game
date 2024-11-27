@@ -25,7 +25,6 @@ public class Main {
             botsApi.registerBot(new GameBot(args[0]));
 
             System.out.println("Бот успешно запущен!");
-            System.out.println("запущено локальное приложение!");
         } catch (TelegramApiException e) {
             System.err.println("Ошибка при запуске бота: " + e.getMessage());
             logger.error("Ошибка при запуске бота: ", e);
