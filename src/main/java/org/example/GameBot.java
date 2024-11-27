@@ -23,7 +23,7 @@ import static org.example.Utils.*;
 
 public class GameBot extends TelegramLongPollingBot {
     private final String botToken;
-    private static final String RESOURCES_PATH = "/resources/";
+    private static final String RESOURCES_PATH = "resources";
     private static final Logger logger = LoggerFactory.getLogger(GameBot.class);
 
     public GameBot(String botToken) {
