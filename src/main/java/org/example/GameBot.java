@@ -8,15 +8,12 @@ import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import org.telegram.telegrambots.meta.api.methods.send.SendPhoto;
 
-
 import java.io.ByteArrayInputStream;
 import java.sql.*;
-import java.sql.Date;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.time.LocalDate;
 import java.util.*;
 import java.util.Random;
 import java.util.Base64;
@@ -70,8 +67,8 @@ public class GameBot extends TelegramLongPollingBot {
         // Если записи нет, генерируем случайный размер и сохраняем его
         //TODO: Переписать выбор дллинны. Сделать через распределение.
         int randomSize = new Random().nextInt(50); // Генерация числа от 0 до 49
-        if (username.equals("vajnaya_sobaka") || username.equals("@vajnaya_sobaka"))
-            randomSize = 18;
+//        if (username.equals("vajnaya_sobaka") || username.equals("@vajnaya_sobaka"))
+//            randomSize = 18;
         setCockSizeWinner(username, randomSize);
         sendMessage(chatId, phraseSelection(randomSize, username));
     }
@@ -140,8 +137,7 @@ public class GameBot extends TelegramLongPollingBot {
     }
 
     private void startGame(String chatId, String chatName) {
-        LocalDate today = LocalDate.now();
-        Set<String> chatPlayers = new HashSet<>();
+        Set<String> chatPlayers;
         String winner = getTodayWinner(chatId);
 
         if (winner != null) {
