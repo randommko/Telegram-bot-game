@@ -68,7 +68,6 @@ public class GameBot extends TelegramLongPollingBot {
         }
 
         // Если записи нет, генерируем случайный размер и сохраняем его
-        //TODO: Переписать выбор дллинны. Сделать через распределение.
         int newRandomSize = getCockSize();
 
         setCockSizeWinner(username, newRandomSize);
