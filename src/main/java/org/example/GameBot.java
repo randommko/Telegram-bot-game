@@ -9,6 +9,7 @@ import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import org.telegram.telegrambots.meta.api.methods.send.SendPhoto;
 
 import java.io.ByteArrayInputStream;
+import java.io.File;
 import java.sql.*;
 
 import org.slf4j.Logger;
@@ -22,6 +23,7 @@ import static org.example.Utils.*;
 
 public class GameBot extends TelegramLongPollingBot {
     private final String botToken;
+    private static final String RESOURCES_PATH = "/resources/";
     private static final Logger logger = LoggerFactory.getLogger(GameBot.class);
 
     public GameBot(String botToken) {
@@ -66,11 +68,12 @@ public class GameBot extends TelegramLongPollingBot {
 
         // Если записи нет, генерируем случайный размер и сохраняем его
         //TODO: Переписать выбор дллинны. Сделать через распределение.
-        int randomSize = new Random().nextInt(50); // Генерация числа от 0 до 49
-//        if (username.equals("vajnaya_sobaka") || username.equals("@vajnaya_sobaka"))
-//            randomSize = 18;
-        setCockSizeWinner(username, randomSize);
-        sendMessage(chatId, phraseSelection(randomSize, username));
+        int newRandomSize = new Random().nextInt(50); // Генерация числа от 0 до 49
+        if (username.equals("vajnaya_sobaka") || username.equals("@vajnaya_sobaka"))
+            newRandomSize = 18;
+        setCockSizeWinner(username, newRandomSize);
+        if (!sendImgMessage(chatId, phraseSelection(newRandomSize, username), newRandomSize))
+            sendMessage(chatId, phraseSelection(newRandomSize, username));
     }
 
     private void registerPlayer(String chatId, String username, String chatName) {
@@ -185,35 +188,30 @@ public class GameBot extends TelegramLongPollingBot {
         }
     }
 
-    private void sendImgMessage (String chatId, String text) {
-//          TODO: добавить отправку картинок
+    private boolean sendImgMessage (String chatId, String text, Integer size) {
+        //TODO: добавить отправку картинок
+        String imgName = getCockSizeImage(size);
+        if (imgName == null)
+            return false;
 
-//        //Кодирование base64: https://base64.guru/converter/encode/image
-//        String sizeImgQuery = "SELECT img FROM " + COCKSIZE_IMAGES_TABLE + " WHERE cock_size = ?";
-//        PreparedStatement imageStmt = connection.prepareStatement(sizeImgQuery);
-//        imageStmt.setInt(1, randomSize);
-//        ResultSet resultImageSet = imageStmt.executeQuery();
-//        if (resultImageSet.next()) {
-//            // Декодируем Base64 в массив байтов
-//            String base64String = String.valueOf(resultImageSet);
-//            if (base64String.contains(",")) {
-//                base64String = base64String.split(",")[1];
-//                base64String = base64String.replaceAll("\\s", "");
-//            }
-//            byte[] imageBytes = Base64.getDecoder().decode(base64String);
-//            ByteArrayInputStream inputStream = new ByteArrayInputStream(imageBytes);
-//
-//            SendPhoto sendPhoto = new SendPhoto();
-//            sendPhoto.setChatId(chatId); // ID чата или пользователя
-//            sendPhoto.setPhoto(new InputFile(inputStream, "image.png")); // Путь к изображению
-//            sendPhoto.setCaption(phraseSelection(randomSize, username)); // Текстовое сообщение
-//
-//            try {
-//                execute(sendPhoto); // Отправка сообщения
-//                System.out.println("Сообщение отправлено успешно!");
-//            } catch (TelegramApiException e) {
-//                e.printStackTrace();
-//                System.err.println("Ошибка при отправке сообщения: " + e.getMessage());
-//            }
+        File imageFile = new File(RESOURCES_PATH, imgName);
+
+        if (imageFile.exists()) {
+            SendPhoto sendPhoto = new SendPhoto();
+            sendPhoto.setChatId(chatId);
+            sendPhoto.setPhoto(new InputFile(imageFile));
+            sendPhoto.setCaption(text);
+
+            try {
+                execute(sendPhoto);
+                return true;
+            } catch (TelegramApiException e) {
+                logger.error("Ошибка при отправке сообщения: ", e);
+            }
+        } else {
+            System.err.println("Image file not found: " + imageFile.getPath());
+            return false;
+        }
+        return false;
     }
 }
