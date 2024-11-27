@@ -139,6 +139,7 @@ public class Utils {
                 checkStmt.setString(1, username);
                 checkStmt.setDate(2, Date.valueOf(currentDate));
                 ResultSet resultSet = checkStmt.executeQuery();
+                resultSet.next();
                 return resultSet.getInt("size");
             }
         } catch (Exception e) {
