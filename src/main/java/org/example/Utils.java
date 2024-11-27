@@ -53,6 +53,11 @@ public class Utils {
         } else return "NO FUCKING WAY! Cocksize @" + username + " is " + size + "cm\uD83D\uDC80";
     }
 
+    public static int getCockSize() {
+        int size = new Random().nextInt(50); // Генерация числа от 0 до 49;
+        return size;
+    }
+
     public static List<String> getRandomResponses() {
         // SQL запрос для выборки случайного текста из группы
         String sql = "SELECT text FROM " + MESSAGES_TABLE + " WHERE group_num = ? ORDER BY RANDOM() LIMIT 1";
