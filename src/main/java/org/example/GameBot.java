@@ -60,11 +60,13 @@ public class GameBot extends TelegramLongPollingBot {
 
 
 
-    private boolean cockSize(String chatId, String username) {
+    private void cockSize(String chatId, String username) {
         int playerCockSize = getPlayerCockSize(username);
         if (playerCockSize != -1) {
-            sendMessage(chatId, phraseSelection(playerCockSize, username));
-            return true;
+
+            if (!sendImgMessage(chatId, phraseSelection(playerCockSize, username), playerCockSize))
+                sendMessage(chatId, phraseSelection(playerCockSize, username));
+            return;
         }
 
         // Если записи нет, генерируем случайный размер и сохраняем его
@@ -73,7 +75,6 @@ public class GameBot extends TelegramLongPollingBot {
         setCockSizeWinner(username, newRandomSize);
         if (!sendImgMessage(chatId, phraseSelection(newRandomSize, username), newRandomSize))
             sendMessage(chatId, phraseSelection(newRandomSize, username));
-        return true;
     }
 
     private void registerPlayer(String chatId, String username, String chatName) {
