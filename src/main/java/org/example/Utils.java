@@ -3,7 +3,6 @@ package org.example;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.ByteArrayInputStream;
 import java.sql.*;
 import java.sql.Date;
 import java.time.LocalDate;
@@ -132,6 +131,24 @@ public class Utils {
         return responses;
     }
 
+    public static String getWinnerResponce() {
+        String sql = "SELECT text FROM " + MESSAGES_TABLE + " WHERE group_num = 100 ORDER BY RANDOM() LIMIT 1";
+
+        try (Connection conn = DataSourceConfig.getDataSource().getConnection()) {
+            try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+                try (ResultSet rs = stmt.executeQuery()) {
+                    if (rs.next()) {
+                        return rs.getString("text");
+                    }
+                }
+            }
+        } catch (Exception e) {
+            logger.error("Произошла ошибка при поулчении текста сообщений из БД: ", e);
+            // В случае ошибки возвращаем предопределённые ответы
+            return "Победитель сегодняшней игры: ";
+        }
+        return "Победитель сегодняшней игры: ";
+    }
     public static String getTodayWinner(String chatId) {
         // Проверяем, была ли уже игра сегодня
         try (Connection connection = DataSourceConfig.getDataSource().getConnection()) {

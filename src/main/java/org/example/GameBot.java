@@ -132,9 +132,10 @@ public class GameBot extends TelegramLongPollingBot {
     private void botInfo(String chatId) {
         sendMessage(chatId, """
                 Этот бот создан для определения пидора дня в чате! Команды:
-                /reg_me - добаавляет пользователя в игру
-                /stats - статистика за все время
-                /start - запускает поиска пидора в чате""");
+                /cocksize - проверь длинну своего члена
+                /reg_me - добавляет пользователя в пидорвикторину
+                /stats - статистика пидорвикторины за все время
+                /start - запускает пидорвикторину""");
     }
 
     private void startGame(String chatId, String chatName) {
@@ -142,7 +143,7 @@ public class GameBot extends TelegramLongPollingBot {
         String winner = getTodayWinner(chatId);
 
         if (winner != null) {
-            sendMessage(chatId, "Сегодня игра уже состоялась. Пидор дня: " + winner);
+            sendMessage(chatId, "Сегодня пидора уже выбрали. Пидор дня: " + winner);
             return;
         }
 
@@ -172,7 +173,7 @@ public class GameBot extends TelegramLongPollingBot {
 
         // Сообщаем о победителе
         //TODO: поправить сообщение, брать из БД
-        sendMessage(chatId, "Победитель сегодняшней игры: " + winner + "!");
+        sendMessage(chatId, getWinnerResponce() + winner + "!");
     }
 
     private void sendMessage(String chatId, String text) {
