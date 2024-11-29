@@ -15,7 +15,7 @@ import java.util.Objects;
 
 
 public class Quiz {
-    private static final String QUIZ_QUESTION_TABLE = "quiz_questions";
+    private static final String QUIZ_QUESTION_TABLE = "public_test.quiz_questions";
     private static final Logger logger = LoggerFactory.getLogger(Quiz.class);
     public static Map<Integer, String> getRandomQuestion() {
         //TODO: дополнительно возращать ответ, зачем?
