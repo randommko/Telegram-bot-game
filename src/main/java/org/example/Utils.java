@@ -9,11 +9,11 @@ import java.time.LocalDate;
 import java.util.*;
 
 public class Utils {
-    public static final String MESSAGES_TABLE = "public.messages";
-    public static final String PIDOR_PLAYERS_TABLE = "public.pidor_players";
-    public static final String PIDOR_STATS_TABLE = "public.pidor_stats";
-    public static final String COCKSIZE_STATS_TABLE = "public.cocksize_stats";
-    public static final String COCKSIZE_IMAGES_TABLE = "public.cocksize_imgs";
+    public static final String MESSAGES_TABLE = "public_test.messages";
+    public static final String PIDOR_PLAYERS_TABLE = "public_test.pidor_players";
+    public static final String PIDOR_STATS_TABLE = "public_test.pidor_stats";
+    public static final String COCKSIZE_STATS_TABLE = "public_test.cocksize_stats";
+    public static final String COCKSIZE_IMAGES_TABLE = "public_test.cocksize_imgs";
     private static final Logger logger = LoggerFactory.getLogger(Utils.class);
 
     public static boolean CheckMessage(String text) {
