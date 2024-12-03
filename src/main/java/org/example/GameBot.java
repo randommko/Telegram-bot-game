@@ -56,6 +56,7 @@ public class GameBot extends TelegramLongPollingBot {
                 case "/bot_info", "/bot_info@ChatGamePidor_Bot", "/help", "/help@ChatGamePidor_Bot" -> botInfo(chatID);
                 case "/cocksize", "/cocksize@ChatGamePidor_Bot" -> cockSize(chatID, userName);
                 case "/startQuiz", "/startQuiz@ChatGamePidor_Bot" -> startQuizGame(chatID);
+                case "/stopQuiz", "/stopQuiz@ChatGamePidor_Bot" -> stopQuiz(chatID);
                 default -> checkQuizAnswer(command, userName, chatName, chatID);
             }
         }
@@ -63,19 +64,37 @@ public class GameBot extends TelegramLongPollingBot {
 
     private void startQuizGame(Long chatID) {
         quizMap.put(chatID, new Quiz());
+        quizMap.get(chatID).isQuizStarted = true;
         Thread thread = new Thread(() -> {
-            quizMap.get(chatID).isQuizStarted = true;
-            quizMap.get(chatID).newQuestion();
-            sendQuestion(chatID);
-            //TODO: отправлять подсказки в чат каждые 10 секунд
+            do {
+                quizMap.get(chatID).newQuestion();
+                sendQuestion(chatID);
+                do {
+                    try {
+                        Thread.sleep(3000); // Задержка 10 секунд
+                    } catch (InterruptedException e) {
+                        throw new RuntimeException(e);
+                    }
+                    quizMap.get(chatID).updateClue();
+                    if (quizMap.get(chatID).isQuizStarted)
+                        sendMessage(chatID, "Подсказка: " + quizMap.get(chatID).clue);
+                } while ((quizMap.get(chatID).getRemainingNumberOfClue() > 2) & (quizMap.get(chatID).isQuizStarted));
+
+                if (quizMap.get(chatID).isQuizStarted)
+                    sendMessage(chatID, "Правильный ответ: " + quizMap.get(chatID).currentAnswer);
+            } while (quizMap.get(chatID).isQuizStarted);
         });
         thread.start();
     }
 
-    private void checkQuizAnswer(String answer, String user_name, String chat_name, Long chatID) {
+    private void stopQuiz (Long chatID) {
+        quizMap.get(chatID).isQuizStarted = false;
+        sendMessage(chatID, "Викторина завершена");
+    }
+    private void checkQuizAnswer(String answer, String userName, String chatName, Long chatID) {
         if (quizMap.get(chatID).currentAnswer.equalsIgnoreCase(answer)) {
             Integer points = quizMap.get(chatID).calculatePoints(answer.toLowerCase());
-            quizMap.get(chatID).setScore(user_name, points, chatID, chat_name);
+            quizMap.get(chatID).setScore(userName, points, chatID, chatName);
             quizMap.get(chatID).newQuestion();
             sendQuestion(chatID);
         }
