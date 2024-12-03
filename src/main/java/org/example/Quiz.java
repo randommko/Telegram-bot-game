@@ -6,12 +6,13 @@ import org.slf4j.LoggerFactory;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 
 
 public class Quiz {
+    public static boolean isQuizStarted = false;
+    public static Map<Integer, String> currentQuestion = new HashMap<>();
+    public static String clue;
     private static final String QUIZ_QUESTION_TABLE = "public_test.quiz_questions";
     private static final String QUIZ_ANSWERS_TABLE = "public_test.quiz_answers";
     private static final String QUIZ_STATS_TABLE = "public_test.quiz_stats";
@@ -39,11 +40,13 @@ public class Quiz {
             return null;
         }
     }
-    public static boolean CheckQuestionAnswer(Integer questionID, String userAnswer) {
+    public static boolean checkQuestionAnswer(String userAnswer) {
         String sql = "SELECT answer FROM " + QUIZ_QUESTION_TABLE + " WHERE id = ?";
         try (Connection connection = DataSourceConfig.getDataSource().getConnection()) {
             try (PreparedStatement stmt = connection.prepareStatement(sql)) {
-                stmt.setInt(1, questionID);
+
+                Iterator<Integer> iterator = currentQuestion.keySet().iterator();
+                stmt.setInt(1, iterator.next());
                 try (ResultSet rs = stmt.executeQuery()) {
                     rs.next();
                     String correctAnswer = rs.getString("answer");
@@ -55,19 +58,20 @@ public class Quiz {
             return false;
         }
     }
-    private static void IncrementQuestion (Integer id) {
+    private static void IncrementQuestion () {
         String sqlIncrementQuestion = "UPDATE " + QUIZ_QUESTION_TABLE + " SET used_times = used_times + 1 WHERE id = ?";
+        Iterator<Integer> iterator = currentQuestion.keySet().iterator();
 
         try (Connection connection = DataSourceConfig.getDataSource().getConnection()) {
             try (PreparedStatement insertStmt = connection.prepareStatement(sqlIncrementQuestion)) {
-                insertStmt.setString(1, String.valueOf(id));
+                insertStmt.setString(1, String.valueOf(iterator.next()));
                 insertStmt.executeUpdate();
             }
         } catch (Exception e) {
             logger.error("Ошибка при увеличении количества раз использоваения вопроса: ", e);
         }
     }
-    private static Integer calculatePoints (String clue, String userAnswer) {
+    public static Integer calculatePoints (String userAnswer) {
         //clue - текущая подсказка
         //userAnswer - ответ пользователя
         int count = 0;
@@ -78,13 +82,14 @@ public class Quiz {
         }
         return count;
     }
-    private static void setUserAnswer(String user_name, Integer question_id, Integer points, String chat_id, String chat_name) {
+    private static void setUserAnswer(String user_name, Integer points, String chat_id, String chat_name) {
         String insertQuery = "INSERT INTO " + QUIZ_ANSWERS_TABLE + " (user_name, question_id, get_points, chat_id, chat_name) VALUES (?, ?, ?, ?, ?)";
+        Iterator<Integer> iterator = currentQuestion.keySet().iterator();
 
         try (Connection connection = DataSourceConfig.getDataSource().getConnection()) {
             try (PreparedStatement insertStmt = connection.prepareStatement(insertQuery)) {
                 insertStmt.setString(1, user_name);
-                insertStmt.setInt(2, question_id);
+                insertStmt.setInt(2, iterator.next());
                 insertStmt.setInt(3, points);
                 insertStmt.setString(4, chat_id);
                 insertStmt.setString(5, chat_name);
@@ -94,9 +99,9 @@ public class Quiz {
             logger.error("Ошибка записи верного ответа: ", e);
         }
     }
-    public static void setScore (String user_name, Integer question_id, Integer points, String chat_id, String chat_name) {
-        setUserAnswer(user_name, question_id, points, chat_id, chat_name);
-        IncrementQuestion(question_id);
+    public static void setScore (String user_name, Integer points, String chat_id, String chat_name) {
+        setUserAnswer(user_name, points, chat_id, chat_name);
+        IncrementQuestion();
 
         String getScoreQuery = "SELECT score FROM " + QUIZ_STATS_TABLE + " WHERE user_name = ? AND chat_name = ?";
 
@@ -128,5 +133,9 @@ public class Quiz {
         } catch (Exception e) {
             logger.error("Произошла ошибка при записи счета в БД: ", e);
         }
+    }
+
+    public static void newQuestion() {
+        Quiz.currentQuestion = Quiz.getRandomQuestion();
     }
 }

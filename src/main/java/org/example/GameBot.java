@@ -18,10 +18,12 @@ import java.util.*;
 import java.util.Random;
 
 
+import static org.example.Quiz.isQuizStarted;
 import static org.example.Utils.*;
 
 public class GameBot extends TelegramLongPollingBot {
     private final String botToken;
+
     private static final String RESOURCES_PATH = "/bin/tg_bot/resources";
     private static final Logger logger = LoggerFactory.getLogger(GameBot.class);
 
@@ -41,7 +43,7 @@ public class GameBot extends TelegramLongPollingBot {
     public void onUpdateReceived(Update update) {
         Message message = update.getMessage();
         System.out.println("Получено сообщение из чата " + message.getChat().getTitle() +": "+ message.getText());
-        if (update.hasMessage() & CheckMessage(message.getText())) {
+        if (update.hasMessage() & CheckMessage(message.getText(), isQuizStarted)) {
             String command = message.getText();
             String chatId = String.valueOf(message.getChatId());
             String chatName = String.valueOf(message.getChat().getTitle());
@@ -53,11 +55,44 @@ public class GameBot extends TelegramLongPollingBot {
                 case "/start", "/start@ChatGamePidor_Bot" -> startGame(chatId, chatName);
                 case "/bot_info", "/bot_info@ChatGamePidor_Bot", "/help", "/help@ChatGamePidor_Bot" -> botInfo(chatId);
                 case "/cocksize", "/cocksize@ChatGamePidor_Bot" -> cockSize(chatId, userName);
-                default -> sendMessage(chatId, "Неизвестная команда.");
+                case "/startQuiz", "/startQuiz@ChatGamePidor_Bot" -> startQuizGame(chatId);
+                default -> checkQuizAnswer(command, userName, chatName, chatId);
             }
         }
     }
 
+    private void startQuizGame(String chatId) {
+        //TODO: работать будет только для одного чата
+        //TODO: для нескольких чатов нужно создавать экземпляр Quiz свой для каждого чата
+        Thread thread = new Thread(() -> {
+            isQuizStarted = true;
+            Quiz.newQuestion();
+            sendQuestion(chatId);
+
+
+            //TODO: отправлять подсказки в чат каждые 10 секунд
+        });
+        thread.start();
+    }
+
+    private void checkQuizAnswer(String answer, String user_name, String chat_name, String chat_id) {
+        if (Quiz.checkQuestionAnswer(answer)) {
+            Integer points = Quiz.calculatePoints(answer);
+            Quiz.setScore(user_name, points, chat_id, chat_name);
+            Quiz.newQuestion();
+            sendQuestion(chat_id);
+        }
+        //TODO: Написать для неверного ответа - а нужно ли?
+    }
+
+    private void sendQuestion(String chatId) {
+        if (Quiz.currentQuestion != null)
+            sendMessage(chatId, Quiz.currentQuestion.get(0));
+        else {
+            sendMessage(chatId, "В БД нет вопросов");
+            isQuizStarted = false;
+        }
+    }
 
 
     private void cockSize(String chatId, String username) {
@@ -95,41 +130,44 @@ public class GameBot extends TelegramLongPollingBot {
     }
 
     private void sendStats(String chatId) {
-        String query = "SELECT winner_user_name, COUNT(*) AS count " +
-                "FROM " + PIDOR_STATS_TABLE +
-                " WHERE chat_id = ? " +
-                "GROUP BY winner_user_name";
+        Thread thread = new Thread(() -> {
+            String query = "SELECT winner_user_name, COUNT(*) AS count " +
+                    "FROM " + PIDOR_STATS_TABLE +
+                    " WHERE chat_id = ? " +
+                    "GROUP BY winner_user_name";
 
-        Map<String, Integer> winnersCount = new HashMap<>();
+            Map<String, Integer> winnersCount = new HashMap<>();
 
-        try (Connection connection = DataSourceConfig.getDataSource().getConnection()) {
-             PreparedStatement preparedStatement = connection.prepareStatement(query);
+            try (Connection connection = DataSourceConfig.getDataSource().getConnection()) {
+                PreparedStatement preparedStatement = connection.prepareStatement(query);
 
-            preparedStatement.setString(1, chatId);
-            ResultSet resultSet = preparedStatement.executeQuery();
+                preparedStatement.setString(1, chatId);
+                ResultSet resultSet = preparedStatement.executeQuery();
 
-            while (resultSet.next()) {
-                String winner = resultSet.getString("winner_user_name");
-                int count = resultSet.getInt("count");
-                winnersCount.put(winner, count);
+                while (resultSet.next()) {
+                    String winner = resultSet.getString("winner_user_name");
+                    int count = resultSet.getInt("count");
+                    winnersCount.put(winner, count);
+                }
+
+                if (winnersCount.isEmpty()) {
+                    sendMessage(chatId, "Статистика пуста.");
+                    return;
+                }
+
+                StringBuilder statsMessage = new StringBuilder("Статистика пидоров:\n");
+                winnersCount.forEach((winner, count) ->
+                        statsMessage.append(winner).append(": ").append(count).append("\n")
+                );
+
+                sendMessage(chatId, statsMessage.toString());
+
+            } catch (SQLException e) {
+                logger.error("Ошибка при получении статистики из БД: ", e);
+                sendMessage(chatId, "Ошибка при получении статистики.");
             }
-
-            if (winnersCount.isEmpty()) {
-                sendMessage(chatId, "Статистика пуста.");
-                return;
-            }
-
-            StringBuilder statsMessage = new StringBuilder("Статистика пидоров:\n");
-            winnersCount.forEach((winner, count) ->
-                    statsMessage.append(winner).append(": ").append(count).append("\n")
-            );
-
-            sendMessage(chatId, statsMessage.toString());
-
-        } catch (SQLException e) {
-            logger.error("Ошибка при получении статистики из БД: ", e);
-            sendMessage(chatId, "Ошибка при получении статистики.");
-        }
+        });
+        thread.start();
     }
 
     private void botInfo(String chatId) {
@@ -142,41 +180,36 @@ public class GameBot extends TelegramLongPollingBot {
     }
 
     private void startGame(String chatId, String chatName) {
-        Set<String> chatPlayers;
-        String winner = getTodayWinner(chatId);
+        Thread thread = new Thread(() -> {
+            Set<String> chatPlayers;
+            String winner = getTodayWinner(chatId);
 
-        if (winner != null) {
-            sendMessage(chatId, "Сегодня пидора уже выбрали. Пидор дня: " + winner);
-            return;
-        }
-
-        chatPlayers = getCockSizePlayers(chatId);
-
-        // Проверяем, есть ли зарегистрированные игроки
-        if (chatPlayers.isEmpty()) {
-            sendMessage(chatId, "Нет зарегистрированных игроков.");
-            return;
-        }
-
-        // Отправляем случайные ответы
-        List<String> responses = getRandomResponses();
-        try {
-            for (String response : responses) {
-                sendMessage(chatId, response);
-                Thread.sleep(1000);
+            if (winner != null) {
+                sendMessage(chatId, "Сегодня пидора уже выбрали. Пидор дня: " + winner);
+                return;
             }
-        } catch (Exception e) {
-            logger.error("Произошла ошибка при сохранении победителя в БД: ", e);
-        }
 
-        // Определяем победителя
-        winner = new ArrayList<>(chatPlayers).get(new Random().nextInt(chatPlayers.size()));
-        // Сохраняем результат в БД
-        setPidorWinner(chatId, winner, chatName);
+            chatPlayers = getCockSizePlayers(chatId);
+            if (chatPlayers.isEmpty()) {
+                sendMessage(chatId, "Нет зарегистрированных игроков.");
+                return;
+            }
 
-        // Сообщаем о победителе
-        //TODO: поправить сообщение, брать из БД
-        sendMessage(chatId, getWinnerResponce() + winner + "!");
+            List<String> responses = getRandomResponses();
+            try {
+                for (String response : responses) {
+                    sendMessage(chatId, response);
+                    Thread.sleep(1000);
+                }
+            } catch (Exception e) {
+                logger.error("Произошла ошибка при сохранении победителя в БД: ", e);
+            }
+
+            winner = new ArrayList<>(chatPlayers).get(new Random().nextInt(chatPlayers.size()));
+            setPidorWinner(chatId, winner, chatName);
+            sendMessage(chatId, getWinnerResponce() + winner + "!");
+        });
+        thread.start();
     }
 
     private void sendMessage(String chatId, String text) {
