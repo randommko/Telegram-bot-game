@@ -24,6 +24,7 @@ public class GameBot extends TelegramLongPollingBot {
     private final Map<Long, Quiz> quizMap = new HashMap<>(); //ключ ID чата, значение экземпляр Quiz
     private static final String RESOURCES_PATH = "/bin/tg_bot/resources";
     private static final Logger logger = LoggerFactory.getLogger(GameBot.class);
+    private static final int quizClueTimer = 10000;
 
     public GameBot(String botToken) {
         this.botToken = botToken;
@@ -71,7 +72,7 @@ public class GameBot extends TelegramLongPollingBot {
                 sendQuestion(chatID);
                 do {
                     try {
-                        Thread.sleep(3000); // Задержка 10 секунд
+                        Thread.sleep(quizClueTimer);
                     } catch (InterruptedException e) {
                         throw new RuntimeException(e);
                     }
