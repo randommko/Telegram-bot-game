@@ -11,60 +11,40 @@ import java.util.*;
 
 public class Quiz {
     public static boolean isQuizStarted = false;
-    public static Map<Integer, String> currentQuestion = new HashMap<>();
+    public static String currentQuestionText;
+    public static Integer currentQuestionID;
+    public static String currentAnswer;
     public static String clue;
     private static final String QUIZ_QUESTION_TABLE = "public_test.quiz_questions";
     private static final String QUIZ_ANSWERS_TABLE = "public_test.quiz_answers";
     private static final String QUIZ_STATS_TABLE = "public_test.quiz_stats";
     private static final Logger logger = LoggerFactory.getLogger(Quiz.class);
-    public static Map<Integer, String> getRandomQuestion() {
+    public static void getRandomQuestion() {
         //TODO: дополнительно возращать ответ, зачем?
-        Map<Integer, String> question = new HashMap<>();
-        String sql = "SELECT id, question FROM " + QUIZ_QUESTION_TABLE + " ORDER BY RANDOM() LIMIT 1";
+        //Map<Integer, String> question = new HashMap<>();
+        String sql = "SELECT id, question, answer FROM " + QUIZ_QUESTION_TABLE + " ORDER BY RANDOM() LIMIT 1";
 
         try (Connection connection = DataSourceConfig.getDataSource().getConnection()) {
             try (PreparedStatement stmt = connection.prepareStatement(sql)) {
-                try (ResultSet rs = stmt.executeQuery()) {
-                    if (rs.next()) {
-                        question.put(rs.getInt("text"), String.valueOf(rs.getInt("id")));
-
-                        return question;
-                    } else {
-                        // Если нет вопросов в БД
-                        return null;
+                try (ResultSet queryResult = stmt.executeQuery()) {
+                    if (queryResult.next()) {
+                        currentQuestionText = queryResult.getString("question");
+                        currentQuestionID = queryResult.getInt("id");
+                        currentAnswer = queryResult.getString("answer");
                     }
                 }
             }
         } catch (Exception e) {
             logger.error("Произошла ошибка при поулчении вопроса из БД: ", e);
-            return null;
-        }
-    }
-    public static boolean checkQuestionAnswer(String userAnswer) {
-        String sql = "SELECT answer FROM " + QUIZ_QUESTION_TABLE + " WHERE id = ?";
-        try (Connection connection = DataSourceConfig.getDataSource().getConnection()) {
-            try (PreparedStatement stmt = connection.prepareStatement(sql)) {
 
-                Iterator<Integer> iterator = currentQuestion.keySet().iterator();
-                stmt.setInt(1, iterator.next());
-                try (ResultSet rs = stmt.executeQuery()) {
-                    rs.next();
-                    String correctAnswer = rs.getString("answer");
-                    return Objects.equals(correctAnswer, userAnswer);
-                }
-            }
-        } catch (Exception e) {
-            logger.error("Произошла ошибка при поулчении ответа из БД: ", e);
-            return false;
         }
     }
     private static void IncrementQuestion () {
         String sqlIncrementQuestion = "UPDATE " + QUIZ_QUESTION_TABLE + " SET used_times = used_times + 1 WHERE id = ?";
-        Iterator<Integer> iterator = currentQuestion.keySet().iterator();
 
         try (Connection connection = DataSourceConfig.getDataSource().getConnection()) {
             try (PreparedStatement insertStmt = connection.prepareStatement(sqlIncrementQuestion)) {
-                insertStmt.setString(1, String.valueOf(iterator.next()));
+                insertStmt.setInt(1, currentQuestionID);
                 insertStmt.executeUpdate();
             }
         } catch (Exception e) {
@@ -84,12 +64,11 @@ public class Quiz {
     }
     private static void setUserAnswer(String user_name, Integer points, String chat_id, String chat_name) {
         String insertQuery = "INSERT INTO " + QUIZ_ANSWERS_TABLE + " (user_name, question_id, get_points, chat_id, chat_name) VALUES (?, ?, ?, ?, ?)";
-        Iterator<Integer> iterator = currentQuestion.keySet().iterator();
 
         try (Connection connection = DataSourceConfig.getDataSource().getConnection()) {
             try (PreparedStatement insertStmt = connection.prepareStatement(insertQuery)) {
                 insertStmt.setString(1, user_name);
-                insertStmt.setInt(2, iterator.next());
+                insertStmt.setInt(2, currentQuestionID);
                 insertStmt.setInt(3, points);
                 insertStmt.setString(4, chat_id);
                 insertStmt.setString(5, chat_name);
@@ -136,6 +115,19 @@ public class Quiz {
     }
 
     public static void newQuestion() {
-        Quiz.currentQuestion = Quiz.getRandomQuestion();
+        Quiz.getRandomQuestion();
+        StringBuilder result = new StringBuilder();
+        // Проходим по каждому символу строки
+        for (char ch : currentAnswer.toCharArray()) {
+            if (Character.isDigit(ch)) { // Проверяем, является ли символ цифрой
+                result.append("*"); // Добавляем '*' count раз
+            } else if (Character.isLetter(ch)) {
+                result.append("*"); // Добавляем '*' count раз
+            }
+            else {
+                result.append(ch); // Сохраняем символ (например, пробел)
+            }
+        }
+        clue = result.toString();
     }
 }
