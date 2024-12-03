@@ -56,8 +56,8 @@ public class GameBot extends TelegramLongPollingBot {
                 case "/start", "/start@ChatGamePidor_Bot" -> startGame(chatID, chatName);
                 case "/bot_info", "/bot_info@ChatGamePidor_Bot", "/help", "/help@ChatGamePidor_Bot" -> botInfo(chatID);
                 case "/cocksize", "/cocksize@ChatGamePidor_Bot" -> cockSize(chatID, userName);
-                case "/startQuiz", "/startQuiz@ChatGamePidor_Bot" -> startQuizGame(chatID);
-                case "/stopQuiz", "/stopQuiz@ChatGamePidor_Bot" -> stopQuiz(chatID);
+                case "/start_quiz", "/start_quiz@ChatGamePidor_Bot" -> startQuizGame(chatID);
+                case "/stop_quiz", "/stop_quiz@ChatGamePidor_Bot" -> stopQuiz(chatID);
                 default -> checkQuizAnswer(command, userName, chatName, chatID);
             }
         }
