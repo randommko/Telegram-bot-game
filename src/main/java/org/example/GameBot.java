@@ -17,13 +17,11 @@ import org.slf4j.LoggerFactory;
 import java.util.*;
 import java.util.Random;
 
-
-import static org.example.Quiz.isQuizStarted;
 import static org.example.Utils.*;
 
 public class GameBot extends TelegramLongPollingBot {
     private final String botToken;
-
+    private final Map<Long, Quiz> quizMap = new HashMap<>(); //ключ ID чата, значение экземпляр Quiz
     private static final String RESOURCES_PATH = "/bin/tg_bot/resources";
     private static final Logger logger = LoggerFactory.getLogger(GameBot.class);
 
@@ -42,63 +40,63 @@ public class GameBot extends TelegramLongPollingBot {
     @Override
     public void onUpdateReceived(Update update) {
         Message message = update.getMessage();
+        Long chatID = message.getChatId();
         System.out.println("Получено сообщение из чата " + message.getChat().getTitle() +": "+ message.getText());
-        if (update.hasMessage() & CheckMessage(message.getText(), isQuizStarted)) {
+        if (update.hasMessage()) {
+//        if (update.hasMessage() & CheckMessage(message.getText(), quizMap.get(chatID).isQuizStarted)) {
             String command = message.getText();
-            String chatId = String.valueOf(message.getChatId());
+
             String chatName = String.valueOf(message.getChat().getTitle());
             String userName = String.valueOf(message.getFrom().getUserName());
 
             switch (command) {
-                case "/reg_me", "/reg_me@ChatGamePidor_Bot" -> registerPlayer(chatId, userName, chatName);
-                case "/stats", "/stats@ChatGamePidor_Bot" -> sendStats(chatId);
-                case "/start", "/start@ChatGamePidor_Bot" -> startGame(chatId, chatName);
-                case "/bot_info", "/bot_info@ChatGamePidor_Bot", "/help", "/help@ChatGamePidor_Bot" -> botInfo(chatId);
-                case "/cocksize", "/cocksize@ChatGamePidor_Bot" -> cockSize(chatId, userName);
-                case "/startQuiz", "/startQuiz@ChatGamePidor_Bot" -> startQuizGame(chatId);
-                default -> checkQuizAnswer(command, userName, chatName, chatId);
+                case "/reg_me", "/reg_me@ChatGamePidor_Bot" -> registerPlayer(chatID, userName, chatName);
+                case "/stats", "/stats@ChatGamePidor_Bot" -> sendStats(chatID);
+                case "/start", "/start@ChatGamePidor_Bot" -> startGame(chatID, chatName);
+                case "/bot_info", "/bot_info@ChatGamePidor_Bot", "/help", "/help@ChatGamePidor_Bot" -> botInfo(chatID);
+                case "/cocksize", "/cocksize@ChatGamePidor_Bot" -> cockSize(chatID, userName);
+                case "/startQuiz", "/startQuiz@ChatGamePidor_Bot" -> startQuizGame(chatID);
+                default -> checkQuizAnswer(command, userName, chatName, chatID);
             }
         }
     }
 
-    private void startQuizGame(String chatId) {
-        //TODO: работать будет только для одного чата
-        //TODO: для нескольких чатов нужно создавать свой экземпляр Quiz для каждого чата
+    private void startQuizGame(Long chatID) {
+        quizMap.put(chatID, new Quiz());
         Thread thread = new Thread(() -> {
-            isQuizStarted = true;
-            Quiz.newQuestion();
-            sendQuestion(chatId);
-
+            quizMap.get(chatID).isQuizStarted = true;
+            quizMap.get(chatID).newQuestion();
+            sendQuestion(chatID);
             //TODO: отправлять подсказки в чат каждые 10 секунд
         });
         thread.start();
     }
 
-    private void checkQuizAnswer(String answer, String user_name, String chat_name, String chat_id) {
-        if (Quiz.currentAnswer.equals(answer)) {
-            Integer points = Quiz.calculatePoints(answer);
-            Quiz.setScore(user_name, points, chat_id, chat_name);
-            Quiz.newQuestion();
-            sendQuestion(chat_id);
+    private void checkQuizAnswer(String answer, String user_name, String chat_name, Long chatID) {
+        if (quizMap.get(chatID).currentAnswer.equalsIgnoreCase(answer)) {
+            Integer points = quizMap.get(chatID).calculatePoints(answer.toLowerCase());
+            quizMap.get(chatID).setScore(user_name, points, chatID, chat_name);
+            quizMap.get(chatID).newQuestion();
+            sendQuestion(chatID);
         }
     }
 
-    private void sendQuestion(String chatId) {
-        if (!Quiz.currentQuestionText.isEmpty()) {
-            sendMessage(chatId, Quiz.currentQuestionText);
-            sendClue(chatId);
+    private void sendQuestion(Long chatID) {
+        if (!quizMap.get(chatID).currentQuestionText.isEmpty()) {
+            sendMessage(chatID, quizMap.get(chatID).currentQuestionText);
+            sendClue(chatID);
         }
         else {
-            sendMessage(chatId, "В БД нет вопросов");
-            isQuizStarted = false;
+            sendMessage(chatID, "В БД нет вопросов");
+            quizMap.get(chatID).isQuizStarted = false;
         }
     }
 
-    private void sendClue(String chatId) {
-        sendMessage(chatId, "Подсказка: " + Quiz.clue);
+    private void sendClue(Long chatID) {
+        sendMessage(chatID, "Подсказка: " + quizMap.get(chatID).clue);
     }
 
-    private void cockSize(String chatId, String username) {
+    private void cockSize(Long chatId, String username) {
         int playerCockSize = getPlayerCockSize(username);
         if (playerCockSize != -1) {
 //            sendMessage(chatId, phraseSelection(playerCockSize, username));
@@ -115,24 +113,24 @@ public class GameBot extends TelegramLongPollingBot {
             sendMessage(chatId, phraseSelection(newRandomSize, username));
     }
 
-    private void registerPlayer(String chatId, String username, String chatName) {
+    private void registerPlayer(Long chatID, String username, String chatName) {
         String insertQuery = "INSERT INTO " + PIDOR_PLAYERS_TABLE + " (chat_id, user_name, chat_name) VALUES (?, ?, ?) ON CONFLICT (chat_id, user_name) DO NOTHING";
         try (Connection connection = DataSourceConfig.getDataSource().getConnection()) {
             PreparedStatement preparedStatement = connection.prepareStatement(insertQuery);
 
-            preparedStatement.setString(1, chatId);
+            preparedStatement.setLong(1, chatID);
             preparedStatement.setString(2, "@" + username);
             preparedStatement.setString(3, Objects.requireNonNullElse(chatName, "-"));
             preparedStatement.executeUpdate();
 
-            sendMessage(chatId, "Игрок @" + username + " зарегистрирован! ");
+            sendMessage(chatID, "Игрок @" + username + " зарегистрирован! ");
         } catch (SQLException e) {
             logger.error("Ошибка при регистрации игрока в БД: " + e);
-            sendMessage(chatId, "Произошла ошибка при регистрации игрока @" + username + "\n" + e.getMessage());
+            sendMessage(chatID, "Произошла ошибка при регистрации игрока @" + username + "\n" + e.getMessage());
         }
     }
 
-    private void sendStats(String chatId) {
+    private void sendStats(Long chatId) {
         Thread thread = new Thread(() -> {
             String query = "SELECT winner_user_name, COUNT(*) AS count " +
                     "FROM " + PIDOR_STATS_TABLE +
@@ -144,7 +142,7 @@ public class GameBot extends TelegramLongPollingBot {
             try (Connection connection = DataSourceConfig.getDataSource().getConnection()) {
                 PreparedStatement preparedStatement = connection.prepareStatement(query);
 
-                preparedStatement.setString(1, chatId);
+                preparedStatement.setLong(1, chatId);
                 ResultSet resultSet = preparedStatement.executeQuery();
 
                 while (resultSet.next()) {
@@ -173,7 +171,7 @@ public class GameBot extends TelegramLongPollingBot {
         thread.start();
     }
 
-    private void botInfo(String chatId) {
+    private void botInfo(Long chatId) {
         sendMessage(chatId, """
                 Этот бот создан для определения пидора дня в чате! Команды:
                 /cocksize - проверь длинну своего члена
@@ -182,26 +180,26 @@ public class GameBot extends TelegramLongPollingBot {
                 /start - запускает пидорвикторину""");
     }
 
-    private void startGame(String chatId, String chatName) {
+    private void startGame(Long chatID, String chatName) {
         Thread thread = new Thread(() -> {
             Set<String> chatPlayers;
-            String winner = getTodayWinner(chatId);
+            String winner = getTodayWinner(chatID);
 
             if (winner != null) {
-                sendMessage(chatId, "Сегодня пидора уже выбрали. Пидор дня: " + winner);
+                sendMessage(chatID, "Сегодня пидора уже выбрали. Пидор дня: " + winner);
                 return;
             }
 
-            chatPlayers = getCockSizePlayers(chatId);
+            chatPlayers = getCockSizePlayers(chatID);
             if (chatPlayers.isEmpty()) {
-                sendMessage(chatId, "Нет зарегистрированных игроков.");
+                sendMessage(chatID, "Нет зарегистрированных игроков.");
                 return;
             }
 
             List<String> responses = getRandomResponses();
             try {
                 for (String response : responses) {
-                    sendMessage(chatId, response);
+                    sendMessage(chatID, response);
                     Thread.sleep(1000);
                 }
             } catch (Exception e) {
@@ -209,13 +207,13 @@ public class GameBot extends TelegramLongPollingBot {
             }
 
             winner = new ArrayList<>(chatPlayers).get(new Random().nextInt(chatPlayers.size()));
-            setPidorWinner(chatId, winner, chatName);
-            sendMessage(chatId, getWinnerResponce() + winner + "!");
+            setPidorWinner(chatID, winner, chatName);
+            sendMessage(chatID, getWinnerResponce() + winner + "!");
         });
         thread.start();
     }
 
-    private void sendMessage(String chatId, String text) {
+    private void sendMessage(Long chatId, String text) {
         SendMessage message = new SendMessage();
         message.setChatId(chatId);
         message.setText(text);
@@ -226,7 +224,7 @@ public class GameBot extends TelegramLongPollingBot {
         }
     }
 
-    private boolean sendImgMessage (String chatId, String text, Integer size) {
+    private boolean sendImgMessage (Long chatId, String text, Integer size) {
         //TODO: добавить отправку картинок
         String imgName = getCockSizeImage(size);
         if (imgName == null)
