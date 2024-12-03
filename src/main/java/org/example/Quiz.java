@@ -15,9 +15,9 @@ public class Quiz {
     public Integer currentQuestionID;
     public String currentAnswer;
     public String clue;
-    private final String QUIZ_QUESTION_TABLE = "public_test.quiz_questions";
-    private final String QUIZ_ANSWERS_TABLE = "public_test.quiz_answers";
-    private final String QUIZ_STATS_TABLE = "public_test.quiz_stats";
+    private final String QUIZ_QUESTION_TABLE = "public.quiz_questions";
+    private final String QUIZ_ANSWERS_TABLE = "public.quiz_answers";
+    private final String QUIZ_STATS_TABLE = "public.quiz_stats";
     private final Logger logger = LoggerFactory.getLogger(Quiz.class);
     public void getRandomQuestion() {
         //TODO: дополнительно возращать ответ, зачем?
