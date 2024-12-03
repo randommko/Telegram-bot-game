@@ -63,12 +63,11 @@ public class GameBot extends TelegramLongPollingBot {
 
     private void startQuizGame(String chatId) {
         //TODO: работать будет только для одного чата
-        //TODO: для нескольких чатов нужно создавать экземпляр Quiz свой для каждого чата
+        //TODO: для нескольких чатов нужно создавать свой экземпляр Quiz для каждого чата
         Thread thread = new Thread(() -> {
             isQuizStarted = true;
             Quiz.newQuestion();
             sendQuestion(chatId);
-
 
             //TODO: отправлять подсказки в чат каждые 10 секунд
         });
@@ -76,22 +75,27 @@ public class GameBot extends TelegramLongPollingBot {
     }
 
     private void checkQuizAnswer(String answer, String user_name, String chat_name, String chat_id) {
-        if (Quiz.checkQuestionAnswer(answer)) {
+        if (Quiz.currentAnswer.equals(answer)) {
             Integer points = Quiz.calculatePoints(answer);
             Quiz.setScore(user_name, points, chat_id, chat_name);
             Quiz.newQuestion();
             sendQuestion(chat_id);
         }
-        //TODO: Написать для неверного ответа - а нужно ли?
     }
 
     private void sendQuestion(String chatId) {
-        if (Quiz.currentQuestion != null)
-            sendMessage(chatId, Quiz.currentQuestion.get(0));
+        if (!Quiz.currentQuestionText.isEmpty()) {
+            sendMessage(chatId, Quiz.currentQuestionText);
+            sendClue(chatId);
+        }
         else {
             sendMessage(chatId, "В БД нет вопросов");
             isQuizStarted = false;
         }
+    }
+
+    private void sendClue(String chatId) {
+        sendMessage(chatId, "Подсказка: " + Quiz.clue);
     }
 
     private void cockSize(String chatId, String username) {
