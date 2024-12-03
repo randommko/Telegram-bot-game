@@ -16,23 +16,20 @@ public class Utils {
     public static final String COCKSIZE_IMAGES_TABLE = "public.cocksize_imgs";
     private static final Logger logger = LoggerFactory.getLogger(Utils.class);
 
-    public static boolean CheckMessage(String text) {
+    public static boolean CheckMessage(String text, boolean isQuizStarted) {
 
-        if (text.equals("/start") || text.equals("/start@ChatGamePidor_Bot")) {
+        if (isQuizStarted)
             return true;
-        }
-
-        if (text.equals("/stats") || text.equals("/stats@ChatGamePidor_Bot")) {
+        if (text.equals("/start") || text.equals("/start@ChatGamePidor_Bot"))
             return true;
-        }
-
-        if (text.equals("/reg_me") || text.equals("/reg_me@ChatGamePidor_Bot")) {
+        if (text.equals("/stats") || text.equals("/stats@ChatGamePidor_Bot"))
             return true;
-        }
-        if (text.equals("/cocksize") || text.equals("/cocksize@ChatGamePidor_Bot")) {
+        if (text.equals("/reg_me") || text.equals("/reg_me@ChatGamePidor_Bot"))
             return true;
-        }
-
+        if (text.equals("/cocksize") || text.equals("/cocksize@ChatGamePidor_Bot"))
+            return true;
+        if (text.equals("/startQuiz") || text.equals("/startQuiz@ChatGamePidor_Bot"))
+            return true;
         return (text.equals("/bot_info") || text.equals("/bot_info@ChatGamePidor_Bot"));
     }
 
@@ -149,14 +146,14 @@ public class Utils {
         }
         return "Победитель сегодняшней игры: ";
     }
-    public static String getTodayWinner(String chatId) {
+    public static String getTodayWinner(Long chatId) {
         // Проверяем, была ли уже игра сегодня
         try (Connection connection = DataSourceConfig.getDataSource().getConnection()) {
             LocalDate today = LocalDate.now();
 
             String checkQuery = "SELECT winner_user_name FROM " + PIDOR_STATS_TABLE + " WHERE chat_id = ? AND date = ?";
             try (PreparedStatement checkStmt = connection.prepareStatement(checkQuery)) {
-                checkStmt.setString(1, chatId);
+                checkStmt.setLong(1, chatId);
                 checkStmt.setDate(2, Date.valueOf(today));
                 try (ResultSet resultSet = checkStmt.executeQuery()) {
                     if (resultSet.next()) {
@@ -172,13 +169,13 @@ public class Utils {
         return null;
     }
 
-    public static Set<String> getCockSizePlayers(String chatId) {
+    public static Set<String> getCockSizePlayers(Long chatID) {
         Set<String> chatPlayers = new HashSet<>();
         try (Connection getPlayersConn = DataSourceConfig.getDataSource().getConnection()) {
             // Запрос к базе данных для получения списка игроков по chat_id
             String query = "SELECT user_name FROM " + PIDOR_PLAYERS_TABLE + " WHERE chat_id = ?";
             PreparedStatement stmt = getPlayersConn.prepareStatement(query);
-            stmt.setString(1, chatId);
+            stmt.setLong(1, chatID);
 
             try (ResultSet rs = stmt.executeQuery()) {
                 while (rs.next()) {
@@ -210,12 +207,12 @@ public class Utils {
         return -1;
     }
 
-    public static void setPidorWinner(String chatId, String winner, String chatName) {
+    public static void setPidorWinner(Long chatId, String winner, String chatName) {
         LocalDate today = LocalDate.now();
         String insertQuery = "INSERT INTO " + PIDOR_STATS_TABLE + " (chat_id, date, winner_user_name, chat_name) VALUES (?, ?, ?, ?)";
         try (Connection connection = DataSourceConfig.getDataSource().getConnection()) {
             try (PreparedStatement insertStmt = connection.prepareStatement(insertQuery)) {
-                insertStmt.setString(1, chatId);
+                insertStmt.setLong(1, chatId);
                 insertStmt.setDate(2, Date.valueOf(today));
                 insertStmt.setString(3, winner);
                 insertStmt.setString(4, chatName);
