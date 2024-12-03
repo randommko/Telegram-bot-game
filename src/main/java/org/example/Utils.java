@@ -16,23 +16,20 @@ public class Utils {
     public static final String COCKSIZE_IMAGES_TABLE = "public_test.cocksize_imgs";
     private static final Logger logger = LoggerFactory.getLogger(Utils.class);
 
-    public static boolean CheckMessage(String text) {
+    public static boolean CheckMessage(String text, boolean isQuizStarted) {
 
-        if (text.equals("/start") || text.equals("/start@ChatGamePidor_Bot")) {
+        if (isQuizStarted)
             return true;
-        }
-
-        if (text.equals("/stats") || text.equals("/stats@ChatGamePidor_Bot")) {
+        if (text.equals("/start") || text.equals("/start@ChatGamePidor_Bot"))
             return true;
-        }
-
-        if (text.equals("/reg_me") || text.equals("/reg_me@ChatGamePidor_Bot")) {
+        if (text.equals("/stats") || text.equals("/stats@ChatGamePidor_Bot"))
             return true;
-        }
-        if (text.equals("/cocksize") || text.equals("/cocksize@ChatGamePidor_Bot")) {
+        if (text.equals("/reg_me") || text.equals("/reg_me@ChatGamePidor_Bot"))
             return true;
-        }
-
+        if (text.equals("/cocksize") || text.equals("/cocksize@ChatGamePidor_Bot"))
+            return true;
+        if (text.equals("/startQuiz") || text.equals("/startQuiz@ChatGamePidor_Bot"))
+            return true;
         return (text.equals("/bot_info") || text.equals("/bot_info@ChatGamePidor_Bot"));
     }
 
