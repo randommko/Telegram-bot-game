@@ -10,16 +10,16 @@ import java.util.*;
 
 
 public class Quiz {
-    public static boolean isQuizStarted = false;
-    public static String currentQuestionText;
-    public static Integer currentQuestionID;
-    public static String currentAnswer;
-    public static String clue;
-    private static final String QUIZ_QUESTION_TABLE = "public_test.quiz_questions";
-    private static final String QUIZ_ANSWERS_TABLE = "public_test.quiz_answers";
-    private static final String QUIZ_STATS_TABLE = "public_test.quiz_stats";
-    private static final Logger logger = LoggerFactory.getLogger(Quiz.class);
-    public static void getRandomQuestion() {
+    public boolean isQuizStarted = false;
+    public String currentQuestionText;
+    public Integer currentQuestionID;
+    public String currentAnswer;
+    public String clue;
+    private final String QUIZ_QUESTION_TABLE = "public_test.quiz_questions";
+    private final String QUIZ_ANSWERS_TABLE = "public_test.quiz_answers";
+    private final String QUIZ_STATS_TABLE = "public_test.quiz_stats";
+    private final Logger logger = LoggerFactory.getLogger(Quiz.class);
+    public void getRandomQuestion() {
         //TODO: дополнительно возращать ответ, зачем?
         //Map<Integer, String> question = new HashMap<>();
         String sql = "SELECT id, question, answer FROM " + QUIZ_QUESTION_TABLE + " ORDER BY RANDOM() LIMIT 1";
@@ -39,7 +39,7 @@ public class Quiz {
 
         }
     }
-    private static void IncrementQuestion () {
+    private void IncrementQuestion () {
         String sqlIncrementQuestion = "UPDATE " + QUIZ_QUESTION_TABLE + " SET used_times = used_times + 1 WHERE id = ?";
 
         try (Connection connection = DataSourceConfig.getDataSource().getConnection()) {
@@ -51,18 +51,18 @@ public class Quiz {
             logger.error("Ошибка при увеличении количества раз использоваения вопроса: ", e);
         }
     }
-    public static Integer calculatePoints (String userAnswer) {
+    public Integer calculatePoints (String userAnswer) {
         //clue - текущая подсказка
         //userAnswer - ответ пользователя
         int count = 0;
         for (int i = 0; i < clue.length(); i++) {
-            if (clue.charAt(i) != userAnswer.charAt(i)) {
+            if (clue.toLowerCase().charAt(i) != userAnswer.charAt(i)) {
                 count++;
             }
         }
         return count;
     }
-    private static void setUserAnswer(String user_name, Integer points, String chat_id, String chat_name) {
+    private void setUserAnswer(String user_name, Integer points, Long chatID, String chat_name) {
         String insertQuery = "INSERT INTO " + QUIZ_ANSWERS_TABLE + " (user_name, question_id, get_points, chat_id, chat_name) VALUES (?, ?, ?, ?, ?)";
 
         try (Connection connection = DataSourceConfig.getDataSource().getConnection()) {
@@ -70,7 +70,7 @@ public class Quiz {
                 insertStmt.setString(1, user_name);
                 insertStmt.setInt(2, currentQuestionID);
                 insertStmt.setInt(3, points);
-                insertStmt.setString(4, chat_id);
+                insertStmt.setLong(4, chatID);
                 insertStmt.setString(5, chat_name);
                 insertStmt.execute();
             }
@@ -78,8 +78,8 @@ public class Quiz {
             logger.error("Ошибка записи верного ответа: ", e);
         }
     }
-    public static void setScore (String user_name, Integer points, String chat_id, String chat_name) {
-        setUserAnswer(user_name, points, chat_id, chat_name);
+    public void setScore (String user_name, Integer points, Long chatID, String chat_name) {
+        setUserAnswer(user_name, points, chatID, chat_name);
         IncrementQuestion();
 
         String getScoreQuery = "SELECT score FROM " + QUIZ_STATS_TABLE + " WHERE user_name = ? AND chat_name = ?";
@@ -114,8 +114,8 @@ public class Quiz {
         }
     }
 
-    public static void newQuestion() {
-        Quiz.getRandomQuestion();
+    public void newQuestion() {
+        getRandomQuestion();
         StringBuilder result = new StringBuilder();
         // Проходим по каждому символу строки
         for (char ch : currentAnswer.toCharArray()) {
