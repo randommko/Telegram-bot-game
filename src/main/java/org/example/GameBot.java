@@ -132,7 +132,8 @@ public class GameBot extends TelegramLongPollingBot {
     private void checkQuizAnswer(String answer, String userName, String chatName, Long chatID) {
         //TODO: добавить ответ на матерные фразы в рандомные моменты
         if (!quizMap.get(chatID).isQuizStarted)
-            sendMessage(chatID, "Викторина не запущена");
+            return;
+//            sendMessage(chatID, "Викторина не запущена");
         if (quizMap.get(chatID).currentAnswer.equalsIgnoreCase(answer)) {
             quizMap.get(chatID).noAnswerCount = 0;
             Integer points = quizMap.get(chatID).calculatePoints(answer.toLowerCase());
