@@ -93,6 +93,8 @@ public class GameBot extends TelegramLongPollingBot {
         sendMessage(chatID, "Викторина завершена");
     }
     private void checkQuizAnswer(String answer, String userName, String chatName, Long chatID) {
+        if (!quizMap.get(chatID).isQuizStarted)
+            sendMessage(chatID, "Викторина не запущена");
         if (quizMap.get(chatID).currentAnswer.equalsIgnoreCase(answer)) {
             Integer points = quizMap.get(chatID).calculatePoints(answer.toLowerCase());
             quizMap.get(chatID).setScore(userName, points, chatID, chatName);
