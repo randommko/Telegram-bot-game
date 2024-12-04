@@ -53,12 +53,12 @@ public class GameBot extends TelegramLongPollingBot {
 
             switch (command) {
                 case "/reg_me", "/reg_me@ChatGamePidor_Bot" -> registerPlayer(chatID, userName, chatName);
-                case "/stats", "/stats@ChatGamePidor_Bot" -> sendStats(chatID);
-                case "/start", "/start@ChatGamePidor_Bot" -> startGame(chatID, chatName);
+                case "/pidor_stats", "/pidor_stats@ChatGamePidor_Bot" -> sendPidorStats(chatID);
+                case "/pidor_start", "/pidor_start@ChatGamePidor_Bot" -> startPidorGame(chatID, chatName);
                 case "/bot_info", "/bot_info@ChatGamePidor_Bot", "/help", "/help@ChatGamePidor_Bot" -> botInfo(chatID);
                 case "/cocksize", "/cocksize@ChatGamePidor_Bot" -> cockSize(chatID, userName);
-                case "/start_quiz", "/start_quiz@ChatGamePidor_Bot" -> startQuizGame(chatID);
-                case "/stop_quiz", "/stop_quiz@ChatGamePidor_Bot" -> stopQuiz(chatID);
+                case "/quiz_start", "/quiz_start@ChatGamePidor_Bot" -> startQuizGame(chatID);
+                case "/quiz_stop", "/quiz_stop@ChatGamePidor_Bot" -> stopQuiz(chatID);
                 case "/quiz_stats", "/quiz_stats@ChatGamePidor_Bot" -> getQuizStats(chatID);
                 default -> checkQuizAnswer(command, "@"+userName, chatName, chatID);
             }
@@ -191,7 +191,7 @@ public class GameBot extends TelegramLongPollingBot {
         }
     }
 
-    private void sendStats(Long chatId) {
+    private void sendPidorStats(Long chatId) {
         Thread thread = new Thread(() -> {
             String query = "SELECT winner_user_name, COUNT(*) AS count " +
                     "FROM " + PIDOR_STATS_TABLE +
@@ -238,7 +238,7 @@ public class GameBot extends TelegramLongPollingBot {
                 /start - запускает пидорвикторину""");
     }
 
-    private void startGame(Long chatID, String chatName) {
+    private void startPidorGame(Long chatID, String chatName) {
         Thread thread = new Thread(() -> {
             Set<String> chatPlayers;
             String winner = getTodayWinner(chatID);
