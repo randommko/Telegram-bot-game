@@ -239,7 +239,6 @@ public class Utils {
     }
 
     public static String getCockSizeImage(Integer size) {
-        //Кодирование base64: https://base64.guru/converter/encode/image
         String selectQuery = "SELECT img FROM " + COCKSIZE_IMAGES_TABLE + " WHERE cock_size = ?";
         try (Connection connection = DataSourceConfig.getDataSource().getConnection()) {
             try (PreparedStatement insertStmt = connection.prepareStatement(selectQuery)) {

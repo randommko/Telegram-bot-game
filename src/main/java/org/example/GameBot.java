@@ -28,6 +28,7 @@ public class GameBot extends TelegramLongPollingBot {
 
     public GameBot(String botToken) {
         this.botToken = botToken;
+        iniQuiz();
     }
     @Override
     public String getBotUsername() {
@@ -58,15 +59,47 @@ public class GameBot extends TelegramLongPollingBot {
                 case "/cocksize", "/cocksize@ChatGamePidor_Bot" -> cockSize(chatID, userName);
                 case "/start_quiz", "/start_quiz@ChatGamePidor_Bot" -> startQuizGame(chatID);
                 case "/stop_quiz", "/stop_quiz@ChatGamePidor_Bot" -> stopQuiz(chatID);
-                default -> checkQuizAnswer(command, userName, chatName, chatID);
+                case "/quiz_stats", "/quiz_stats@ChatGamePidor_Bot" -> getQuizStats(chatID);
+                default -> checkQuizAnswer(command, "@"+userName, chatName, chatID);
             }
         }
+    }
+
+    private void iniQuiz() {
+        List<Long> quizChatIDs = new ArrayList<>();
+        String QUIZ_STATS_TABLE = "public.quiz_stats";
+        String getScoreQuery = "SELECT DISTINCT chat_id FROM " + QUIZ_STATS_TABLE;
+        try (Connection connection = DataSourceConfig.getDataSource().getConnection()) {
+            try (PreparedStatement stmt = connection.prepareStatement(getScoreQuery)) {
+                try (ResultSet rs = stmt.executeQuery()) {
+                    while (rs.next()) {
+                        quizChatIDs.add(rs.getLong("chat_id"));
+                    }
+                }
+            }
+        } catch (Exception e) {
+            logger.error("Произошла ошибка при получения счета в БД: ", e);
+        }
+        quizChatIDs.forEach((chatID) ->
+            quizMap.put(chatID, new Quiz())
+        );
+    }
+    private void getQuizStats(Long chatID) {
+        Map<String, Integer> stats;
+        stats = quizMap.get(chatID).getScore(chatID);
+
+        StringBuilder statsMessage = new StringBuilder("Статистика викторины:\n");
+        stats.forEach((userName, score) ->
+                statsMessage.append(userName).append(": ").append(score).append(" очков\n")
+        );
+        sendMessage(chatID, statsMessage.toString());
     }
 
     private void startQuizGame(Long chatID) {
         quizMap.put(chatID, new Quiz());
         quizMap.get(chatID).isQuizStarted = true;
         Thread thread = new Thread(() -> {
+
             do {
                 quizMap.get(chatID).newQuestion();
                 sendQuestion(chatID);
@@ -81,8 +114,12 @@ public class GameBot extends TelegramLongPollingBot {
                         sendMessage(chatID, "Подсказка: " + quizMap.get(chatID).clue);
                 } while ((quizMap.get(chatID).getRemainingNumberOfClue() > 2) & (quizMap.get(chatID).isQuizStarted));
 
-                if (quizMap.get(chatID).isQuizStarted)
+                if (quizMap.get(chatID).isQuizStarted) {
                     sendMessage(chatID, "Правильный ответ: " + quizMap.get(chatID).currentAnswer);
+                    quizMap.get(chatID).noAnswerCount++;
+                }
+                if (quizMap.get(chatID).noAnswerCount >= 3)
+                    stopQuiz(chatID);
             } while (quizMap.get(chatID).isQuizStarted);
         });
         thread.start();
@@ -93,9 +130,11 @@ public class GameBot extends TelegramLongPollingBot {
         sendMessage(chatID, "Викторина завершена");
     }
     private void checkQuizAnswer(String answer, String userName, String chatName, Long chatID) {
+        //TODO: добавить ответ на матерные фразы в рандомные моменты
         if (!quizMap.get(chatID).isQuizStarted)
             sendMessage(chatID, "Викторина не запущена");
         if (quizMap.get(chatID).currentAnswer.equalsIgnoreCase(answer)) {
+            quizMap.get(chatID).noAnswerCount = 0;
             Integer points = quizMap.get(chatID).calculatePoints(answer.toLowerCase());
             quizMap.get(chatID).setScore(userName, points, chatID, chatName);
             quizMap.get(chatID).newQuestion();
@@ -168,11 +207,8 @@ public class GameBot extends TelegramLongPollingBot {
                 preparedStatement.setLong(1, chatId);
                 ResultSet resultSet = preparedStatement.executeQuery();
 
-                while (resultSet.next()) {
-                    String winner = resultSet.getString("winner_user_name");
-                    int count = resultSet.getInt("count");
-                    winnersCount.put(winner, count);
-                }
+                while (resultSet.next())
+                    winnersCount.put(resultSet.getString("winner_user_name"), resultSet.getInt("count"));
 
                 if (winnersCount.isEmpty()) {
                     sendMessage(chatId, "Статистика пуста.");
