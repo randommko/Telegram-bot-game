@@ -11,6 +11,7 @@ import java.util.*;
 
 public class Quiz {
     public boolean isQuizStarted = false;
+    public Integer noAnswerCount;
     public String currentQuestionText;
     public Integer currentQuestionID;
     public String currentAnswer;
@@ -62,8 +63,8 @@ public class Quiz {
         }
         return count;
     }
-    private void setUserAnswer(String user_name, Integer points, Long chatID, String chat_name) {
-        String insertQuery = "INSERT INTO " + QUIZ_ANSWERS_TABLE + " (user_name, question_id, get_points, chat_id, chat_name) VALUES (?, ?, ?, ?, ?)";
+    private void setUserAnswer(String user_name, Integer points, Long chatID) {
+        String insertQuery = "INSERT INTO " + QUIZ_ANSWERS_TABLE + " (user_name, question_id, get_points, chat_id, chat_name) VALUES (?, ?, ?, ?)";
 
         try (Connection connection = DataSourceConfig.getDataSource().getConnection()) {
             try (PreparedStatement insertStmt = connection.prepareStatement(insertQuery)) {
@@ -71,39 +72,57 @@ public class Quiz {
                 insertStmt.setInt(2, currentQuestionID);
                 insertStmt.setInt(3, points);
                 insertStmt.setLong(4, chatID);
-                insertStmt.setString(5, chat_name);
                 insertStmt.execute();
             }
         } catch (Exception e) {
             logger.error("Ошибка записи верного ответа: ", e);
         }
     }
+    public Map<String, Integer> getScore(Long chatID) {
+        Map<String, Integer> stats = new HashMap<>();
+        String getScoreQuery = "SELECT user_name, score FROM " + QUIZ_STATS_TABLE + " WHERE chat_id = ?";
+        try (Connection connection = DataSourceConfig.getDataSource().getConnection()) {
+            try (PreparedStatement stmt = connection.prepareStatement(getScoreQuery)) {
+                stmt.setLong(1, chatID);
+
+                try (ResultSet rs = stmt.executeQuery()) {
+                    while (rs.next()) {
+                        stats.put(rs.getString("user_name"), rs.getInt("score")) ;
+                    }
+                }
+            }
+        } catch (Exception e) {
+            logger.error("Произошла ошибка при получения счета в БД: ", e);
+        }
+
+        return stats;
+    }
     public void setScore (String user_name, Integer points, Long chatID, String chat_name) {
-        setUserAnswer(user_name, points, chatID, chat_name);
+        setUserAnswer(user_name, points, chatID);
         IncrementQuestion();
 
-        String getScoreQuery = "SELECT score FROM " + QUIZ_STATS_TABLE + " WHERE user_name = ? AND chat_name = ?";
+        String getScoreQuery = "SELECT score FROM " + QUIZ_STATS_TABLE + " WHERE user_name = ? AND chat_id = ?";
 
         try (Connection connection = DataSourceConfig.getDataSource().getConnection()) {
             try (PreparedStatement stmt = connection.prepareStatement(getScoreQuery)) {
                 stmt.setString(1, user_name);
-                stmt.setString(2, chat_name);
+                stmt.setLong(2, chatID);
 
                 try (ResultSet rs = stmt.executeQuery()) {
                     if (rs.next()) {
-                        String sqlIncrementQuestion = "UPDATE " + QUIZ_STATS_TABLE + " SET score = score + " + points + " WHERE user_name = ? AND chat_name = ?";
+                        String sqlIncrementQuestion = "UPDATE " + QUIZ_STATS_TABLE + " SET score = score + " + points + " WHERE user_name = ? AND chat_id = ?";
                         try (PreparedStatement insertStmt = connection.prepareStatement(sqlIncrementQuestion)) {
                             insertStmt.setString(1, user_name);
-                            insertStmt.setString(2, chat_name);
+                            insertStmt.setLong(2, chatID);
                             insertStmt.executeUpdate();
                         }
                     }
                     else {
-                        String sqlInsertUserQuery = "INSERT INTO " + QUIZ_STATS_TABLE + "(user_name, score, chat_name) VALUES (?,?,?)";
+                        String sqlInsertUserQuery = "INSERT INTO " + QUIZ_STATS_TABLE + "(user_name, score, chat_id) VALUES (?,?,?)";
                         try (PreparedStatement insertStmt = connection.prepareStatement(sqlInsertUserQuery)) {
                             insertStmt.setString(1, user_name);
                             insertStmt.setInt(2, points);
-                            insertStmt.setString(3, chat_name);
+                            insertStmt.setLong(3, chatID);
                             insertStmt.executeUpdate();
                         }
                     }
@@ -132,6 +151,7 @@ public class Quiz {
     }
 
     public void updateClue() {
+        //TODO: открывать несколько симвлов за раз из расчета что должно быть 5-6 подсказок на вопрос
         if (getRemainingNumberOfClue() < 2)
             return;
 
