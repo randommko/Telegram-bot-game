@@ -16,13 +16,12 @@ public class Quiz {
     public Integer currentQuestionID;
     public String currentAnswer;
     public String clue;
+    private final Integer clueNum = 5;
     private final String QUIZ_QUESTION_TABLE = "public.quiz_questions";
     private final String QUIZ_ANSWERS_TABLE = "public.quiz_answers";
     private final String QUIZ_STATS_TABLE = "public.quiz_stats";
     private final Logger logger = LoggerFactory.getLogger(Quiz.class);
     public void getRandomQuestion() {
-        //TODO: отдавать вопросы которые реже всего задавались
-        //Map<Integer, String> question = new HashMap<>();
         String sql = "SELECT id, question, answer \n" +
                 "FROM (\n" +
                 "    SELECT id, question, answer \n" +
@@ -159,24 +158,28 @@ public class Quiz {
     }
 
     public void updateClue() {
-        //TODO: открывать несколько симвлов за раз из расчета что должно быть 5-6 подсказок на вопрос
+
         if (getRemainingNumberOfClue() < 2)
             return;
 
         char[] clueChar = clue.toCharArray();
         char[] answerChar = currentAnswer.toCharArray();
         int randomNum;
-        do {
-            randomNum = new Random().nextInt(currentAnswer.length());
-        } while (clueChar[randomNum] != '*');
+        float num = (float) currentAnswer.length() / clueNum;
+        for (int i = 0; i < (int)num; i++) {
+            do {
+                randomNum = new Random().nextInt(currentAnswer.length());
+            } while (clueChar[randomNum] != '*');
 
-        clueChar[randomNum] = answerChar[randomNum]; // заменяем символ с индексом 1
-        clue = new String(clueChar);
+            clueChar[randomNum] = answerChar[randomNum]; // заменяем символ с индексом 1
+            clue = new String(clueChar);
+        }
     }
 
     public Integer getRemainingNumberOfClue() {
         int count = 0;
-        for (int i = 0; i < clue.length(); i++) {
+        float num = (float) currentAnswer.length() / clueNum;
+        for (int i = 0; i < num; i++) {
             if (clue.toLowerCase().charAt(i) != currentAnswer.toLowerCase().charAt(i)) {
                 count++;
             }
