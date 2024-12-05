@@ -50,7 +50,6 @@ public class Utils {
     }
 
     public static int getCockSize() {
-        //TODO: Переписать выбор дллинны. Сделать через распределение.
         int randomNum = new Random().nextInt(100);        //Выбираем случайное число для попадания в распределение
 
         if (randomNum < 2)                                      //У 2% выборки
