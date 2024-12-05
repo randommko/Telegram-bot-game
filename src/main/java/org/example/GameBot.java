@@ -16,6 +16,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.*;
 import java.util.Random;
+import java.util.regex.Pattern;
 
 import static org.example.Utils.*;
 
@@ -133,13 +134,46 @@ public class GameBot extends TelegramLongPollingBot {
         //TODO: добавить ответ на матерные фразы в рандомные моменты
         if (!quizMap.get(chatID).isQuizStarted)
             return;
-//            sendMessage(chatID, "Викторина не запущена");
+        obsceneAnswer(answer, chatID);
         if (quizMap.get(chatID).currentAnswer.equalsIgnoreCase(answer)) {
             quizMap.get(chatID).noAnswerCount = 0;
             Integer points = quizMap.get(chatID).calculatePoints(answer.toLowerCase());
             quizMap.get(chatID).setScore(userName, points, chatID);
             quizMap.get(chatID).newQuestion();
             sendQuestion(chatID);
+        }
+    }
+
+    private void obsceneAnswer(String answer, Long chatID) {
+        Set<String> obscenePatterns = new HashSet<>();
+        obscenePatterns.add("^хуй.*");
+        obscenePatterns.add(".*хуй.*");
+        obscenePatterns.add("^хуе.*");
+        obscenePatterns.add("^хуё.*");
+        obscenePatterns.add("^хуи.*");
+        obscenePatterns.add("^Пидор.*");
+        obscenePatterns.add("^пидор.*");
+        obscenePatterns.add(".*ну и пошёл ты нахуй.*");
+        obscenePatterns.add(".*да идиты в жопу.*");
+        obscenePatterns.add(".*пиздец.*");
+
+        List<String> botAnswerList = new ArrayList<>();
+        botAnswerList.add("Пошел на хер");
+
+        String botAnswer = "Сам такой";
+        Random random = new Random();
+
+        for (String item : obscenePatterns) {
+                if (Pattern.matches(item, answer.toLowerCase())) {
+
+                    int randomIndex = random.nextInt(botAnswerList.size());
+                    botAnswer = botAnswerList.get(randomIndex);
+                }
+            }
+
+        int randomNum = random.nextInt(10);
+        if (randomNum == 5) {
+            sendMessage(chatID, botAnswer);
         }
     }
 
