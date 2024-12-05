@@ -21,9 +21,17 @@ public class Quiz {
     private final String QUIZ_STATS_TABLE = "public.quiz_stats";
     private final Logger logger = LoggerFactory.getLogger(Quiz.class);
     public void getRandomQuestion() {
-        //TODO: дополнительно возращать ответ, зачем?
+        //TODO: отдавать вопросы которые реже всего задавались
         //Map<Integer, String> question = new HashMap<>();
-        String sql = "SELECT id, question, answer FROM " + QUIZ_QUESTION_TABLE + " ORDER BY RANDOM() LIMIT 1";
+        String sql = "SELECT id, question, answer \n" +
+                "FROM (\n" +
+                "    SELECT id, question, answer \n" +
+                "    FROM QUIZ_QUESTION_TABLE \n" +
+                "    ORDER BY used_times ASC \n" +
+                "    LIMIT 10\n" +
+                ") AS top_questions \n" +
+                "ORDER BY RANDOM() \n" +
+                "LIMIT 1;";
 
         try (Connection connection = DataSourceConfig.getDataSource().getConnection()) {
             try (PreparedStatement stmt = connection.prepareStatement(sql)) {
@@ -36,7 +44,7 @@ public class Quiz {
                 }
             }
         } catch (Exception e) {
-            logger.error("Произошла ошибка при поулчении вопроса из БД: ", e);
+            logger.error("Произошла ошибка при получении вопроса из БД: ", e);
 
         }
     }
@@ -97,7 +105,7 @@ public class Quiz {
 
         return stats;
     }
-    public void setScore (String user_name, Integer points, Long chatID, String chat_name) {
+    public void setScore (String user_name, Integer points, Long chatID) {
         setUserAnswer(user_name, points, chatID);
         IncrementQuestion();
 

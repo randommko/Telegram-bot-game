@@ -60,7 +60,7 @@ public class GameBot extends TelegramLongPollingBot {
                 case "/quiz_start", "/quiz_start@ChatGamePidor_Bot" -> startQuizGame(chatID);
                 case "/quiz_stop", "/quiz_stop@ChatGamePidor_Bot" -> stopQuiz(chatID);
                 case "/quiz_stats", "/quiz_stats@ChatGamePidor_Bot" -> getQuizStats(chatID);
-                default -> checkQuizAnswer(command, "@"+userName, chatName, chatID);
+                default -> checkQuizAnswer(command, "@"+userName, chatID);
             }
         }
     }
@@ -129,7 +129,7 @@ public class GameBot extends TelegramLongPollingBot {
         quizMap.get(chatID).isQuizStarted = false;
         sendMessage(chatID, "Викторина завершена");
     }
-    private void checkQuizAnswer(String answer, String userName, String chatName, Long chatID) {
+    private void checkQuizAnswer(String answer, String userName, Long chatID) {
         //TODO: добавить ответ на матерные фразы в рандомные моменты
         if (!quizMap.get(chatID).isQuizStarted)
             return;
@@ -137,7 +137,7 @@ public class GameBot extends TelegramLongPollingBot {
         if (quizMap.get(chatID).currentAnswer.equalsIgnoreCase(answer)) {
             quizMap.get(chatID).noAnswerCount = 0;
             Integer points = quizMap.get(chatID).calculatePoints(answer.toLowerCase());
-            quizMap.get(chatID).setScore(userName, points, chatID, chatName);
+            quizMap.get(chatID).setScore(userName, points, chatID);
             quizMap.get(chatID).newQuestion();
             sendQuestion(chatID);
         }
@@ -284,7 +284,6 @@ public class GameBot extends TelegramLongPollingBot {
     }
 
     private boolean sendImgMessage (Long chatId, String text, Integer size) {
-        //TODO: добавить отправку картинок
         String imgName = getCockSizeImage(size);
         if (imgName == null)
             return false;
