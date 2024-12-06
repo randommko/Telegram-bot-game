@@ -22,6 +22,10 @@ import static org.example.Utils.*;
 
 public class GameBot extends TelegramLongPollingBot {
     private final String botToken;
+    //TODO: вынести переменные с названиями таблиц в отдельный класс
+    public static final String TG_USERS_TABLE = "public.tg_users";
+    private Map<Long, String> usersSet = new HashMap<>();
+    private Map<Long, String> chatSet = new HashMap<>();
     private final Map<Long, Quiz> quizMap = new HashMap<>(); //ключ ID чата, значение экземпляр Quiz
     private static final String RESOURCES_PATH = "/bin/tg_bot/resources";
     private static final Logger logger = LoggerFactory.getLogger(GameBot.class);
@@ -30,6 +34,8 @@ public class GameBot extends TelegramLongPollingBot {
     public GameBot(String botToken) {
         this.botToken = botToken;
         iniQuiz();
+        usersSet = initUsers();
+        chatSet = initChats();
     }
     @Override
     public String getBotUsername() {
@@ -43,14 +49,18 @@ public class GameBot extends TelegramLongPollingBot {
     @Override
     public void onUpdateReceived(Update update) {
         Message message = update.getMessage();
-        //TODO: перейти с имени пользователя на его ID
+        if (!usersSet.containsKey(message.getFrom().getId()))
+            insertUserInDB(message);
+        if (!chatSet.containsKey(message.getChatId()))
+            insertChatInDB(message);
+
         System.out.println("Получено сообщение из чата " + message.getChat().getTitle() +": "+ message.getText());
         if (update.hasMessage()) {
 //        if (update.hasMessage() & CheckMessage(message.getText(), quizMap.get(chatID).isQuizStarted)) {
             String command = message.getText();
 
             switch (command) {
-                case "/reg_me", "/reg_me@ChatGamePidor_Bot" -> registerPlayer(message);
+                case "/pidor_reg", "/pidor_reg@ChatGamePidor_Bot" -> registerPlayer(message);
                 case "/pidor_stats", "/pidor_stats@ChatGamePidor_Bot" -> sendPidorStats(message);
                 case "/pidor_start", "/pidor_start@ChatGamePidor_Bot" -> startPidorGame(message);
                 case "/bot_info", "/bot_info@ChatGamePidor_Bot", "/help", "/help@ChatGamePidor_Bot" -> botInfo(message);
@@ -89,7 +99,7 @@ public class GameBot extends TelegramLongPollingBot {
 
         StringBuilder statsMessage = new StringBuilder("Статистика викторины:\n");
         stats.forEach((userName, score) ->
-                statsMessage.append(userName).append(": ").append(score).append(" очков\n")
+            statsMessage.append(userName).append(": ").append(score).append(" очков\n")
         );
         sendMessage(chatID, statsMessage.toString());
     }
@@ -133,7 +143,7 @@ public class GameBot extends TelegramLongPollingBot {
     private void checkQuizAnswer(Message message) {
         Long chatID = message.getChatId();
         String answer = message.getText();
-        String userName = "@" + message.getFrom().getUserName();
+        Long userID = message.getFrom().getId();
 
         if (!quizMap.get(chatID).isQuizStarted)
             return;
@@ -141,7 +151,7 @@ public class GameBot extends TelegramLongPollingBot {
         if (quizMap.get(chatID).currentAnswer.equalsIgnoreCase(answer)) {
             quizMap.get(chatID).noAnswerCount = 0;
             Integer points = quizMap.get(chatID).calculatePoints(answer.toLowerCase());
-            quizMap.get(chatID).setScore(userName, points, chatID);
+            quizMap.get(chatID).setScore(userID, points, chatID);
             quizMap.get(chatID).newQuestion();
             sendQuestion(chatID);
         }
@@ -207,52 +217,54 @@ public class GameBot extends TelegramLongPollingBot {
     }
 
     private void cockSize(Message message) {
-        String username = message.getFrom().getUserName();
+        Long userID = message.getFrom().getId();
+        String userName = message.getFrom().getUserName();
         Long chatID = message.getChatId();
 
-        int playerCockSize = getPlayerCockSize(username);
+        int playerCockSize = getPlayerCockSize(userID);
         if (playerCockSize != -1) {
-            if (!sendImgMessage(chatID, phraseSelection(playerCockSize, username), playerCockSize))
-                sendMessage(chatID, phraseSelection(playerCockSize, username));
+            if (!sendImgMessage(chatID, phraseSelection(playerCockSize, userName), playerCockSize))
+                sendMessage(chatID, phraseSelection(playerCockSize, userName));
             return;
         }
 
         // Если записи нет, генерируем случайный размер и сохраняем его
         int newRandomSize = getCockSize();
 
-        setCockSizeWinner(username, newRandomSize);
-        if (!sendImgMessage(chatID, phraseSelection(newRandomSize, username), newRandomSize))
-            sendMessage(chatID, phraseSelection(newRandomSize, username));
+        setCockSizeWinner(userID, newRandomSize);
+        if (!sendImgMessage(chatID, phraseSelection(newRandomSize, userName), newRandomSize))
+            sendMessage(chatID, phraseSelection(newRandomSize, userName));
     }
 
     private void registerPlayer(Message message) {
         Long chatID = message.getChatId();
-        String username = message.getFrom().getUserName();
-        String chatName = message.getChat().getTitle();
+        String userName = message.getFrom().getUserName();
+        Long userID = message.getFrom().getId();
 
-        String insertQuery = "INSERT INTO " + PIDOR_PLAYERS_TABLE + " (chat_id, user_name, chat_name) VALUES (?, ?, ?) ON CONFLICT (chat_id, user_name) DO NOTHING";
+        String insertQuery = "INSERT INTO " + PIDOR_PLAYERS_TABLE + " (chat_id, user_id) VALUES (?, ?) ON CONFLICT (chat_id, user_id) DO NOTHING";
         try (Connection connection = DataSourceConfig.getDataSource().getConnection()) {
             PreparedStatement preparedStatement = connection.prepareStatement(insertQuery);
 
             preparedStatement.setLong(1, chatID);
-            preparedStatement.setString(2, "@" + username);
-            preparedStatement.setString(3, Objects.requireNonNullElse(chatName, "-"));
+            preparedStatement.setLong(2, userID);
             preparedStatement.executeUpdate();
 
-            sendMessage(chatID, "Игрок @" + username + " зарегистрирован! ");
+            sendMessage(chatID, "Игрок @" + userName + " зарегистрирован! ");
         } catch (SQLException e) {
             logger.error("Ошибка при регистрации игрока в БД: " + e);
-            sendMessage(chatID, "Произошла ошибка при регистрации игрока @" + username + "\n" + e.getMessage());
+            sendMessage(chatID, "Произошла ошибка при регистрации игрока @" + userName + "\n" + e.getMessage());
         }
     }
 
     private void sendPidorStats(Message message) {
         Long chatId = message.getChatId();
         Thread thread = new Thread(() -> {
-            String query = "SELECT winner_user_name, COUNT(*) AS count " +
+            String query = "SELECT pst.user_id, COUNT(*) AS count " +
                     "FROM " + PIDOR_STATS_TABLE +
-                    " WHERE chat_id = ? " +
-                    "GROUP BY winner_user_name";
+                    " AS pst JOIN " + TG_USERS_TABLE +
+                    " AS tut ON pst.user_id = tut.user_id " +
+                    "WHERE pst.chat_id = ? " +
+                    "GROUP BY pst.user_id";
 
             Map<String, Integer> winnersCount = new HashMap<>();
 
@@ -263,7 +275,7 @@ public class GameBot extends TelegramLongPollingBot {
                 ResultSet resultSet = preparedStatement.executeQuery();
 
                 while (resultSet.next())
-                    winnersCount.put(resultSet.getString("winner_user_name"), resultSet.getInt("count"));
+                    winnersCount.put(usersSet.get(resultSet.getLong("user_id")), resultSet.getInt("count"));
 
                 if (winnersCount.isEmpty()) {
                     sendMessage(chatId, "Статистика пуста.");
@@ -297,17 +309,16 @@ public class GameBot extends TelegramLongPollingBot {
 
     private void startPidorGame(Message message) {
         Long chatID = message.getChatId();
-        String chatName = message.getChat().getTitle();
         Thread thread = new Thread(() -> {
-            Set<String> chatPlayers;
-            String winner = getTodayWinner(chatID);
+            Set<Long> chatPlayers;
+            Long winnerID = getTodayWinner(chatID);
 
-            if (winner != null) {
-                sendMessage(chatID, "Сегодня пидора уже выбрали. Пидор дня: " + winner);
+            if (winnerID != null) {
+                sendMessage(chatID, "Сегодня пидора уже выбрали. Пидор дня: " + getUserNameByID(winnerID));
                 return;
             }
 
-            chatPlayers = getCockSizePlayers(chatID);
+            chatPlayers = getPidorGamePlayers(chatID);
             if (chatPlayers.isEmpty()) {
                 sendMessage(chatID, "Нет зарегистрированных игроков.");
                 return;
@@ -323,9 +334,11 @@ public class GameBot extends TelegramLongPollingBot {
                 logger.error("Произошла ошибка при сохранении победителя в БД: ", e);
             }
 
-            winner = new ArrayList<>(chatPlayers).get(new Random().nextInt(chatPlayers.size()));
-            setPidorWinner(chatID, winner, chatName);
-            sendMessage(chatID, getWinnerResponce() + winner + "!");
+            winnerID = new ArrayList<>(chatPlayers).get(new Random().nextInt(chatPlayers.size()));
+
+            setPidorWinner(chatID, winnerID);
+
+            sendMessage(chatID, getWinnerResponce() + getUserNameByID(winnerID) + "!");
         });
         thread.start();
     }

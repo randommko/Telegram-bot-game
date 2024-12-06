@@ -11,26 +11,19 @@ import java.util.*;
 
 public class Quiz {
     public boolean isQuizStarted = false;
-    public Integer noAnswerCount;
+    public Integer noAnswerCount = 0;
     public String currentQuestionText;
     public Integer currentQuestionID;
     public String currentAnswer;
     public String clue;
     private final Integer clueNum = 5;
+    public static final String TG_USERS_TABLE = "public.tg_users";
     private final String QUIZ_QUESTION_TABLE = "public.quiz_questions";
     private final String QUIZ_ANSWERS_TABLE = "public.quiz_answers";
     private final String QUIZ_STATS_TABLE = "public.quiz_stats";
     private final Logger logger = LoggerFactory.getLogger(Quiz.class);
     public void getRandomQuestion() {
-        String sql = "SELECT id, question, answer \n" +
-                "FROM (\n" +
-                "    SELECT id, question, answer \n" +
-                "    FROM QUIZ_QUESTION_TABLE \n" +
-                "    ORDER BY used_times ASC \n" +
-                "    LIMIT 10\n" +
-                ") AS top_questions \n" +
-                "ORDER BY RANDOM() \n" +
-                "LIMIT 1;";
+        String sql = "SELECT id, question, answer FROM (SELECT id, question, answer FROM " + QUIZ_QUESTION_TABLE + " ORDER BY used_times ASC LIMIT 10) AS top_questions ORDER BY RANDOM() LIMIT 1;";
 
         try (Connection connection = DataSourceConfig.getDataSource().getConnection()) {
             try (PreparedStatement stmt = connection.prepareStatement(sql)) {
@@ -70,12 +63,12 @@ public class Quiz {
         }
         return count;
     }
-    private void setUserAnswer(String user_name, Integer points, Long chatID) {
-        String insertQuery = "INSERT INTO " + QUIZ_ANSWERS_TABLE + " (user_name, question_id, get_points, chat_id, chat_name) VALUES (?, ?, ?, ?)";
+    private void setUserAnswer(Long userID, Integer points, Long chatID) {
+        String insertQuery = "INSERT INTO " + QUIZ_ANSWERS_TABLE + " (user_id, question_id, get_points, chat_id) VALUES (?, ?, ?, ?)";
 
         try (Connection connection = DataSourceConfig.getDataSource().getConnection()) {
             try (PreparedStatement insertStmt = connection.prepareStatement(insertQuery)) {
-                insertStmt.setString(1, user_name);
+                insertStmt.setLong(1, userID);
                 insertStmt.setInt(2, currentQuestionID);
                 insertStmt.setInt(3, points);
                 insertStmt.setLong(4, chatID);
@@ -87,11 +80,11 @@ public class Quiz {
     }
     public Map<String, Integer> getScore(Long chatID) {
         Map<String, Integer> stats = new HashMap<>();
-        String getScoreQuery = "SELECT user_name, score FROM " + QUIZ_STATS_TABLE + " WHERE chat_id = ?";
+        //TODO: проверить это запрос
+        String getScoreQuery = "SELECT tut.user_name, qst.score FROM " + QUIZ_STATS_TABLE + " AS qst JOIN " + TG_USERS_TABLE + " AS tut ON qst.user_id = tut.user_id WHERE qst.chat_id = ?";
         try (Connection connection = DataSourceConfig.getDataSource().getConnection()) {
             try (PreparedStatement stmt = connection.prepareStatement(getScoreQuery)) {
                 stmt.setLong(1, chatID);
-
                 try (ResultSet rs = stmt.executeQuery()) {
                     while (rs.next()) {
                         stats.put(rs.getString("user_name"), rs.getInt("score")) ;
@@ -104,30 +97,30 @@ public class Quiz {
 
         return stats;
     }
-    public void setScore (String user_name, Integer points, Long chatID) {
-        setUserAnswer(user_name, points, chatID);
+    public void setScore (Long userID, Integer points, Long chatID) {
+        setUserAnswer(userID, points, chatID);
         IncrementQuestion();
 
-        String getScoreQuery = "SELECT score FROM " + QUIZ_STATS_TABLE + " WHERE user_name = ? AND chat_id = ?";
+        String getScoreQuery = "SELECT score FROM " + QUIZ_STATS_TABLE + " WHERE user_id = ? AND chat_id = ?";
 
         try (Connection connection = DataSourceConfig.getDataSource().getConnection()) {
             try (PreparedStatement stmt = connection.prepareStatement(getScoreQuery)) {
-                stmt.setString(1, user_name);
+                stmt.setLong(1, userID);
                 stmt.setLong(2, chatID);
 
                 try (ResultSet rs = stmt.executeQuery()) {
                     if (rs.next()) {
-                        String sqlIncrementQuestion = "UPDATE " + QUIZ_STATS_TABLE + " SET score = score + " + points + " WHERE user_name = ? AND chat_id = ?";
+                        String sqlIncrementQuestion = "UPDATE " + QUIZ_STATS_TABLE + " SET score = score + " + points + " WHERE user_id = ? AND chat_id = ?";
                         try (PreparedStatement insertStmt = connection.prepareStatement(sqlIncrementQuestion)) {
-                            insertStmt.setString(1, user_name);
+                            insertStmt.setLong(1, userID);
                             insertStmt.setLong(2, chatID);
                             insertStmt.executeUpdate();
                         }
                     }
                     else {
-                        String sqlInsertUserQuery = "INSERT INTO " + QUIZ_STATS_TABLE + "(user_name, score, chat_id) VALUES (?,?,?)";
+                        String sqlInsertUserQuery = "INSERT INTO " + QUIZ_STATS_TABLE + "(user_id, score, chat_id) VALUES (?,?,?)";
                         try (PreparedStatement insertStmt = connection.prepareStatement(sqlInsertUserQuery)) {
-                            insertStmt.setString(1, user_name);
+                            insertStmt.setLong(1, userID);
                             insertStmt.setInt(2, points);
                             insertStmt.setLong(3, chatID);
                             insertStmt.executeUpdate();
@@ -165,6 +158,7 @@ public class Quiz {
         char[] clueChar = clue.toCharArray();
         char[] answerChar = currentAnswer.toCharArray();
         int randomNum;
+        //TODO: убрать формулу
         float num = (float) currentAnswer.length() / clueNum;
         for (int i = 0; i < (int)num; i++) {
             do {
