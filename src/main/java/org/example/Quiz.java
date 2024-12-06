@@ -8,6 +8,8 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.*;
 
+import static org.example.TablesDB.*;
+
 
 public class Quiz {
     public boolean isQuizStarted = false;
@@ -17,10 +19,7 @@ public class Quiz {
     public String currentAnswer;
     public String clue;
     private final Integer clueNum = 5;
-    public static final String TG_USERS_TABLE = "public.tg_users";
-    private final String QUIZ_QUESTION_TABLE = "public.quiz_questions";
-    private final String QUIZ_ANSWERS_TABLE = "public.quiz_answers";
-    private final String QUIZ_STATS_TABLE = "public.quiz_stats";
+
     private final Logger logger = LoggerFactory.getLogger(Quiz.class);
     public void getRandomQuestion() {
         String sql = "SELECT id, question, answer FROM (SELECT id, question, answer FROM " + QUIZ_QUESTION_TABLE + " ORDER BY used_times ASC LIMIT 10) AS top_questions ORDER BY RANDOM() LIMIT 1;";
@@ -80,7 +79,6 @@ public class Quiz {
     }
     public Map<String, Integer> getScore(Long chatID) {
         Map<String, Integer> stats = new HashMap<>();
-        //TODO: проверить это запрос
         String getScoreQuery = "SELECT tut.user_name, qst.score FROM " + QUIZ_STATS_TABLE + " AS qst JOIN " + TG_USERS_TABLE + " AS tut ON qst.user_id = tut.user_id WHERE qst.chat_id = ?";
         try (Connection connection = DataSourceConfig.getDataSource().getConnection()) {
             try (PreparedStatement stmt = connection.prepareStatement(getScoreQuery)) {
