@@ -23,8 +23,6 @@ import static org.example.Utils.*;
 
 public class GameBot extends TelegramLongPollingBot {
     private final String botToken;
-    //TODO: вынести переменные с названиями таблиц в отдельный класс
-
     private Map<Long, String> usersSet = new HashMap<>();
     private Map<Long, String> chatSet = new HashMap<>();
     private final Map<Long, Quiz> quizMap = new HashMap<>(); //ключ ID чата, значение экземпляр Quiz
@@ -153,6 +151,7 @@ public class GameBot extends TelegramLongPollingBot {
             quizMap.get(chatID).noAnswerCount = 0;
             Integer points = quizMap.get(chatID).calculatePoints(answer.toLowerCase());
             quizMap.get(chatID).setScore(userID, points, chatID);
+            SendReplyMessage(message);
             quizMap.get(chatID).newQuestion();
             sendQuestion(chatID);
         }
@@ -302,11 +301,14 @@ public class GameBot extends TelegramLongPollingBot {
     private void botInfo(Message message) {
         Long chatID = message.getChatId();
         sendMessage(chatID, """
-                Этот бот создан для определения пидора дня в чате! Команды:
-                /cocksize - проверь длинну своего члена
-                /reg_me - добавляет пользователя в пидорвикторину
-                /stats - статистика пидорвикторины за все время
-                /start - запускает пидорвикторину""");
+                 Этот бот создан для определения пидора дня в чате! Команды:
+                 /cocksize - Измерить причиндалы
+                 /quiz_start - Запустить викторину
+                 /quiz_stop - Остановить викторину
+                 /quiz_stats - Статистика викторина
+                 /pidor_start - Найти пидора дня
+                 /pidor_reg - Добавиться в игру поиска пидоров
+                 /pidor_stats - Статистика пидоров""");
     }
 
     private void startPidorGame(Message message) {
@@ -376,9 +378,25 @@ public class GameBot extends TelegramLongPollingBot {
                 logger.error("Ошибка при отправке сообщения: ", e);
             }
         } else {
-            System.err.println("Image file not found: " + imageFile.getPath());
+            logger.error("Image file not found: " + imageFile.getPath());
             return false;
         }
         return false;
+    }
+
+    private boolean SendReplyMessage(Message message) {
+        SendMessage response = new SendMessage();
+        response.setChatId(message.getChatId());
+        response.setText("Правильный ответ!");
+        response.setReplyToMessageId(message.getMessageId()); // Привязываем к конкретному сообщению
+
+        try {
+            execute(response);
+            return true;
+        } catch (TelegramApiException e) {
+            logger.error("Ошибка при отправке сообщения: ", e);
+            return false;
+        }
+
     }
 }
