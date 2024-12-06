@@ -151,23 +151,18 @@ public class Quiz {
     }
 
     public void updateClue() {
-
         if (getRemainingNumberOfClue() < 2)
             return;
 
         char[] clueChar = clue.toCharArray();
         char[] answerChar = currentAnswer.toCharArray();
         int randomNum;
-        //TODO: убрать формулу
-        float num = (float) currentAnswer.length() / clueNum;
-        for (int i = 0; i < (int)num; i++) {
-            do {
-                randomNum = new Random().nextInt(currentAnswer.length());
-            } while (clueChar[randomNum] != '*');
+        do {
+            randomNum = new Random().nextInt(currentAnswer.length());
+        } while (clueChar[randomNum] != '*');
 
-            clueChar[randomNum] = answerChar[randomNum]; // заменяем символ с индексом 1
-            clue = new String(clueChar);
-        }
+        clueChar[randomNum] = answerChar[randomNum]; // заменяем символ с индексом 1
+        clue = new String(clueChar);
     }
 
     public Integer getRemainingNumberOfClue() {
