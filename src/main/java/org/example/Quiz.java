@@ -18,7 +18,6 @@ public class Quiz {
     public Integer currentQuestionID;
     public String currentAnswer;
     public String clue;
-    private final Integer clueNum = 5;
 
     private final Logger logger = LoggerFactory.getLogger(Quiz.class);
     public void getRandomQuestion() {
@@ -165,12 +164,13 @@ public class Quiz {
 
     public Integer getRemainingNumberOfClue() {
         int count = 0;
-        float num = (float) currentAnswer.length() / clueNum;
+        float num = currentAnswer.length();
         for (int i = 0; i < num; i++) {
             if (clue.toLowerCase().charAt(i) != currentAnswer.toLowerCase().charAt(i)) {
                 count++;
             }
         }
+
         return count;
     }
 }
