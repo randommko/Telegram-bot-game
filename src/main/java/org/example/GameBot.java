@@ -55,9 +55,7 @@ public class GameBot extends TelegramLongPollingBot {
 
         System.out.println("Получено сообщение из чата " + message.getChat().getTitle() +": "+ message.getText());
         if (update.hasMessage()) {
-//        if (update.hasMessage() & CheckMessage(message.getText(), quizMap.get(chatID).isQuizStarted)) {
             String command = message.getText();
-
             switch (command) {
                 case "/pidor_reg", "/pidor_reg@ChatGamePidor_Bot" -> registerPlayer(message);
                 case "/pidor_stats", "/pidor_stats@ChatGamePidor_Bot" -> sendPidorStats(message);
@@ -108,8 +106,9 @@ public class GameBot extends TelegramLongPollingBot {
         quizMap.put(chatID, new Quiz());
         quizMap.get(chatID).isQuizStarted = true;
         Thread thread = new Thread(() -> {
-
             do {
+                //TODO: подумать как правильный отправлять подсказки -
+                // сейчас если был дан верный ответ счетчик подсказок не сбрасывается
                 quizMap.get(chatID).newQuestion();
                 sendQuestion(chatID);
                 do {
