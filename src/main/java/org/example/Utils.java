@@ -2,6 +2,7 @@ package org.example;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.telegram.telegrambots.meta.api.objects.Message;
 
 import java.sql.*;
 import java.sql.Date;
@@ -9,29 +10,14 @@ import java.time.LocalDate;
 import java.util.*;
 
 public class Utils {
-    public static final String MESSAGES_TABLE = "public.messages";
+    public static final String MESSAGES_TABLE = "public.pidor_messages";
     public static final String PIDOR_PLAYERS_TABLE = "public.pidor_players";
     public static final String PIDOR_STATS_TABLE = "public.pidor_stats";
     public static final String COCKSIZE_STATS_TABLE = "public.cocksize_stats";
     public static final String COCKSIZE_IMAGES_TABLE = "public.cocksize_imgs";
+    public static final String TG_USERS_TABLE = "public.tg_users";
+    public static final String TG_CHATS_TABLE = "public.tg_chats";
     private static final Logger logger = LoggerFactory.getLogger(Utils.class);
-
-    public static boolean CheckMessage(String text, boolean isQuizStarted) {
-
-        if (isQuizStarted)
-            return true;
-        if (text.equals("/start") || text.equals("/start@ChatGamePidor_Bot"))
-            return true;
-        if (text.equals("/stats") || text.equals("/stats@ChatGamePidor_Bot"))
-            return true;
-        if (text.equals("/reg_me") || text.equals("/reg_me@ChatGamePidor_Bot"))
-            return true;
-        if (text.equals("/cocksize") || text.equals("/cocksize@ChatGamePidor_Bot"))
-            return true;
-        if (text.equals("/startQuiz") || text.equals("/startQuiz@ChatGamePidor_Bot"))
-            return true;
-        return (text.equals("/bot_info") || text.equals("/bot_info@ChatGamePidor_Bot"));
-    }
 
     public static String phraseSelection(int size, String username) {
         if (size >= 0 && size <= 5) {
@@ -145,18 +131,18 @@ public class Utils {
         }
         return "Победитель сегодняшней игры: ";
     }
-    public static String getTodayWinner(Long chatId) {
+    public static Long getTodayWinner(Long chatID) {
         // Проверяем, была ли уже игра сегодня
         try (Connection connection = DataSourceConfig.getDataSource().getConnection()) {
             LocalDate today = LocalDate.now();
 
-            String checkQuery = "SELECT winner_user_name FROM " + PIDOR_STATS_TABLE + " WHERE chat_id = ? AND date = ?";
+            String checkQuery = "SELECT user_id FROM " + PIDOR_STATS_TABLE + " WHERE pst.chat_id = ? AND pst.date = ?";
             try (PreparedStatement checkStmt = connection.prepareStatement(checkQuery)) {
-                checkStmt.setLong(1, chatId);
+                checkStmt.setLong(1, chatID);
                 checkStmt.setDate(2, Date.valueOf(today));
                 try (ResultSet resultSet = checkStmt.executeQuery()) {
                     if (resultSet.next()) {
-                        return resultSet.getString("winner_user_name");
+                        return resultSet.getLong("user_id");
                     }
                 }
             } catch (Exception e) {
@@ -168,19 +154,16 @@ public class Utils {
         return null;
     }
 
-    public static Set<String> getCockSizePlayers(Long chatID) {
-        Set<String> chatPlayers = new HashSet<>();
+    public static Set<Long> getPidorGamePlayers(Long chatID) {
+        Set<Long> chatPlayers = new HashSet<>();
         try (Connection getPlayersConn = DataSourceConfig.getDataSource().getConnection()) {
-            // Запрос к базе данных для получения списка игроков по chat_id
-            String query = "SELECT user_name FROM " + PIDOR_PLAYERS_TABLE + " WHERE chat_id = ?";
+            String query = "SELECT user_id FROM " + PIDOR_PLAYERS_TABLE + " WHERE chat_id = ?";
             PreparedStatement stmt = getPlayersConn.prepareStatement(query);
             stmt.setLong(1, chatID);
 
             try (ResultSet rs = stmt.executeQuery()) {
-                while (rs.next()) {
-                    // Добавляем имя игрока в список
-                    chatPlayers.add(rs.getString("user_name"));
-                }
+                while (rs.next())
+                    chatPlayers.add(rs.getLong("user_id"));
             }
         } catch (Exception e) {
             logger.error("Ошибка получения списка игроков из БД: ", e);
@@ -188,13 +171,13 @@ public class Utils {
         return chatPlayers;
     }
 
-    public static int getPlayerCockSize(String username) {
+    public static int getPlayerCockSize(Long userID) {
         LocalDate currentDate = LocalDate.now();
         try (Connection connection = DataSourceConfig.getDataSource().getConnection()) {
             // Проверяем, есть ли запись для текущей даты
-            String checkQuery = "SELECT size FROM " + COCKSIZE_STATS_TABLE + " WHERE user_name = ? AND date = ?";
+            String checkQuery = "SELECT size FROM " + COCKSIZE_STATS_TABLE + " WHERE user_id = ? AND date = ?";
             try (PreparedStatement checkStmt = connection.prepareStatement(checkQuery)) {
-                checkStmt.setString(1, username);
+                checkStmt.setLong(1, userID);
                 checkStmt.setDate(2, Date.valueOf(currentDate));
                 ResultSet resultSet = checkStmt.executeQuery();
                 resultSet.next();
@@ -206,15 +189,98 @@ public class Utils {
         return -1;
     }
 
-    public static void setPidorWinner(Long chatId, String winner, String chatName) {
+    public static Map<Long, String> initUsers() {
+        String checkUserQuery = "SELECT user_id, user_name FROM " + TG_USERS_TABLE;
+        Map<Long, String> result = new HashMap<>();
+        try (Connection connection = DataSourceConfig.getDataSource().getConnection()) {
+            try (PreparedStatement checkUser = connection.prepareStatement(checkUserQuery)) {
+                ResultSet resultUserSet = checkUser.executeQuery();
+                while (resultUserSet.next()) {
+                    result.put(resultUserSet.getLong("user_id"), resultUserSet.getString("user_name"));
+                }
+                return result;
+            }
+        }
+        catch (Exception e) {
+            logger.error("Ошибка получения списка пользователей из БД: ", e);
+        }
+        return null;
+    }
+
+    public static Map<Long, String> initChats() {
+        String checkChatQuery = "SELECT chat_id, chat_title FROM " + TG_CHATS_TABLE;
+        Map<Long, String> result = new HashMap<>();
+        try (Connection connection = DataSourceConfig.getDataSource().getConnection()) {
+            try (PreparedStatement checkChat = connection.prepareStatement(checkChatQuery)) {
+                ResultSet resultChatSet = checkChat.executeQuery();
+                while (resultChatSet.next()) {
+                    result.put(resultChatSet.getLong("chat_id"), resultChatSet.getString("chat_title"));
+                }
+                return result;
+            }
+        }
+        catch (Exception e) {
+            logger.error("Ошибка получения списка чатов из БД: ", e);
+        }
+        return null;
+    }
+
+    public static void insertChatInDB(Message message) {
+        //TODO: кэшировать чаты и пользователей в памяти что бы не слать на каждое соощбение запрос в БД
+        Long chatID = message.getChatId();
+        String chatTitle = message.getChat().getTitle();
+        try (Connection connection = DataSourceConfig.getDataSource().getConnection()) {
+            String insertUserQuery = "INSERT INTO " + TG_CHATS_TABLE + " (chat_id, chat_title) VALUES (?, ?)";
+            try (PreparedStatement insertUser = connection.prepareStatement(insertUserQuery)) {
+                insertUser.setLong(1, chatID);
+                insertUser.setString(2, chatTitle);
+                insertUser.executeQuery();
+            }
+        } catch (Exception e) {
+            logger.error("Ошибка при сохранении чата в БД: ", e);
+        }
+    }
+
+    public static void insertUserInDB(Message message) {
+        //TODO: кэшировать чаты и пользователей в памяти что бы не слать на каждое соощбение запрос в БД
+        Long userID = message.getFrom().getId();
+        String userName = message.getFrom().getUserName();
+
+        try (Connection connection = DataSourceConfig.getDataSource().getConnection()) {
+            String insertUserQuery = "INSERT INTO " + TG_USERS_TABLE + " (user_id, user_name) VALUES (?, ?)";
+            try (PreparedStatement insertUser = connection.prepareStatement(insertUserQuery)) {
+                insertUser.setLong(1, userID);
+                insertUser.setString(2, "@" + userName);
+                insertUser.executeQuery();
+            }
+        } catch (Exception e) {
+            logger.error("Ошибка при сохранении пользователя в БД: ", e);
+        }
+    }
+
+    public static String getUserNameByID(Long userID) {
+        try (Connection connection = DataSourceConfig.getDataSource().getConnection()) {
+            String checkQuery = "SELECT user_name FROM " + TG_USERS_TABLE + " WHERE user_id = ?";
+            try (PreparedStatement checkStmt = connection.prepareStatement(checkQuery)) {
+                checkStmt.setLong(1, userID);
+                ResultSet resultSet = checkStmt.executeQuery();
+                resultSet.next();
+                return resultSet.getString("user_name");
+            }
+        } catch (Exception e) {
+            logger.error("Ошибка при поиске в БД длинны члена: ", e);
+        }
+        return String.valueOf(userID);
+    }
+
+    public static void setPidorWinner(Long chatID, Long userID) {
         LocalDate today = LocalDate.now();
-        String insertQuery = "INSERT INTO " + PIDOR_STATS_TABLE + " (chat_id, date, winner_user_name, chat_name) VALUES (?, ?, ?, ?)";
+        String insertQuery = "INSERT INTO " + PIDOR_STATS_TABLE + " (chat_id, date, user_id) VALUES (?, ?, ?)";
         try (Connection connection = DataSourceConfig.getDataSource().getConnection()) {
             try (PreparedStatement insertStmt = connection.prepareStatement(insertQuery)) {
-                insertStmt.setLong(1, chatId);
+                insertStmt.setLong(1, chatID);
                 insertStmt.setDate(2, Date.valueOf(today));
-                insertStmt.setString(3, winner);
-                insertStmt.setString(4, chatName);
+                insertStmt.setLong(3, userID);
                 insertStmt.executeUpdate();
             }
         } catch (Exception e) {
@@ -222,12 +288,12 @@ public class Utils {
         }
     }
 
-    public static void setCockSizeWinner (String username, Integer size) {
+    public static void setCockSizeWinner (Long userID, Integer size) {
         LocalDate today = LocalDate.now();
-        String insertQuery = "INSERT INTO " + COCKSIZE_STATS_TABLE + " (user_name, size, date) VALUES (?, ?, ?)";
+        String insertQuery = "INSERT INTO " + COCKSIZE_STATS_TABLE + " (user_id, size, date) VALUES (?, ?, ?)";
         try (Connection connection = DataSourceConfig.getDataSource().getConnection()) {
             try (PreparedStatement insertStmt = connection.prepareStatement(insertQuery)) {
-                insertStmt.setString(1, username);
+                insertStmt.setLong(1, userID);
                 insertStmt.setInt(2, size);
                 insertStmt.setDate(3, Date.valueOf(today));
                 insertStmt.executeUpdate();
