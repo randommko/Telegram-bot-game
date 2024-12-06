@@ -18,12 +18,13 @@ import java.util.*;
 import java.util.Random;
 import java.util.regex.Pattern;
 
+import static org.example.TablesDB.*;
 import static org.example.Utils.*;
 
 public class GameBot extends TelegramLongPollingBot {
     private final String botToken;
     //TODO: вынести переменные с названиями таблиц в отдельный класс
-    public static final String TG_USERS_TABLE = "public.tg_users";
+
     private Map<Long, String> usersSet = new HashMap<>();
     private Map<Long, String> chatSet = new HashMap<>();
     private final Map<Long, Quiz> quizMap = new HashMap<>(); //ключ ID чата, значение экземпляр Quiz

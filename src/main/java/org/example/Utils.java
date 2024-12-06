@@ -9,14 +9,10 @@ import java.sql.Date;
 import java.time.LocalDate;
 import java.util.*;
 
+import static org.example.TablesDB.*;
+
 public class Utils {
-    public static final String MESSAGES_TABLE = "public.pidor_messages";
-    public static final String PIDOR_PLAYERS_TABLE = "public.pidor_players";
-    public static final String PIDOR_STATS_TABLE = "public.pidor_stats";
-    public static final String COCKSIZE_STATS_TABLE = "public.cocksize_stats";
-    public static final String COCKSIZE_IMAGES_TABLE = "public.cocksize_imgs";
-    public static final String TG_USERS_TABLE = "public.tg_users";
-    public static final String TG_CHATS_TABLE = "public.tg_chats";
+
     private static final Logger logger = LoggerFactory.getLogger(Utils.class);
 
     public static String phraseSelection(int size, String username) {
@@ -226,7 +222,6 @@ public class Utils {
     }
 
     public static void insertChatInDB(Message message) {
-        //TODO: кэшировать чаты и пользователей в памяти что бы не слать на каждое соощбение запрос в БД
         Long chatID = message.getChatId();
         String chatTitle = message.getChat().getTitle();
         try (Connection connection = DataSourceConfig.getDataSource().getConnection()) {
@@ -242,7 +237,6 @@ public class Utils {
     }
 
     public static void insertUserInDB(Message message) {
-        //TODO: кэшировать чаты и пользователей в памяти что бы не слать на каждое соощбение запрос в БД
         Long userID = message.getFrom().getId();
         String userName = message.getFrom().getUserName();
 
