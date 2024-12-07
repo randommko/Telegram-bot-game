@@ -151,7 +151,7 @@ public class GameBot extends TelegramLongPollingBot {
             quizMap.get(chatID).noAnswerCount = 0;
             Integer points = quizMap.get(chatID).calculatePoints(answer.toLowerCase());
             quizMap.get(chatID).setScore(userID, points, chatID);
-            sendReplyMessage(message, "Правильный ответ! Вы заработали " + points.toString() + "очков!");
+            sendReplyMessage(message, "Правильный ответ! Вы заработали " + points.toString() + " очков!");
             quizMap.get(chatID).newQuestion();
             sendQuestion(chatID);
         }
