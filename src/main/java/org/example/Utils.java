@@ -132,7 +132,7 @@ public class Utils {
         try (Connection connection = DataSourceConfig.getDataSource().getConnection()) {
             LocalDate today = LocalDate.now();
 
-            String checkQuery = "SELECT user_id FROM " + PIDOR_STATS_TABLE + " WHERE pst.chat_id = ? AND pst.date = ?";
+            String checkQuery = "SELECT user_id FROM " + PIDOR_STATS_TABLE + " WHERE chat_id = ? AND date = ?";
             try (PreparedStatement checkStmt = connection.prepareStatement(checkQuery)) {
                 checkStmt.setLong(1, chatID);
                 checkStmt.setDate(2, Date.valueOf(today));
@@ -181,8 +181,8 @@ public class Utils {
             }
         } catch (Exception e) {
             logger.error("Ошибка при поиске в БД длинны члена: ", e);
+            return -1;
         }
-        return -1;
     }
 
     public static Map<Long, String> initUsers() {
