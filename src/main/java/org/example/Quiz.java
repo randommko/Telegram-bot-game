@@ -38,7 +38,7 @@ public class Quiz {
 
         }
     }
-    private void IncrementQuestion () {
+    private void incrementQuestion() {
         String sqlIncrementQuestion = "UPDATE " + QUIZ_QUESTION_TABLE + " SET used_times = used_times + 1 WHERE id = ?";
 
         try (Connection connection = DataSourceConfig.getDataSource().getConnection()) {
@@ -96,7 +96,7 @@ public class Quiz {
     }
     public void setScore (Long userID, Integer points, Long chatID) {
         setUserAnswer(userID, points, chatID);
-        IncrementQuestion();
+        incrementQuestion();
 
         String getScoreQuery = "SELECT score FROM " + QUIZ_STATS_TABLE + " WHERE user_id = ? AND chat_id = ?";
 

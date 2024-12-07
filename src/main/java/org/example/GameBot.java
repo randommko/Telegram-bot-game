@@ -29,6 +29,7 @@ public class GameBot extends TelegramLongPollingBot {
     private static final String RESOURCES_PATH = "/bin/tg_bot/resources";
     private static final Logger logger = LoggerFactory.getLogger(GameBot.class);
     private static final int quizClueTimer = 10000;
+    //TODO: вынести работу с пользователями и чатами в отдельные классы
 
     public GameBot(String botToken) {
         this.botToken = botToken;
@@ -150,7 +151,7 @@ public class GameBot extends TelegramLongPollingBot {
             quizMap.get(chatID).noAnswerCount = 0;
             Integer points = quizMap.get(chatID).calculatePoints(answer.toLowerCase());
             quizMap.get(chatID).setScore(userID, points, chatID);
-            sendReplyMessage(message, "Правильный ответ!");
+            sendReplyMessage(message, "Правильный ответ! Вы заработали " + points.toString() + "очков!");
             quizMap.get(chatID).newQuestion();
             sendQuestion(chatID);
         }
