@@ -15,7 +15,12 @@ public class Main {
             System.exit(1);
         }
 
-        DataSourceConfig.initialize(args[1], args[2], args[3]);
+        try {
+            DataSourceConfig.initialize(args[1], args[2], args[3]);
+        } catch (Exception e) {
+            logger.error("Ошибка при подключении к БД: ", e);
+        }
+
 
         try {
             // Создаем объект TelegramBotsApi
@@ -24,9 +29,8 @@ public class Main {
             // Регистрируем бота
             botsApi.registerBot(new GameBot(args[0]));
 
-            System.out.println("Бот успешно запущен!");
+            logger.info("Бот успешно запущен!");
         } catch (TelegramApiException e) {
-            System.err.println("Ошибка при запуске бота: " + e.getMessage());
             logger.error("Ошибка при запуске бота: ", e);
         }
     }
