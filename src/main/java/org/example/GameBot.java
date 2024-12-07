@@ -53,7 +53,7 @@ public class GameBot extends TelegramLongPollingBot {
         if (!chatSet.containsKey(message.getChatId()))
             insertChatInDB(message);
 
-        System.out.println("Получено сообщение из чата " + message.getChat().getTitle() +": "+ message.getText());
+        System.out.println("Получено сообщение из чата " + message.getChat().getId().toString() +": "+ message.getText());
         if (update.hasMessage()) {
             String command = message.getText();
             switch (command) {
@@ -150,7 +150,7 @@ public class GameBot extends TelegramLongPollingBot {
             quizMap.get(chatID).noAnswerCount = 0;
             Integer points = quizMap.get(chatID).calculatePoints(answer.toLowerCase());
             quizMap.get(chatID).setScore(userID, points, chatID);
-            SendReplyMessage(message);
+            sendReplyMessage(message, "Правильный ответ!");
             quizMap.get(chatID).newQuestion();
             sendQuestion(chatID);
         }
@@ -187,17 +187,9 @@ public class GameBot extends TelegramLongPollingBot {
             }
 
         int randomNum = random.nextInt(10);
-        if (randomNum == 5) {
-            SendMessage response = new SendMessage();
-            response.setReplyToMessageId(messageID);
-            response.setChatId(chatID);
-            response.setText(botAnswer);
-            try {
-                execute(response);
-            } catch (TelegramApiException e) {
-                logger.error("Ошибка при отправке сообщения: ", e);
-            }
-        }
+        if (randomNum == 5)
+            sendReplyMessage(message, botAnswer);
+
     }
 
     private void sendQuestion(Long chatID) {
@@ -382,10 +374,10 @@ public class GameBot extends TelegramLongPollingBot {
         return false;
     }
 
-    private boolean SendReplyMessage(Message message) {
+    private boolean sendReplyMessage(Message message, String messageText) {
         SendMessage response = new SendMessage();
         response.setChatId(message.getChatId());
-        response.setText("Правильный ответ!");
+        response.setText(messageText);
         response.setReplyToMessageId(message.getMessageId()); // Привязываем к конкретному сообщению
 
         try {
