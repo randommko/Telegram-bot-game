@@ -1,25 +1,53 @@
-package org.example;
+package org.example.quizGame;
 
+import org.example.DataSourceConfig;
+import org.example.pidorGame.PidorGameService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.util.*;
+import java.util.HashMap;
+import java.util.Map;
 
 import static org.example.TablesDB.*;
 
+public class QuizRepository {
+    private static final Logger logger = LoggerFactory.getLogger(QuizRepository.class);
+    public static String getUserNameByID(Long userID) {
+        try (Connection connection = DataSourceConfig.getDataSource().getConnection()) {
+            String checkQuery = "SELECT user_name FROM " + TG_USERS_TABLE + " WHERE user_id = ?";
+            try (PreparedStatement checkStmt = connection.prepareStatement(checkQuery)) {
+                checkStmt.setLong(1, userID);
+                ResultSet resultSet = checkStmt.executeQuery();
+                resultSet.next();
+                return resultSet.getString("user_name");
+            }
+        } catch (Exception e) {
+            logger.error("Ошибка при поиске в БД длинны члена: ", e);
+        }
+        return String.valueOf(userID);
+    }
 
-public class Quiz {
-    public boolean isQuizStarted = false;
-    public Integer noAnswerCount = 0;
-    public String currentQuestionText;
-    public Integer currentQuestionID;
-    public String currentAnswer;
-    public String clue;
+    public static Map<Long, String> initUsers() {
+        String checkUserQuery = "SELECT user_id, user_name FROM " + TG_USERS_TABLE;
+        Map<Long, String> result = new HashMap<>();
+        try (Connection connection = DataSourceConfig.getDataSource().getConnection()) {
+            try (PreparedStatement checkUser = connection.prepareStatement(checkUserQuery)) {
+                ResultSet resultUserSet = checkUser.executeQuery();
+                while (resultUserSet.next()) {
+                    result.put(resultUserSet.getLong("user_id"), resultUserSet.getString("user_name"));
+                }
+                return result;
+            }
+        }
+        catch (Exception e) {
+            logger.error("Ошибка получения списка пользователей из БД: ", e);
+        }
+        return null;
+    }
 
-    private final Logger logger = LoggerFactory.getLogger(Quiz.class);
     public void getRandomQuestion() {
         String sql = "SELECT id, question, answer FROM (SELECT id, question, answer FROM " + QUIZ_QUESTION_TABLE + " ORDER BY used_times ASC LIMIT 10) AS top_questions ORDER BY RANDOM() LIMIT 1;";
 
@@ -38,6 +66,7 @@ public class Quiz {
 
         }
     }
+
     private void incrementQuestion() {
         String sqlIncrementQuestion = "UPDATE " + QUIZ_QUESTION_TABLE + " SET used_times = used_times + 1 WHERE id = ?";
 
@@ -50,17 +79,7 @@ public class Quiz {
             logger.error("Ошибка при увеличении количества раз использоваения вопроса: ", e);
         }
     }
-    public Integer calculatePoints (String userAnswer) {
-        //clue - текущая подсказка
-        //userAnswer - ответ пользователя
-        int count = 0;
-        for (int i = 0; i < clue.length(); i++) {
-            if (clue.toLowerCase().charAt(i) != userAnswer.charAt(i)) {
-                count++;
-            }
-        }
-        return count;
-    }
+
     private void setUserAnswer(Long userID, Integer points, Long chatID) {
         String insertQuery = "INSERT INTO " + QUIZ_ANSWERS_TABLE + " (user_id, question_id, get_points, chat_id) VALUES (?, ?, ?, ?)";
 
@@ -76,6 +95,7 @@ public class Quiz {
             logger.error("Ошибка записи верного ответа: ", e);
         }
     }
+
     public Map<String, Integer> getScore(Long chatID) {
         Map<String, Integer> stats = new HashMap<>();
         String getScoreQuery = "SELECT tut.user_name, qst.score FROM " + QUIZ_STATS_TABLE + " AS qst JOIN " + TG_USERS_TABLE + " AS tut ON qst.user_id = tut.user_id WHERE qst.chat_id = ?";
@@ -94,6 +114,7 @@ public class Quiz {
 
         return stats;
     }
+
     public void setScore (Long userID, Integer points, Long chatID) {
         setUserAnswer(userID, points, chatID);
         incrementQuestion();
@@ -128,49 +149,5 @@ public class Quiz {
         } catch (Exception e) {
             logger.error("Произошла ошибка при записи счета в БД: ", e);
         }
-    }
-
-    public void newQuestion() {
-        getRandomQuestion();
-        StringBuilder result = new StringBuilder();
-        // Проходим по каждому символу строки
-        for (char ch : currentAnswer.toCharArray()) {
-            if (Character.isDigit(ch)) { // Проверяем, является ли символ цифрой
-                result.append("*"); // Добавляем '*' count раз
-            } else if (Character.isLetter(ch)) {
-                result.append("*"); // Добавляем '*' count раз
-            }
-            else {
-                result.append(ch); // Сохраняем символ (например, пробел)
-            }
-        }
-        clue = result.toString();
-    }
-
-    public void updateClue() {
-        if (getRemainingNumberOfClue() < 2)
-            return;
-
-        char[] clueChar = clue.toCharArray();
-        char[] answerChar = currentAnswer.toCharArray();
-        int randomNum;
-        do {
-            randomNum = new Random().nextInt(currentAnswer.length());
-        } while (clueChar[randomNum] != '*');
-
-        clueChar[randomNum] = answerChar[randomNum]; // заменяем символ с индексом 1
-        clue = new String(clueChar);
-    }
-
-    public Integer getRemainingNumberOfClue() {
-        int count = 0;
-        float num = currentAnswer.length();
-        for (int i = 0; i < num; i++) {
-            if (clue.toLowerCase().charAt(i) != currentAnswer.toLowerCase().charAt(i)) {
-                count++;
-            }
-        }
-
-        return count;
     }
 }
