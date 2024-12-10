@@ -1,7 +1,6 @@
-package org.example.cockSize;
+package org.example.CockSize;
 
 import org.example.DataSourceConfig;
-import org.example.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -60,21 +59,6 @@ public class CockSizeRepository {
         } catch (Exception e) {
             logger.error("Ошибка при поиске в БД длинны члена: ", e);
             return -1;
-        }
-    }
-
-    public String getUserNameByID(Long userID) {
-        try (Connection connection = DataSourceConfig.getDataSource().getConnection()) {
-            String userNameQuery = "SELECT user_name FROM " + TG_USERS_TABLE + " WHERE user_id = ?";
-            try (PreparedStatement checkStmt = connection.prepareStatement(userNameQuery)) {
-                checkStmt.setLong(1, userID);
-                ResultSet resultSet = checkStmt.executeQuery();
-                resultSet.next();
-                return resultSet.getString("user_name");
-            }
-        } catch (Exception e) {
-            logger.error("Ошибка при поиске в БД длинны члена: ", e);
-            return null;
         }
     }
 }

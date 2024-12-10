@@ -1,6 +1,9 @@
-package org.example.pidorGame;
+package org.example.PidorGame;
 
+import org.example.Chats.ChatsService;
 import org.example.DataSourceConfig;
+import org.example.TelegramBot;
+import org.example.Users.UsersService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -10,15 +13,20 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.*;
 
-import static org.example.GameBot.sendMessage;
 import static org.example.TablesDB.*;
-import static org.example.quizGame.QuizRepository.getUserNameByID;
 
-public class PidorGameService {
-        private static final Logger logger = LoggerFactory.getLogger(PidorGameService.class);
+public class PidorGame {
+        TelegramBot bot;
+        private static final Logger logger = LoggerFactory.getLogger(PidorGame.class);
         private final PidorGameRepository repo = new PidorGameRepository();
+        private final UsersService usersService = new UsersService();
+        private final ChatsService chatsService = new ChatsService();
+
+        public PidorGame() {
+                bot = TelegramBot.getInstance();
+        }
         public void registerPlayer(Long chatID, Long userID) {
-                String userName = getUserNameByID(userID);
+                String userName = usersService.getUserNameByID(userID);
 
                 String insertQuery = "INSERT INTO " + PIDOR_PLAYERS_TABLE + " (chat_id, user_id) VALUES (?, ?) ON CONFLICT (chat_id, user_id) DO NOTHING";
                 try (Connection connection = DataSourceConfig.getDataSource().getConnection()) {
@@ -28,10 +36,10 @@ public class PidorGameService {
                         preparedStatement.setLong(2, userID);
                         preparedStatement.executeUpdate();
 
-                        sendMessage(chatID, "Игрок @" + userName + " зарегистрирован! ");
+                        bot.sendMessage(chatID, "Игрок @" + userName + " зарегистрирован! ");
                 } catch (SQLException e) {
                         logger.error("Ошибка при регистрации игрока в БД: " + e);
-                        sendMessage(chatID, "Произошла ошибка при регистрации игрока @" + userName + "\n" + e.getMessage());
+                        bot.sendMessage(chatID, "Произошла ошибка при регистрации игрока @" + userName + "\n" + e.getMessage());
                 }
         }
         public void sendPidorStats(Long chatID) {
@@ -52,12 +60,12 @@ public class PidorGameService {
 
                                 while (resultSet.next())
                                         winnersList.put(
-                                                getUserNameByID(resultSet.getLong("user_id")),
+                                                usersService.getUserNameByID(resultSet.getLong("user_id")),
                                                 resultSet.getInt("count")
                                         );
 
                                 if (winnersList.isEmpty()) {
-                                        sendMessage(chatID, "Статистика пуста.");
+                                        bot.sendMessage(chatID, "Статистика пуста.");
                                         return;
                                 }
 
@@ -66,11 +74,11 @@ public class PidorGameService {
                                         statsMessage.append(winner).append(": ").append(count).append("\n")
                                 );
 
-                                sendMessage(chatID, statsMessage.toString());
+                                bot.sendMessage(chatID, statsMessage.toString());
 
                         } catch (SQLException e) {
                                 logger.error("Ошибка при получении статистики из БД: ", e);
-                                sendMessage(chatID, "Ошибка при получении статистики.");
+                                bot.sendMessage(chatID, "Ошибка при получении статистики.");
                         }
                 });
                 thread.start();
@@ -81,30 +89,30 @@ public class PidorGameService {
                         Long winnerID = repo.getTodayWinner(chatID);
 
                         if (winnerID != null) {
-                                sendMessage(chatID, "Сегодня пидора уже выбрали. Пидор дня: " + getUserNameByID(winnerID));
+                                bot.sendMessage(chatID, "Сегодня пидора уже выбрали. Пидор дня: " + usersService.getUserNameByID(winnerID));
                                 return;
                         }
 
                         Set<Long> chatPlayers = repo.getPidorGamePlayers(chatID);
                         if (chatPlayers.isEmpty()) {
-                                sendMessage(chatID, "Нет зарегистрированных игроков.");
+                                bot.sendMessage(chatID, "Нет зарегистрированных игроков.");
                                 return;
                         }
 
                         List<String> responses = repo.getRandomResponses();
                         try {
                                 for (String response : responses) {
-                                        sendMessage(chatID, response);
+                                        bot.sendMessage(chatID, response);
                                         Thread.sleep(1000);
                                 }
                         } catch (Exception e) {
-                                sendMessage(chatID, "Ищем пидора запасным вариантом...");
+                                bot.sendMessage(chatID, "Ищем пидора запасным вариантом...");
                                 logger.error("Произошла ошибка при получении из БД списка соощбений: ", e);
                         }
 
                         winnerID = new ArrayList<>(chatPlayers).get(new Random().nextInt(chatPlayers.size()));
                         repo.setPidorWinner(chatID, winnerID);
-                        sendMessage(chatID, repo.getWinnerResponce() + getUserNameByID(winnerID) + "!");
+                        bot.sendMessage(chatID, repo.getWinnerResponce() + usersService.getUserNameByID(winnerID) + "!");
                 });
                 thread.start();
         }
