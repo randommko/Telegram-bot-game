@@ -1,7 +1,6 @@
-package org.example.quizGame;
+package org.example.QuizGame;
 
 import org.example.DataSourceConfig;
-import org.example.pidorGame.PidorGameService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -15,78 +14,44 @@ import static org.example.TablesDB.*;
 
 public class QuizRepository {
     private static final Logger logger = LoggerFactory.getLogger(QuizRepository.class);
-    public static String getUserNameByID(Long userID) {
-        try (Connection connection = DataSourceConfig.getDataSource().getConnection()) {
-            String checkQuery = "SELECT user_name FROM " + TG_USERS_TABLE + " WHERE user_id = ?";
-            try (PreparedStatement checkStmt = connection.prepareStatement(checkQuery)) {
-                checkStmt.setLong(1, userID);
-                ResultSet resultSet = checkStmt.executeQuery();
-                resultSet.next();
-                return resultSet.getString("user_name");
-            }
-        } catch (Exception e) {
-            logger.error("Ошибка при поиске в БД длинны члена: ", e);
-        }
-        return String.valueOf(userID);
-    }
 
-    public static Map<Long, String> initUsers() {
-        String checkUserQuery = "SELECT user_id, user_name FROM " + TG_USERS_TABLE;
-        Map<Long, String> result = new HashMap<>();
-        try (Connection connection = DataSourceConfig.getDataSource().getConnection()) {
-            try (PreparedStatement checkUser = connection.prepareStatement(checkUserQuery)) {
-                ResultSet resultUserSet = checkUser.executeQuery();
-                while (resultUserSet.next()) {
-                    result.put(resultUserSet.getLong("user_id"), resultUserSet.getString("user_name"));
-                }
-                return result;
-            }
-        }
-        catch (Exception e) {
-            logger.error("Ошибка получения списка пользователей из БД: ", e);
-        }
-        return null;
-    }
-
-    public void getRandomQuestion() {
-        String sql = "SELECT id, question, answer FROM (SELECT id, question, answer FROM " + QUIZ_QUESTION_TABLE + " ORDER BY used_times ASC LIMIT 10) AS top_questions ORDER BY RANDOM() LIMIT 1;";
+    public Integer getRandomQuestionID() {
+        String sql = "SELECT id FROM (SELECT id, question, answer FROM " + QUIZ_QUESTION_TABLE + " ORDER BY used_times ASC LIMIT 10) AS top_questions ORDER BY RANDOM() LIMIT 1;";
 
         try (Connection connection = DataSourceConfig.getDataSource().getConnection()) {
             try (PreparedStatement stmt = connection.prepareStatement(sql)) {
                 try (ResultSet queryResult = stmt.executeQuery()) {
-                    if (queryResult.next()) {
-                        currentQuestionText = queryResult.getString("question");
-                        currentQuestionID = queryResult.getInt("id");
-                        currentAnswer = queryResult.getString("answer");
-                    }
+                    if (queryResult.next())
+                        return queryResult.getInt("id");
                 }
             }
         } catch (Exception e) {
             logger.error("Произошла ошибка при получении вопроса из БД: ", e);
-
+            return null;
         }
+        return null;
     }
 
-    private void incrementQuestion() {
+    private void incrementQuestion(Integer questionID) {
         String sqlIncrementQuestion = "UPDATE " + QUIZ_QUESTION_TABLE + " SET used_times = used_times + 1 WHERE id = ?";
 
         try (Connection connection = DataSourceConfig.getDataSource().getConnection()) {
             try (PreparedStatement insertStmt = connection.prepareStatement(sqlIncrementQuestion)) {
-                insertStmt.setInt(1, currentQuestionID);
+                insertStmt.setInt(1, questionID);
                 insertStmt.executeUpdate();
             }
         } catch (Exception e) {
-            logger.error("Ошибка при увеличении количества раз использоваения вопроса: ", e);
+            logger.error("Ошибка при увеличении количества раз использования вопроса: ", e);
         }
     }
 
-    private void setUserAnswer(Long userID, Integer points, Long chatID) {
+    private void setUserAnswer(Long userID, Integer points, Long chatID, Integer questionID) {
         String insertQuery = "INSERT INTO " + QUIZ_ANSWERS_TABLE + " (user_id, question_id, get_points, chat_id) VALUES (?, ?, ?, ?)";
 
         try (Connection connection = DataSourceConfig.getDataSource().getConnection()) {
             try (PreparedStatement insertStmt = connection.prepareStatement(insertQuery)) {
                 insertStmt.setLong(1, userID);
-                insertStmt.setInt(2, currentQuestionID);
+                insertStmt.setInt(2, questionID);
                 insertStmt.setInt(3, points);
                 insertStmt.setLong(4, chatID);
                 insertStmt.execute();
@@ -116,8 +81,8 @@ public class QuizRepository {
     }
 
     public void setScore (Long userID, Integer points, Long chatID) {
-        setUserAnswer(userID, points, chatID);
-        incrementQuestion();
+//        setUserAnswer(userID, points, chatID);
+//        incrementQuestion();
 
         String getScoreQuery = "SELECT score FROM " + QUIZ_STATS_TABLE + " WHERE user_id = ? AND chat_id = ?";
 
@@ -150,4 +115,42 @@ public class QuizRepository {
             logger.error("Произошла ошибка при записи счета в БД: ", e);
         }
     }
+
+    public String getQuestionTextByID (Integer questionID) {
+        String sql = "SELECT question FROM " + QUIZ_QUESTION_TABLE + " WHERE id = ?;";
+
+        try (Connection connection = DataSourceConfig.getDataSource().getConnection()) {
+            try (PreparedStatement stmt = connection.prepareStatement(sql)) {
+                stmt.setInt(1, questionID);
+                try (ResultSet queryResult = stmt.executeQuery()) {
+                    if (queryResult.next())
+                        return queryResult.getString("question");
+                }
+            }
+        } catch (Exception e) {
+            logger.error("Произошла ошибка при получении текста вопроса из БД: ", e);
+            return null;
+        }
+        return null;
+    }
+
+    public String getQuestionAnswerByID (Integer questionID) {
+        String sql = "SELECT answer FROM " + QUIZ_QUESTION_TABLE + " WHERE id = ?;";
+
+        try (Connection connection = DataSourceConfig.getDataSource().getConnection()) {
+            try (PreparedStatement stmt = connection.prepareStatement(sql)) {
+                stmt.setInt(1, questionID);
+                try (ResultSet queryResult = stmt.executeQuery()) {
+                    if (queryResult.next())
+                        return queryResult.getString("answer");
+                }
+            }
+        } catch (Exception e) {
+            logger.error("Произошла ошибка при получении ответа на вопрос из БД: ", e);
+            return null;
+        }
+        return null;
+    }
+
+
 }

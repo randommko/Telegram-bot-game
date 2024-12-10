@@ -1,9 +1,12 @@
-package org.example.cockSize;
+package org.example.CockSize;
+
+import org.example.Users.UsersService;
 
 import java.util.Random;
 
 public class CockSizeService {
     private final CockSizeRepository repo = new CockSizeRepository();
+    private UsersService usersService = new UsersService();
     public Integer measureCockSize(Long userID) {
         int newRandomSize = getCockSize();
         repo.setCockSizeWinner(userID, newRandomSize);
@@ -82,6 +85,6 @@ public class CockSizeService {
     }
 
     public String getUserNameByID(Long userID) {
-        return repo.getUserNameByID(userID);
+        return usersService.getUserNameByID(userID);
     }
 }

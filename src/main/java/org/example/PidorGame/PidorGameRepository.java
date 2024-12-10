@@ -1,7 +1,6 @@
-package org.example.pidorGame;
+package org.example.PidorGame;
 
 import org.example.DataSourceConfig;
-import org.example.cockSize.CockSizeService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
