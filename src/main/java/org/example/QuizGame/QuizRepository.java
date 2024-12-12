@@ -16,7 +16,8 @@ public class QuizRepository {
     private static final Logger logger = LoggerFactory.getLogger(QuizRepository.class);
 
     public Integer getRandomQuestionID() {
-        String sql = "SELECT id FROM (SELECT id, question, answer FROM " + QUIZ_QUESTION_TABLE + " ORDER BY used_times ASC LIMIT 10) AS top_questions ORDER BY RANDOM() LIMIT 1;";
+//        String sql = "SELECT id FROM (SELECT id FROM " + QUIZ_QUESTION_TABLE + " ORDER BY used_times ASC LIMIT 10) AS top_questions ORDER BY RANDOM() LIMIT 1;";
+        String sql = "SELECT id FROM " + QUIZ_QUESTION_TABLE + " ORDER BY RANDOM() LIMIT 1;";
 
         try (Connection connection = DataSourceConfig.getDataSource().getConnection()) {
             try (PreparedStatement stmt = connection.prepareStatement(sql)) {

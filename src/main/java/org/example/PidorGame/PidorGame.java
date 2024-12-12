@@ -16,7 +16,7 @@ import java.util.*;
 import static org.example.TablesDB.*;
 
 public class PidorGame {
-        TelegramBot bot;
+        private final TelegramBot bot;
         private static final Logger logger = LoggerFactory.getLogger(PidorGame.class);
         private final PidorGameRepository repo = new PidorGameRepository();
         private final UsersService usersService = new UsersService();

@@ -21,17 +21,20 @@ import java.io.File;
 
 public class TelegramBot extends TelegramLongPollingBot {
     private final String botToken;
-    private static TelegramBot instance;
+    private static TelegramBot instance = null;
     private final UsersService usersService = new UsersService();
     private final ChatsService chatsService = new ChatsService();
-    private final CockSizeGame cockSizeGame = new CockSizeGame();
-    private final PidorGame pidorGame = new PidorGame();
-    private final QuizGame quizGame = new QuizGame();
+    private final CockSizeGame cockSizeGame;
+    private final PidorGame pidorGame;
+    private final QuizGame quizGame;
     private static final Logger logger = LoggerFactory.getLogger(TelegramBot.class);
 
     public TelegramBot(String botToken) {
         this.botToken = botToken;
         instance = this;
+        cockSizeGame = new CockSizeGame();
+        pidorGame = new PidorGame();
+        quizGame = new QuizGame();
     }
     @Override
     public String getBotUsername() {
