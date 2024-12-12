@@ -1,73 +1,58 @@
-package org.example;
+package org.example.QuizGame;
 
+import org.example.DataSourceConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.util.*;
+import java.util.HashMap;
+import java.util.Map;
 
 import static org.example.TablesDB.*;
 
+public class QuizRepository {
+    private static final Logger logger = LoggerFactory.getLogger(QuizRepository.class);
 
-public class Quiz {
-    public boolean isQuizStarted = false;
-    public Integer noAnswerCount = 0;
-    public String currentQuestionText;
-    public Integer currentQuestionID;
-    public String currentAnswer;
-    public String clue;
-
-    private final Logger logger = LoggerFactory.getLogger(Quiz.class);
-    public void getRandomQuestion() {
-        String sql = "SELECT id, question, answer FROM (SELECT id, question, answer FROM " + QUIZ_QUESTION_TABLE + " ORDER BY used_times ASC LIMIT 10) AS top_questions ORDER BY RANDOM() LIMIT 1;";
+    public Integer getRandomQuestionID() {
+//        String sql = "SELECT id FROM (SELECT id FROM " + QUIZ_QUESTION_TABLE + " ORDER BY used_times ASC LIMIT 10) AS top_questions ORDER BY RANDOM() LIMIT 1;";
+        String sql = "SELECT id FROM " + QUIZ_QUESTION_TABLE + " ORDER BY RANDOM() LIMIT 1;";
 
         try (Connection connection = DataSourceConfig.getDataSource().getConnection()) {
             try (PreparedStatement stmt = connection.prepareStatement(sql)) {
                 try (ResultSet queryResult = stmt.executeQuery()) {
-                    if (queryResult.next()) {
-                        currentQuestionText = queryResult.getString("question");
-                        currentQuestionID = queryResult.getInt("id");
-                        currentAnswer = queryResult.getString("answer");
-                    }
+                    if (queryResult.next())
+                        return queryResult.getInt("id");
                 }
             }
         } catch (Exception e) {
             logger.error("Произошла ошибка при получении вопроса из БД: ", e);
-
+            return null;
         }
+        return null;
     }
-    private void incrementQuestion() {
+
+    private void incrementQuestion(Integer questionID) {
         String sqlIncrementQuestion = "UPDATE " + QUIZ_QUESTION_TABLE + " SET used_times = used_times + 1 WHERE id = ?";
 
         try (Connection connection = DataSourceConfig.getDataSource().getConnection()) {
             try (PreparedStatement insertStmt = connection.prepareStatement(sqlIncrementQuestion)) {
-                insertStmt.setInt(1, currentQuestionID);
+                insertStmt.setInt(1, questionID);
                 insertStmt.executeUpdate();
             }
         } catch (Exception e) {
-            logger.error("Ошибка при увеличении количества раз использоваения вопроса: ", e);
+            logger.error("Ошибка при увеличении количества раз использования вопроса: ", e);
         }
     }
-    public Integer calculatePoints (String userAnswer) {
-        //clue - текущая подсказка
-        //userAnswer - ответ пользователя
-        int count = 0;
-        for (int i = 0; i < clue.length(); i++) {
-            if (clue.toLowerCase().charAt(i) != userAnswer.charAt(i)) {
-                count++;
-            }
-        }
-        return count;
-    }
-    private void setUserAnswer(Long userID, Integer points, Long chatID) {
+
+    private void setUserAnswer(Long userID, Integer points, Long chatID, Integer questionID) {
         String insertQuery = "INSERT INTO " + QUIZ_ANSWERS_TABLE + " (user_id, question_id, get_points, chat_id) VALUES (?, ?, ?, ?)";
 
         try (Connection connection = DataSourceConfig.getDataSource().getConnection()) {
             try (PreparedStatement insertStmt = connection.prepareStatement(insertQuery)) {
                 insertStmt.setLong(1, userID);
-                insertStmt.setInt(2, currentQuestionID);
+                insertStmt.setInt(2, questionID);
                 insertStmt.setInt(3, points);
                 insertStmt.setLong(4, chatID);
                 insertStmt.execute();
@@ -76,6 +61,7 @@ public class Quiz {
             logger.error("Ошибка записи верного ответа: ", e);
         }
     }
+
     public Map<String, Integer> getScore(Long chatID) {
         Map<String, Integer> stats = new HashMap<>();
         String getScoreQuery = "SELECT tut.user_name, qst.score FROM " + QUIZ_STATS_TABLE + " AS qst JOIN " + TG_USERS_TABLE + " AS tut ON qst.user_id = tut.user_id WHERE qst.chat_id = ?";
@@ -94,9 +80,10 @@ public class Quiz {
 
         return stats;
     }
+
     public void setScore (Long userID, Integer points, Long chatID) {
-        setUserAnswer(userID, points, chatID);
-        incrementQuestion();
+//        setUserAnswer(userID, points, chatID);
+//        incrementQuestion();
 
         String getScoreQuery = "SELECT score FROM " + QUIZ_STATS_TABLE + " WHERE user_id = ? AND chat_id = ?";
 
@@ -130,47 +117,41 @@ public class Quiz {
         }
     }
 
-    public void newQuestion() {
-        getRandomQuestion();
-        StringBuilder result = new StringBuilder();
-        // Проходим по каждому символу строки
-        for (char ch : currentAnswer.toCharArray()) {
-            if (Character.isDigit(ch)) { // Проверяем, является ли символ цифрой
-                result.append("*"); // Добавляем '*' count раз
-            } else if (Character.isLetter(ch)) {
-                result.append("*"); // Добавляем '*' count раз
+    public String getQuestionTextByID (Integer questionID) {
+        String sql = "SELECT question FROM " + QUIZ_QUESTION_TABLE + " WHERE id = ?;";
+
+        try (Connection connection = DataSourceConfig.getDataSource().getConnection()) {
+            try (PreparedStatement stmt = connection.prepareStatement(sql)) {
+                stmt.setInt(1, questionID);
+                try (ResultSet queryResult = stmt.executeQuery()) {
+                    if (queryResult.next())
+                        return queryResult.getString("question");
+                }
             }
-            else {
-                result.append(ch); // Сохраняем символ (например, пробел)
-            }
+        } catch (Exception e) {
+            logger.error("Произошла ошибка при получении текста вопроса из БД: ", e);
+            return null;
         }
-        clue = result.toString();
+        return null;
     }
 
-    public void updateClue() {
-        if (getRemainingNumberOfClue() < 2)
-            return;
+    public String getQuestionAnswerByID (Integer questionID) {
+        String sql = "SELECT answer FROM " + QUIZ_QUESTION_TABLE + " WHERE id = ?;";
 
-        char[] clueChar = clue.toCharArray();
-        char[] answerChar = currentAnswer.toCharArray();
-        int randomNum;
-        do {
-            randomNum = new Random().nextInt(currentAnswer.length());
-        } while (clueChar[randomNum] != '*');
-
-        clueChar[randomNum] = answerChar[randomNum]; // заменяем символ с индексом 1
-        clue = new String(clueChar);
-    }
-
-    public Integer getRemainingNumberOfClue() {
-        int count = 0;
-        float num = currentAnswer.length();
-        for (int i = 0; i < num; i++) {
-            if (clue.toLowerCase().charAt(i) != currentAnswer.toLowerCase().charAt(i)) {
-                count++;
+        try (Connection connection = DataSourceConfig.getDataSource().getConnection()) {
+            try (PreparedStatement stmt = connection.prepareStatement(sql)) {
+                stmt.setInt(1, questionID);
+                try (ResultSet queryResult = stmt.executeQuery()) {
+                    if (queryResult.next())
+                        return queryResult.getString("answer");
+                }
             }
+        } catch (Exception e) {
+            logger.error("Произошла ошибка при получении ответа на вопрос из БД: ", e);
+            return null;
         }
-
-        return count;
+        return null;
     }
+
+
 }
