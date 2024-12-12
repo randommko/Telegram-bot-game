@@ -18,7 +18,7 @@ public class DataSourceConfig {
         config.setUsername(dbUser);
         config.setPassword(dbPass);
         config.setDriverClassName("org.postgresql.Driver");
-        config.setMaximumPoolSize(100); // Максимальное количество соединений в пуле
+        config.setMaximumPoolSize(10); // Максимальное количество соединений в пуле
         dataSource = new HikariDataSource(config);
     }
 
