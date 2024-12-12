@@ -86,8 +86,9 @@ public class QuizService {
         }
         return count;
     }
-    public void newRandomQuestion() {
+    public boolean newRandomQuestion() {
         currentQuestionID = repo.getRandomQuestionID();
+        return currentQuestionID != null;
     }
     public String getClue() {
         return clueText;
