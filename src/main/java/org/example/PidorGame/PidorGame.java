@@ -12,6 +12,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.*;
 
+import static org.example.Emodji.*;
 import static org.example.TablesDB.*;
 
 public class PidorGame {
@@ -83,12 +84,12 @@ public class PidorGame {
                 thread.start();
         }
         public void startPidorGame(Long chatID) {
-                if (!workingChatsMap.get(chatID).isAlive()) {
+//                if (!workingChatsMap.get(chatID).isAlive()) {
                         Thread thread = new Thread(() -> {
                                 Long winnerID = repo.getTodayWinner(chatID);
 
                                 if (winnerID != null) {
-                                        bot.sendMessage(chatID, "Сегодня пидора уже выбрали. Пидор дня: " + usersService.getUserNameByID(winnerID));
+                                        bot.sendMessage(chatID, RAINBOW_FLAG_EMODJI + " Сегодня пидора уже выбрали. Пидор дня: " + usersService.getUserNameByID(winnerID));
                                         return;
                                 }
 
@@ -111,12 +112,12 @@ public class PidorGame {
 
                                 winnerID = new ArrayList<>(chatPlayers).get(new Random().nextInt(chatPlayers.size()));
                                 repo.setPidorWinner(chatID, winnerID);
-                                bot.sendMessage(chatID, repo.getWinnerResponce() + usersService.getUserNameByID(winnerID) + "!");
+                                bot.sendMessage(chatID, RAINBOW_FLAG_EMODJI + " " + repo.getWinnerResponce() + usersService.getUserNameByID(winnerID) + "!");
                         });
                         thread.start();
                         workingChatsMap.put(chatID, thread);
-                } else
-                        bot.sendMessage(chatID, "Поиск пидора уже ведется");
-                workingChatsMap.remove(chatID);
+//                } else
+//                        bot.sendMessage(chatID, "Поиск пидора уже ведется");
+//                workingChatsMap.remove(chatID);
         }
 }

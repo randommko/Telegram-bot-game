@@ -8,6 +8,8 @@ import org.telegram.telegrambots.meta.api.objects.Message;
 import java.util.*;
 import java.util.concurrent.*;
 
+import static org.example.Emodji.*;
+
 public class QuizGame {
     private final TelegramBot bot;
     private final Map<Long, QuizService> quizMap = new HashMap<>(); //ключ ID чата, значение экземпляр Quiz
@@ -16,6 +18,7 @@ public class QuizGame {
     CompletableFuture<Void> currentQuestionThread;
     ExecutorService executor = Executors.newSingleThreadExecutor();
     public Integer currentClueMessageID = null;
+    public Integer currentQuestionMessageID = null;
     private final QuizRepository repo = new QuizRepository();
 
 
@@ -26,16 +29,13 @@ public class QuizGame {
                 quizMap.put(chatID, new QuizService(chatID))
         );
     }
-
     public void startQuizGame(Message message) {
         Long chatID = message.getChatId();
         if (!quizMap.containsKey(chatID))
             quizMap.put(chatID, new QuizService(chatID));
         if (!quizMap.get(chatID).isQuizStarted) {
             quizMap.get(chatID).startQuiz();
-            Thread thread = new Thread(() -> {
-                startGameUntilEnd(chatID);
-            });
+            Thread thread = new Thread(() -> startGameUntilEnd(chatID));
             thread.start();
         } else {
             bot.sendMessage(chatID, "Викторина уже идет!");
@@ -45,15 +45,20 @@ public class QuizGame {
         bot.sendMessage(message.getChatId(), quizMap.get(message.getChatId()).getQuizStats());
     }
     public void stopQuiz(Long chatID) {
-        quizMap.get(chatID).isQuizStarted = false;
+        quizMap.get(chatID).stopQuiz();
         executor.shutdownNow(); // Остановка всех потоков
-        bot.sendMessage(chatID, "Викторина завершена");
     }
-    private Integer sendClue(Long chatID) {
-        return currentClueMessageID = bot.sendMessage(chatID, "Подсказка: " + quizMap.get(chatID).getClue());
+    private void sendClue(Long chatID) {
+        String msg = PAPERCLIP_EMODJI + " Подсказка: " + quizMap.get(chatID).getClue();
+        if (currentQuestionMessageID == null)
+            bot.sendMessage(chatID, "Вопрос не был задан");
+        if (currentClueMessageID == null)
+            currentClueMessageID =  bot.sendReplyMessage(chatID, currentQuestionMessageID, msg);
+        else
+            bot.editMessage(chatID, currentClueMessageID, msg);
     }
     private void sendQuestion(Long chatID) {
-        bot.sendMessage(chatID, quizMap.get(chatID).getQuestion());
+        currentQuestionMessageID = bot.sendMessage(chatID, QUESTION_EMODJI + " Вопрос №" + quizMap.get(chatID).currentQuestionID + ": " + quizMap.get(chatID).getQuestion());
     }
     public void checkQuizAnswer(Message message) {
         logger.info("Проверка ответа на вопрос викторины: " + message.getText());
@@ -70,6 +75,7 @@ public class QuizGame {
     private void startGameUntilEnd(Long chatID) {
         logger.info("Запускаем бесконечный цикл викторины для чата " + chatID);
         do {
+            currentClueMessageID = null;
             quizMap.get(chatID).newRandomQuestion();
             quizMap.get(chatID).createClue();
             if (quizMap.get(chatID).currentQuestionID != null) {
@@ -101,7 +107,7 @@ public class QuizGame {
                         sendClue(chatID);
                     } else {
                         questionEndFlag = false;
-                        bot.sendMessage(chatID, "Правильный ответ: " + quizMap.get(chatID).getAnswer());
+                        bot.editMessage(chatID, currentClueMessageID,"Правильный ответ: " + quizMap.get(chatID).getAnswer());
                         quizMap.get(chatID).noAnswerCount++;
                     }
                 } catch (InterruptedException e) {
