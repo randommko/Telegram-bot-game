@@ -2,18 +2,16 @@ package org.example.QuizGame;
 
 
 import org.example.TelegramBot;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.util.*;
+
+import static org.example.Emodji.*;
 
 
 public class QuizService {
-    private static final Logger logger = LoggerFactory.getLogger(QuizService.class);
     private final QuizRepository repo = new QuizRepository();
     public boolean isQuizStarted = false;
     private final TelegramBot bot;
-    private Long chatID;
+    private final Long chatID;
     public Integer noAnswerCount = 0;
     public Integer currentQuestionID = null;
     private String clueText;
@@ -38,7 +36,7 @@ public class QuizService {
     }
     public void startQuiz() {
         isQuizStarted = true;
-        bot.sendMessage(chatID, "Викторина начинается!");
+        bot.sendMessage(chatID, "Викторина начинается!" + PARTY_POPPER_EMODJI);
     }
     public void stopQuiz() {
         isQuizStarted = false;
@@ -89,9 +87,8 @@ public class QuizService {
         }
         return count;
     }
-    public boolean newRandomQuestion() {
+    public void newRandomQuestion() {
         currentQuestionID = repo.getRandomQuestionID();
-        return currentQuestionID != null;
     }
     public String getClue() {
         return clueText;

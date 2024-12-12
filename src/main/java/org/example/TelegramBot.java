@@ -8,6 +8,7 @@ import org.example.Users.UsersService;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.methods.send.SendPhoto;
+import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageText;
 import org.telegram.telegrambots.meta.api.objects.InputFile;
 import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
@@ -101,18 +102,17 @@ public class TelegramBot extends TelegramLongPollingBot {
         }
         return null;
     }
-    public boolean sendReplyMessage(Long chatId, Integer replyMessageID, String messageText) {
+    public Integer sendReplyMessage(Long chatId, Integer replyMessageID, String messageText) {
         SendMessage response = new SendMessage();
         response.setChatId(chatId);
         response.setText(messageText);
         response.setReplyToMessageId(replyMessageID); // Привязываем к конкретному сообщению
 
         try {
-            execute(response);
-            return true;
+            return execute(response).getMessageId();
         } catch (TelegramApiException e) {
             logger.error("Ошибка при отправке сообщения: ", e);
-            return false;
+            return null;
         }
     }
     public boolean sendImgMessage (Long chatId, String text, File imageFile) {
@@ -134,6 +134,18 @@ public class TelegramBot extends TelegramLongPollingBot {
             return false;
         }
         return false;
+    }
+
+    public void editMessage(Long chatId, Integer messageID, String newMessageText) {
+        EditMessageText message = new EditMessageText();
+        message.setChatId(chatId);
+        message.setMessageId(messageID);
+        message.setText(newMessageText);
+        try {
+            execute(message);
+        } catch (TelegramApiException e) {
+            logger.error("Ошибка при отправке сообщения: ", e);
+        }
     }
 
 
