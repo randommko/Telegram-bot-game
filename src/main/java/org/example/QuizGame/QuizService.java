@@ -1,5 +1,6 @@
 package org.example.QuizGame;
 
+import org.example.TelegramBot;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -10,14 +11,16 @@ public class QuizService {
     private static final Logger logger = LoggerFactory.getLogger(QuizService.class);
     private final QuizRepository repo = new QuizRepository();
     public boolean isQuizStarted = false;
+    private final TelegramBot bot;
     private Long chatID;
     public Integer noAnswerCount = 0;
-    public Integer currentQuestionID;
+    public Integer currentQuestionID = null;
     private String clueText;
 
 
     public QuizService(Long chatID) {
         this.chatID = chatID;
+        bot = TelegramBot.getInstance();
     }
     public Integer checkQuizAnswer(String answer) {
         //TODO: буквы "е" и "ё" считать одинаковыми
@@ -32,13 +35,13 @@ public class QuizService {
     }
     public void startQuiz() {
         isQuizStarted = true;
-        currentQuestionID = getRandomQuestionID();
-        createClue();
+        bot.sendMessage(chatID, "Викторина начинается!");
     }
     public void stopQuiz() {
         isQuizStarted = false;
+        bot.sendMessage(chatID, "Викторина завершена");
     }
-    private void createClue() {
+    public void createClue() {
         StringBuilder result = new StringBuilder();
         // Проходим по каждому символу строки
         for (char ch : getAnswer().toCharArray()) {
@@ -83,8 +86,8 @@ public class QuizService {
         }
         return count;
     }
-    private Integer getRandomQuestionID() {
-        return repo.getRandomQuestionID();
+    public void newRandomQuestion() {
+        currentQuestionID = repo.getRandomQuestionID();
     }
     public String getClue() {
         return clueText;
@@ -115,8 +118,5 @@ public class QuizService {
             }
         }
         return count;
-    }
-    public void newQuestion() {
-        //TODO:
     }
 }

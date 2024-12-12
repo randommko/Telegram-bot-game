@@ -11,7 +11,7 @@ import java.util.Map;
 
 public class CockSizeGame {
     CockSizeService service = new CockSizeService();
-    TelegramBot bot;
+    private final TelegramBot bot;
     private static final String RESOURCES_PATH = "/bin/tg_bot/resources";
 
     public CockSizeGame() {
