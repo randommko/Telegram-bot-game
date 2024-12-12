@@ -21,6 +21,7 @@ public class PidorGame {
         private final PidorGameRepository repo = new PidorGameRepository();
         private final UsersService usersService = new UsersService();
         private final ChatsService chatsService = new ChatsService();
+        private Map<Long, Thread> workingChatsMap = new HashMap<>();
 
         public PidorGame() {
                 bot = TelegramBot.getInstance();
@@ -84,36 +85,40 @@ public class PidorGame {
                 thread.start();
         }
         public void startPidorGame(Long chatID) {
-                //TODO: если отправить две команды подряд то будет выбрано два победителя. Блокировать поиск нового пока не завершился первый
-                Thread thread = new Thread(() -> {
-                        Long winnerID = repo.getTodayWinner(chatID);
+                if (!workingChatsMap.get(chatID).isAlive()) {
+                        Thread thread = new Thread(() -> {
+                                Long winnerID = repo.getTodayWinner(chatID);
 
-                        if (winnerID != null) {
-                                bot.sendMessage(chatID, "Сегодня пидора уже выбрали. Пидор дня: " + usersService.getUserNameByID(winnerID));
-                                return;
-                        }
-
-                        Set<Long> chatPlayers = repo.getPidorGamePlayers(chatID);
-                        if (chatPlayers.isEmpty()) {
-                                bot.sendMessage(chatID, "Нет зарегистрированных игроков.");
-                                return;
-                        }
-
-                        List<String> responses = repo.getRandomResponses();
-                        try {
-                                for (String response : responses) {
-                                        bot.sendMessage(chatID, response);
-                                        Thread.sleep(1000);
+                                if (winnerID != null) {
+                                        bot.sendMessage(chatID, "Сегодня пидора уже выбрали. Пидор дня: " + usersService.getUserNameByID(winnerID));
+                                        return;
                                 }
-                        } catch (Exception e) {
-                                bot.sendMessage(chatID, "Ищем пидора запасным вариантом...");
-                                logger.error("Произошла ошибка при получении из БД списка соощбений: ", e);
-                        }
 
-                        winnerID = new ArrayList<>(chatPlayers).get(new Random().nextInt(chatPlayers.size()));
-                        repo.setPidorWinner(chatID, winnerID);
-                        bot.sendMessage(chatID, repo.getWinnerResponce() + usersService.getUserNameByID(winnerID) + "!");
-                });
-                thread.start();
+                                Set<Long> chatPlayers = repo.getPidorGamePlayers(chatID);
+                                if (chatPlayers.isEmpty()) {
+                                        bot.sendMessage(chatID, "Нет зарегистрированных игроков.");
+                                        return;
+                                }
+
+                                List<String> responses = repo.getRandomResponses();
+                                try {
+                                        for (String response : responses) {
+                                                bot.sendMessage(chatID, response);
+                                                Thread.sleep(1000);
+                                        }
+                                } catch (Exception e) {
+                                        bot.sendMessage(chatID, "Ищем пидора запасным вариантом...");
+                                        logger.error("Произошла ошибка при получении из БД списка соощбений: ", e);
+                                }
+
+                                winnerID = new ArrayList<>(chatPlayers).get(new Random().nextInt(chatPlayers.size()));
+                                repo.setPidorWinner(chatID, winnerID);
+                                bot.sendMessage(chatID, repo.getWinnerResponce() + usersService.getUserNameByID(winnerID) + "!");
+                        });
+                        thread.start();
+                        workingChatsMap.put(chatID, thread);
+                } else
+                        bot.sendMessage(chatID, "Поиск пидора уже ведется");
+                workingChatsMap.remove(chatID);
         }
 }
