@@ -7,7 +7,9 @@ import org.slf4j.LoggerFactory;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import static org.example.TablesDB.*;
@@ -153,5 +155,22 @@ public class QuizRepository {
         return null;
     }
 
+    public List<Long> initQuiz() {
+        List<Long> quizChatIDs = new ArrayList<>();
+        String QUIZ_STATS_TABLE = "public.quiz_stats";
+        String getScoreQuery = "SELECT DISTINCT chat_id FROM " + QUIZ_STATS_TABLE;
+        try (Connection connection = DataSourceConfig.getDataSource().getConnection()) {
+            try (PreparedStatement stmt = connection.prepareStatement(getScoreQuery)) {
+                try (ResultSet rs = stmt.executeQuery()) {
+                    while (rs.next()) {
+                        quizChatIDs.add(rs.getLong("chat_id"));
+                    }
+                }
+            }
+        } catch (Exception e) {
+            logger.error("Произошла ошибка при получения счета в БД: ", e);
+        }
+        return quizChatIDs;
+    }
 
 }

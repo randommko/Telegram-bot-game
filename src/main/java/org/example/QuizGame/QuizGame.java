@@ -1,15 +1,10 @@
 package org.example.QuizGame;
 
-import org.example.DataSourceConfig;
-
 import org.example.TelegramBot;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.telegram.telegrambots.meta.api.objects.Message;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.util.*;
 import java.util.concurrent.*;
 
@@ -21,32 +16,17 @@ public class QuizGame {
     CompletableFuture<Void> currentQuestionThread;
     ExecutorService executor = Executors.newSingleThreadExecutor();
     public Integer currentClueMessageID = null;
+    private final QuizRepository repo = new QuizRepository();
 
 
     public QuizGame() {
         bot = TelegramBot.getInstance();
-        initQuiz();
-    }
-    private void initQuiz() {
-        //TODO: перенести в репо
-        List<Long> quizChatIDs = new ArrayList<>();
-        String QUIZ_STATS_TABLE = "public.quiz_stats";
-        String getScoreQuery = "SELECT DISTINCT chat_id FROM " + QUIZ_STATS_TABLE;
-        try (Connection connection = DataSourceConfig.getDataSource().getConnection()) {
-            try (PreparedStatement stmt = connection.prepareStatement(getScoreQuery)) {
-                try (ResultSet rs = stmt.executeQuery()) {
-                    while (rs.next()) {
-                        quizChatIDs.add(rs.getLong("chat_id"));
-                    }
-                }
-            }
-        } catch (Exception e) {
-            logger.error("Произошла ошибка при получения счета в БД: ", e);
-        }
+        List<Long> quizChatIDs = repo.initQuiz();
         quizChatIDs.forEach((chatID) ->
                 quizMap.put(chatID, new QuizService(chatID))
         );
     }
+
     public void startQuizGame(Message message) {
         Long chatID = message.getChatId();
         if (!quizMap.containsKey(chatID))
