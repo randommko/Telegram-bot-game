@@ -35,7 +35,7 @@ public class QuizRepository {
         return null;
     }
 
-    private void incrementQuestion(Integer questionID) {
+    public void incrementQuestion(Integer questionID) {
         String sqlIncrementQuestion = "UPDATE " + QUIZ_QUESTION_TABLE + " SET used_times = used_times + 1 WHERE id = ?";
 
         try (Connection connection = DataSourceConfig.getDataSource().getConnection()) {
@@ -48,7 +48,7 @@ public class QuizRepository {
         }
     }
 
-    private void setUserAnswer(Long userID, Integer points, Long chatID, Integer questionID) {
+    public void setUserAnswer(Long userID, Integer points, Long chatID, Integer questionID) {
         String insertQuery = "INSERT INTO " + QUIZ_ANSWERS_TABLE + " (user_id, question_id, get_points, chat_id) VALUES (?, ?, ?, ?)";
 
         try (Connection connection = DataSourceConfig.getDataSource().getConnection()) {

@@ -64,7 +64,7 @@ public class QuizGame {
         if (points != -1) {
             bot.sendReplyMessage(chatID, message.getMessageId(), "Правильный ответ! Вы заработали " + points + " очков!");
             currentQuestionThread.cancel(true); // Отмена задачи
-            quizMap.get(chatID).setScore(userID, points, chatID);
+            quizMap.get(chatID).countAnswer(userID, points, chatID);
         }
     }
     private void startGameUntilEnd(Long chatID) {
