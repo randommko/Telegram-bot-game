@@ -31,8 +31,10 @@ public class QuizService {
         }
         return -1;
     }
-    public void setScore(Long userID, Integer points, Long chatID) {
+    public void countAnswer(Long userID, Integer points, Long chatID) {
         repo.setScore(userID, points, chatID);
+        repo.setUserAnswer(userID, points, chatID, currentQuestionID);
+        repo.incrementQuestion(currentQuestionID);
     }
     public void startQuiz() {
         isQuizStarted = true;
