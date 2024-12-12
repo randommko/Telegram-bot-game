@@ -49,6 +49,7 @@ public class QuizGame {
         executor.shutdownNow(); // Остановка всех потоков
     }
     private void sendClue(Long chatID) {
+//        logger.info("Подсказка обновлена");
         String msg = PAPERCLIP_EMODJI + " Подсказка: " + quizMap.get(chatID).getClue();
         if (currentQuestionMessageID == null)
             bot.sendMessage(chatID, "Вопрос не был задан");
