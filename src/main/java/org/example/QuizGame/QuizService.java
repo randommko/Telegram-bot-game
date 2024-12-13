@@ -100,8 +100,21 @@ public class QuizService {
         return repo.getQuestionAnswerByID(currentQuestionID);
     }
     public String getQuizStats() {
-        Map<String, Integer> stats;
-        stats = repo.getScore(chatID);
+//        Map<String, Integer> stats;
+//        stats = repo.getScore(chatID);
+
+        Map<String, Integer> stats = repo.getScore(chatID);
+
+        // Преобразуем Map в List<Entry> и сортируем по убыванию значений
+        List<Map.Entry<String, Integer>> sortedList = new ArrayList<>(stats.entrySet());
+        sortedList.sort((entry1, entry2) -> entry2.getValue().compareTo(entry1.getValue()));
+
+        // Если нужно, можно вернуть отсортированную карту
+        Map<String, Integer> sortedMap = new LinkedHashMap<>();
+        for (Map.Entry<String, Integer> entry : sortedList) {
+            sortedMap.put(entry.getKey(), entry.getValue());
+        }
+
 
         StringBuilder statsMessage = new StringBuilder("Статистика викторины:\n");
         stats.forEach((userName, score) ->
