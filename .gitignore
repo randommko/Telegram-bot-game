@@ -11,7 +11,6 @@ target/
 *.iws
 *.iml
 *.ipr
-bot_secrets.json
 
 ### Eclipse ###
 .apt_generated
