@@ -18,6 +18,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
+import java.time.LocalDate;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Objects;
 
 
 public class TelegramBot extends TelegramLongPollingBot {
@@ -28,6 +32,7 @@ public class TelegramBot extends TelegramLongPollingBot {
     private final CockSizeGame cockSizeGame;
     private final PidorGame pidorGame;
     private final QuizGame quizGame;
+    private static Map<Long, LocalDate> usersUpdateTime = new HashMap<>();
     private static final Logger logger = LoggerFactory.getLogger(TelegramBot.class);
 
     public TelegramBot(String botToken) {
@@ -48,17 +53,22 @@ public class TelegramBot extends TelegramLongPollingBot {
     @Override
     public void onUpdateReceived(Update update) {
         Message message = update.getMessage();
-        if (!usersService.checkUser(message.getFrom().getId()))
-            usersService.addUser(
-                    message.getFrom().getUserName(),
-                    message.getFrom().getId()
-            );
+
+        if (!usersService.checkUser(message.getFrom())) {
+            usersService.addUser(message.getFrom());
+            usersUpdateTime.put(message.getFrom().getId(), LocalDate.now());
+        }
+        else {
+            if (!Objects.equals(usersUpdateTime.get(message.getFrom().getId()), LocalDate.now())) {
+                usersService.updateUser(message.getFrom());
+                usersUpdateTime.put(message.getFrom().getId(), LocalDate.now());
+            }
+        }
+
 
         if (!chatsService.checkChat(message.getChatId()))
-            chatsService.addChat(
-                    message.getChatId(),
-                    message.getChat().getTitle()
-            );
+            chatsService.addChat(message.getChat());
+
 
         logger.debug("Получено сообщение из чата " + message.getChat().getId().toString() +": "+ message.getText());
         if (update.hasMessage()) {
