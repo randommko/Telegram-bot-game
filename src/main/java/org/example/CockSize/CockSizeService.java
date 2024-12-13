@@ -68,18 +68,18 @@ public class CockSizeService {
 
     public String phraseSelection(int size, String username) {
         if (size >= 0 && size <= 5) {
-            return "The legendary cocksize of @" + username + " is " + size + "cm" + LOVE_EMODJI;
+            return "The legendary cocksize of " + username + " is " + size + "cm" + LOVE_EMODJI;
         } else if (size >= 6 && size <= 10) {
-            return "The mighty cocksize of @" + username + " is " + size + "cm" + SECOND_EMODJI;
+            return "The mighty cocksize of " + username + " is " + size + "cm" + SECOND_EMODJI;
         } else if (size >= 11 && size <= 20) {
-            return "The epic cocksize of @" + username + " is " + size + "cm" + THIRD_EMODJI;
+            return "The epic cocksize of " + username + " is " + size + "cm" + THIRD_EMODJI;
         } else if (size >= 21 && size <= 30) {
-            return "The majestic cocksize of @" + username + " is " + size + "cm" + FORTH_EMODJI;
+            return "The majestic cocksize of " + username + " is " + size + "cm" + FORTH_EMODJI;
         } else if (size >= 31 && size <= 40) {
-            return "The legendary cocksize of @" + username + " is " + size + "cm" + FIFTH_EMODJI;
+            return "The legendary cocksize of " + username + " is " + size + "cm" + FIFTH_EMODJI;
         } else if (size >= 41 && size <= 50) {
-            return "The mythical cocksize of @" + username + " is " + size + "cm" + SIX_EMODJI;
-        } else return "NO FUCKING WAY! Cocksize @" + username + " is " + size + "cm" + SEVEN_EMODJI;
+            return "The mythical cocksize of " + username + " is " + size + "cm" + SIX_EMODJI;
+        } else return "NO FUCKING WAY! Cocksize " + username + " is " + size + "cm" + SEVEN_EMODJI;
     }
 
     public String getCockSizeImageName(Integer size) {
