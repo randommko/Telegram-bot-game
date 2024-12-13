@@ -170,6 +170,23 @@ public class TelegramBot extends TelegramLongPollingBot {
                 logger.debug("Message was sent in a private chat.");
                 return true;
             case "Group":
+                logger.debug("Message was sent in a group chat.");
+                try {
+                    GetChatMember getChatMember = new GetChatMember();
+                    getChatMember.setChatId(chatID);
+                    getChatMember.setUserId(this.execute(new GetMe()).getId());
+
+                    ChatMember chatMember = execute(getChatMember);
+
+                    if (chatMember instanceof ChatMemberRestricted restricted) {
+                        return restricted.getCanSendMessages();
+                    } else
+                        return false;
+
+                } catch (Exception e) {
+                    logger.debug("Ошибка проверки прав доступа у бота: " + e);
+                    return false;
+                }
             case "Supergroup":
                 logger.debug("Message was sent in a group chat.");
                 try {
