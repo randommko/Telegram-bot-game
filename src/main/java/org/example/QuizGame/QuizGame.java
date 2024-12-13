@@ -61,7 +61,8 @@ public class QuizGame {
         if (currentClueMessageID == null)
             currentClueMessageID =  bot.sendReplyMessage(chatID, currentQuestionMessageID, msg);
         else
-            bot.editMessage(chatID, currentClueMessageID, msg);
+            if (!bot.editMessage(chatID, currentClueMessageID, msg))
+                bot.sendMessage(chatID, msg);
     }
     private void sendQuestion(Long chatID) {
         currentQuestionMessageID = bot.sendMessage(chatID, QUESTION_EMODJI + " Вопрос №" + quizMap.get(chatID).currentQuestionID + ": " + quizMap.get(chatID).getQuestion());
@@ -118,7 +119,9 @@ public class QuizGame {
                         sendClue(chatID);
                     } else {
                         questionEndFlag = false;
-                        bot.editMessage(chatID, currentClueMessageID,"Правильный ответ: " + quizMap.get(chatID).getAnswer());
+                        if (!bot.editMessage(chatID, currentClueMessageID,"Правильный ответ: " + quizMap.get(chatID).getAnswer()))
+                            bot.sendMessage(chatID,"Правильный ответ: " + quizMap.get(chatID).getAnswer());
+
                         quizMap.get(chatID).noAnswerCount++;
                     }
                 } catch (InterruptedException e) {

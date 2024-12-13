@@ -155,15 +155,17 @@ public class TelegramBot extends TelegramLongPollingBot {
         }
         return false;
     }
-    public void editMessage(Long chatId, Integer messageID, String newMessageText) {
+    public boolean editMessage(Long chatId, Integer messageID, String newMessageText) {
         EditMessageText message = new EditMessageText();
         message.setChatId(chatId);
         message.setMessageId(messageID);
         message.setText(newMessageText);
         try {
             execute(message);
+            return true;
         } catch (TelegramApiException e) {
             logger.error("Ошибка при отправке сообщения: ", e);
+            return false;
         }
     }
     public Boolean checkAccessPrivileges(Message message) {
