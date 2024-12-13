@@ -14,7 +14,6 @@ public class PidorGame {
         private static final Logger logger = LoggerFactory.getLogger(PidorGame.class);
         private final PidorGameRepository repo = new PidorGameRepository();
         private final UsersService usersService = new UsersService();
-        private final Map<Long, Thread> workingChatsMap = new HashMap<>();
 
         public PidorGame() {
                 bot = TelegramBot.getInstance();
