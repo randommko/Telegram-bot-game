@@ -7,10 +7,7 @@ import org.slf4j.LoggerFactory;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static org.example.TablesDB.*;
 
@@ -18,9 +15,10 @@ public class QuizRepository {
     private static final Logger logger = LoggerFactory.getLogger(QuizRepository.class);
 
     public Integer getRandomQuestionID() {
-//        String sql = "SELECT id FROM (SELECT id FROM " + QUIZ_QUESTION_TABLE + " ORDER BY used_times ASC LIMIT 10) AS top_questions ORDER BY RANDOM() LIMIT 1;";
-        String sql = "SELECT id FROM " + QUIZ_QUESTION_TABLE + " ORDER BY RANDOM() LIMIT 1;";
+        String sql = "SELECT id FROM " + QUIZ_QUESTION_TABLE + " WHERE is_actual = true ORDER BY RANDOM() LIMIT 1;";
 
+//        String sql = "SELECT id FROM " + QUIZ_QUESTION_TABLE + " WHERE is_actual = true ORDER BY used_times ASC LIMIT 1;";
+//        String sql = "SELECT id FROM " + QUIZ_QUESTION_TABLE + " WHERE is_actual = true ORDER BY used_times ASC LIMIT 1 OFFSET 5;";
         try (Connection connection = DataSourceConfig.getDataSource().getConnection()) {
             try (PreparedStatement stmt = connection.prepareStatement(sql)) {
                 try (ResultSet queryResult = stmt.executeQuery()) {
@@ -179,3 +177,4 @@ public class QuizRepository {
     }
 
 }
+

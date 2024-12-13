@@ -169,19 +169,6 @@ public class TelegramBot extends TelegramLongPollingBot {
     public Boolean checkAccessPrivileges(Message message) {
         Long chatID = message.getChatId();
         String chatType = message.getChat().isGroupChat() ? "Group" : message.getChat().isSuperGroupChat() ? "Supergroup" : message.getChat().isChannelChat() ? "Channel" : "Private";
-//        try {
-//            GetChatMember getChatMember = new GetChatMember();
-//            getChatMember.setChatId(chatID);
-//            getChatMember.setUserId(this.execute(new GetMe()).getId());
-//
-//            ChatMember chatMember = execute(getChatMember);
-//
-//            return chatMember.getStatus() == "administrator";
-//
-//        } catch (Exception e) {
-//            logger.debug("Ошибка проверки прав доступа у бота: " + e);
-//            return false;
-//        }
 
         switch (chatType) {
             case "Private":

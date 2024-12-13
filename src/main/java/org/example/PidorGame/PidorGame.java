@@ -27,19 +27,43 @@ public class PidorGame {
                         bot.sendMessage(chatID, "Игрок " + userName + " был зарегистрирован ранее ");
         }
         public void sendPidorStats(Long chatID) {
+//                Thread thread = new Thread(() -> {
+//                        Map<String, Integer> winnersList = repo.getPidorStats(chatID);
+//                        if (winnersList.isEmpty()) {
+//                                bot.sendMessage(chatID, "Статистика пуста.");
+//                                return;
+//                        }
+//                        StringBuilder statsMessage = new StringBuilder("Статистика пидоров:\n");
+//                        winnersList.forEach((winner, count) ->
+//                                statsMessage.append(winner).append(": ").append(count).append("\n")
+//                        );
+//                        bot.sendMessage(chatID, statsMessage.toString());
+//                });
+//                thread.start();
+
                 Thread thread = new Thread(() -> {
-                        Map<String, Integer> winnersList = repo.getPidorStats(chatID);
-                        if (winnersList.isEmpty()) {
-                                bot.sendMessage(chatID, "Статистика пуста.");
-                                return;
+                        Map<String, Integer> stats = repo.getPidorStats(chatID);
+
+                        // Преобразуем Map в List<Entry> и сортируем по убыванию значений
+                        List<Map.Entry<String, Integer>> sortedList = new ArrayList<>(stats.entrySet());
+                        sortedList.sort((entry1, entry2) -> entry2.getValue().compareTo(entry1.getValue()));
+
+                        // Если нужно, можно вернуть отсортированную карту
+                        Map<String, Integer> sortedMap = new LinkedHashMap<>();
+                        for (Map.Entry<String, Integer> entry : sortedList) {
+                                sortedMap.put(entry.getKey(), entry.getValue());
                         }
-                        StringBuilder statsMessage = new StringBuilder("Статистика пидоров:\n");
-                        winnersList.forEach((winner, count) ->
-                                statsMessage.append(winner).append(": ").append(count).append("\n")
+
+
+                        StringBuilder statsMessage = new StringBuilder("Статистика викторины:\n");
+                        sortedMap.forEach((userName, score) ->
+                                statsMessage.append(userName.startsWith("@") ? userName.substring(1) : userName)
+                                        .append(": ").append(score).append(" очков\n")
                         );
                         bot.sendMessage(chatID, statsMessage.toString());
                 });
                 thread.start();
+
         }
         public void startPidorGame(Long chatID) {
                 Long winnerID = repo.getTodayWinner(chatID);
