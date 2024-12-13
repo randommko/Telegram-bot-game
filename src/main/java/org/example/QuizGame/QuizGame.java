@@ -49,7 +49,7 @@ public class QuizGame {
 //        executor.shutdownNow(); // Остановка всех потоков
     }
     private void sendClue(Long chatID) {
-//        logger.info("Подсказка обновлена");
+        logger.debug("Подсказка обновлена");
         String msg = PAPERCLIP_EMODJI + " Подсказка: " + quizMap.get(chatID).getClue();
         if (currentQuestionMessageID == null)
             bot.sendMessage(chatID, "Вопрос не был задан");
@@ -64,7 +64,7 @@ public class QuizGame {
     public void checkQuizAnswer(Message message) {
         Long chatID = message.getChatId();
         if (quizMap.get(chatID).isQuizStarted) {
-            logger.info("Проверка ответа на вопрос викторины: " + message.getText());
+            logger.debug("Проверка ответа на вопрос викторины: " + message.getText());
             String answer = message.getText();
             Long userID = message.getFrom().getId();
             Integer points = quizMap.get(chatID).checkQuizAnswer(answer);
@@ -75,7 +75,7 @@ public class QuizGame {
             }
         }
         else {
-            logger.info("Викторина не запущена для чата: " + chatID);
+            logger.debug("Викторина не запущена для чата: " + chatID);
         }
     }
     private void startGameUntilEnd(Long chatID) {
@@ -91,12 +91,12 @@ public class QuizGame {
                 try {
                     currentQuestionThread.join(); // Ожидание завершения потока
                 } catch (CancellationException e) {
-                    logger.info("Получен верный ответ. Поток с подсказками был прерван: " + e);
+                    logger.debug("Получен верный ответ. Поток с подсказками был прерван: " + e);
                 }
             }
             else {
                 bot.sendMessage(chatID, "В БД нет вопросов");
-                logger.info("В БД нет вопросов - викторина завершена");
+                logger.debug("В БД нет вопросов - викторина завершена");
                 quizMap.get(chatID).stopQuiz();
             }
         } while (quizMap.get(chatID).isQuizStarted);
@@ -107,10 +107,6 @@ public class QuizGame {
             boolean questionEndFlag = true;
             while ((quizMap.get(chatID).isQuizStarted) & (questionEndFlag)) {
                 try {
-//                    for (int i = 0; i < quizClueTimer/1000; i++) {
-//                        Thread.sleep(quizClueTimer/1000);
-//                        logger.info("");
-//                    }
                     Thread.sleep(quizClueTimer);
                     if (quizMap.get(chatID).getRemainingNumberOfClue() > 2) {
                         quizMap.get(chatID).updateClue();
@@ -121,7 +117,7 @@ public class QuizGame {
                         quizMap.get(chatID).noAnswerCount++;
                     }
                 } catch (InterruptedException e) {
-                    logger.info("Отправка подсказок была прервана (Викторина завершена?)");
+                    logger.debug("Отправка подсказок была прервана (Викторина завершена?)");
                 }
             }
             if (quizMap.get(chatID).noAnswerCount >= 3)
