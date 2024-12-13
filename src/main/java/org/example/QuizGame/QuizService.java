@@ -2,6 +2,7 @@ package org.example.QuizGame;
 
 import org.example.TelegramBot;
 
+import java.text.Normalizer;
 import java.util.*;
 
 import static org.example.Emodji.*;
@@ -21,9 +22,27 @@ public class QuizService {
         this.chatID = chatID;
         bot = TelegramBot.getInstance();
     }
+
+    private static String normalizeAnswer(String answer) {
+        // Приводим к нижнему регистру
+        answer = answer.toLowerCase();
+
+        // Заменяем "ё" на "е"
+        answer = answer.replace('ё', 'е');
+
+        // Убираем лишние пробелы (начало, конец, несколько пробелов подряд)
+        answer = answer.trim().replaceAll("\\s+", " ");
+
+        // Убираем возможные диакритические знаки
+        answer = Normalizer.normalize(answer, Normalizer.Form.NFD);
+        answer = answer.replaceAll("[\\p{M}]", ""); // Удаляем диакритические символы
+
+        return answer;
+    }
     public Integer checkQuizAnswer(String answer) {
         //TODO: буквы "е" и "ё" считать одинаковыми
-        if (repo.getQuestionAnswerByID(currentQuestionID).equalsIgnoreCase(answer)) {
+
+        if (normalizeAnswer(repo.getQuestionAnswerByID(currentQuestionID)).equals(normalizeAnswer(answer))) {
             noAnswerCount = 0;
             return calculatePoints(answer.toLowerCase(), clueText);
         }
