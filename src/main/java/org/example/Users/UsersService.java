@@ -1,20 +1,24 @@
 package org.example.Users;
 
-import java.util.Map;
+import org.telegram.telegrambots.meta.api.objects.User;
+
 
 public class UsersService {
     private final UsersRepository repo = new UsersRepository();
 
-
-    public void addUser(String userName, Long userID) {
-        repo.insertUserInDB(userName, userID);
+    public void addUser(User user) {
+        repo.insertUserInDB(user);
     }
 
-    public boolean checkUser(Long userID) {
-        return !repo.getUserNameByID(userID).isEmpty();
+    public void updateUser(User user) {
+        repo.updateUserInDB(user);
+    }
+
+    public boolean checkUser(User user) {
+        return !(repo.getUserByID(user.getId()) == null);
     }
 
     public String getUserNameByID(Long userID) {
-        return repo.getUserNameByID(userID);
+        return repo.getUserByID(userID).getUserName();
     }
 }
