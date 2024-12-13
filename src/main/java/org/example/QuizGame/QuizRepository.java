@@ -66,7 +66,7 @@ public class QuizRepository {
 
     public Map<String, Integer> getScore(Long chatID) {
         Map<String, Integer> stats = new HashMap<>();
-        String getScoreQuery = "SELECT tut.user_name, tut.first_name, qst.score FROM " + QUIZ_STATS_TABLE + " AS qst JOIN " + TG_USERS_TABLE + " AS tut ON qst.user_id = tut.user_id WHERE qst.chat_id = ?";
+        String getScoreQuery = "SELECT tut.user_name, tut.first_name, qst.score FROM " + QUIZ_STATS_TABLE + " AS qst JOIN " + TG_USERS_TABLE + " AS tut ON qst.user_id = tut.user_id WHERE qst.chat_id = ? ORDER BY qst.score DESC";
         try (Connection connection = DataSourceConfig.getDataSource().getConnection()) {
             try (PreparedStatement stmt = connection.prepareStatement(getScoreQuery)) {
                 stmt.setLong(1, chatID);
