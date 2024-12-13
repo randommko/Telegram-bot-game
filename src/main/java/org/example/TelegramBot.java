@@ -12,6 +12,7 @@ import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageTe
 import org.telegram.telegrambots.meta.api.objects.InputFile;
 import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
 import org.slf4j.Logger;
@@ -64,6 +65,7 @@ public class TelegramBot extends TelegramLongPollingBot {
         if (update.hasMessage()) {
             String command = message.getText();
             switch (command) {
+                //TODO: добавить гороскоп
                 case "/bot_info", "/bot_info@ChatGamePidor_Bot", "/help", "/help@ChatGamePidor_Bot" -> botInfo(message);
                 case "/cocksize", "/cocksize@ChatGamePidor_Bot" -> cockSizeGame.cockSizeStart(message);
                 case "/pidor_reg", "/pidor_reg@ChatGamePidor_Bot" -> pidorGame.registerPlayer(message.getChatId(), message.getFrom().getId());
@@ -135,7 +137,6 @@ public class TelegramBot extends TelegramLongPollingBot {
         }
         return false;
     }
-
     public void editMessage(Long chatId, Integer messageID, String newMessageText) {
         EditMessageText message = new EditMessageText();
         message.setChatId(chatId);

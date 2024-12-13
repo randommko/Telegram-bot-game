@@ -46,7 +46,7 @@ public class QuizGame {
     }
     public void stopQuiz(Long chatID) {
         quizMap.get(chatID).stopQuiz();
-        executor.shutdownNow(); // Остановка всех потоков
+//        executor.shutdownNow(); // Остановка всех потоков
     }
     private void sendClue(Long chatID) {
 //        logger.info("Подсказка обновлена");
@@ -62,15 +62,20 @@ public class QuizGame {
         currentQuestionMessageID = bot.sendMessage(chatID, QUESTION_EMODJI + " Вопрос №" + quizMap.get(chatID).currentQuestionID + ": " + quizMap.get(chatID).getQuestion());
     }
     public void checkQuizAnswer(Message message) {
-        logger.info("Проверка ответа на вопрос викторины: " + message.getText());
         Long chatID = message.getChatId();
-        String answer = message.getText();
-        Long userID = message.getFrom().getId();
-        Integer points = quizMap.get(chatID).checkQuizAnswer(answer);
-        if (points != -1) {
-            bot.sendReplyMessage(chatID, message.getMessageId(), "Правильный ответ! Вы заработали " + points + " очков!");
-            currentQuestionThread.cancel(true); // Отмена задачи
-            quizMap.get(chatID).countAnswer(userID, points, chatID);
+        if (quizMap.get(chatID).isQuizStarted) {
+            logger.info("Проверка ответа на вопрос викторины: " + message.getText());
+            String answer = message.getText();
+            Long userID = message.getFrom().getId();
+            Integer points = quizMap.get(chatID).checkQuizAnswer(answer);
+            if (points != -1) {
+                bot.sendReplyMessage(chatID, message.getMessageId(), "Правильный ответ! Вы заработали " + points + " очков!");
+                currentQuestionThread.cancel(true); // Отмена задачи
+                quizMap.get(chatID).countAnswer(userID, points, chatID);
+            }
+        }
+        else {
+            logger.info("Викторина не запущена для чата: " + chatID);
         }
     }
     private void startGameUntilEnd(Long chatID) {
@@ -102,6 +107,10 @@ public class QuizGame {
             boolean questionEndFlag = true;
             while ((quizMap.get(chatID).isQuizStarted) & (questionEndFlag)) {
                 try {
+//                    for (int i = 0; i < quizClueTimer/1000; i++) {
+//                        Thread.sleep(quizClueTimer/1000);
+//                        logger.info("");
+//                    }
                     Thread.sleep(quizClueTimer);
                     if (quizMap.get(chatID).getRemainingNumberOfClue() > 2) {
                         quizMap.get(chatID).updateClue();

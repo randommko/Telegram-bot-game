@@ -35,8 +35,12 @@ public class ChatsRepository {
             try (PreparedStatement checkStmt = connection.prepareStatement(userNameQuery)) {
                 checkStmt.setLong(1, chatID);
                 ResultSet resultSet = checkStmt.executeQuery();
-                resultSet.next();
-                return resultSet.getString("chat_title");
+                if (resultSet.next())
+                    return resultSet.getString("chat_title");
+                else {
+                    logger.warn("ID чата не найден в БД");
+                    return null;
+                }
             }
         } catch (Exception e) {
             logger.error("Ошибка при поиске в БД чата: ", e);
