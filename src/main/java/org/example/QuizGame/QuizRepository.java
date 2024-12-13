@@ -66,13 +66,17 @@ public class QuizRepository {
 
     public Map<String, Integer> getScore(Long chatID) {
         Map<String, Integer> stats = new HashMap<>();
-        String getScoreQuery = "SELECT tut.user_name, tut.first_name, qst.score FROM " + QUIZ_STATS_TABLE + " AS qst JOIN " + TG_USERS_TABLE + " AS tut ON qst.user_id = tut.user_id WHERE qst.chat_id = ? ORDER BY qst.score DESC";
+        String getScoreQuery = "SELECT tut.user_name, tut.first_name, qst.score " +
+                "FROM " + QUIZ_STATS_TABLE + " AS qst " +
+                "JOIN " + TG_USERS_TABLE + " AS tut " +
+                "ON qst.user_id = tut.user_id " +
+                "WHERE qst.chat_id = ? " +
+                "ORDER BY qst.score DESC;";
         try (Connection connection = DataSourceConfig.getDataSource().getConnection()) {
             try (PreparedStatement stmt = connection.prepareStatement(getScoreQuery)) {
                 stmt.setLong(1, chatID);
                 try (ResultSet rs = stmt.executeQuery()) {
                     while (rs.next()) {
-                        String name;
                         if (rs.getString("user_name") != null)
                             stats.put(rs.getString("user_name"), rs.getInt("score")) ;
                         else
@@ -88,9 +92,6 @@ public class QuizRepository {
     }
 
     public void setScore (Long userID, Integer points, Long chatID) {
-//        setUserAnswer(userID, points, chatID);
-//        incrementQuestion();
-
         String getScoreQuery = "SELECT score FROM " + QUIZ_STATS_TABLE + " WHERE user_id = ? AND chat_id = ?";
 
         try (Connection connection = DataSourceConfig.getDataSource().getConnection()) {
