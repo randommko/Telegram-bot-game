@@ -105,7 +105,8 @@ public class QuizService {
 
         StringBuilder statsMessage = new StringBuilder("Статистика викторины:\n");
         stats.forEach((userName, score) ->
-                statsMessage.append(userName).append(": ").append(score).append(" очков\n")
+                statsMessage.append(userName.startsWith("@") ? userName.substring(1) : userName)
+                        .append(": ").append(score).append(" очков\n")
         );
         return statsMessage.toString();
     }
