@@ -58,6 +58,11 @@ public class TelegramBot extends TelegramLongPollingBot {
     public void onUpdateReceived(Update update) {
         Message message = update.getMessage();
 
+        if (message == null) {
+            logger.debug("Пустое сообщение (например, событие, связанное с вызовами, действиями пользователей, или callback-запросами)");
+            return;
+        }
+
         if (!usersService.checkUser(message.getFrom())) {
             usersService.addUser(message.getFrom());
             usersUpdateTime.put(message.getFrom().getId(), LocalDate.now());
@@ -164,12 +169,25 @@ public class TelegramBot extends TelegramLongPollingBot {
     public Boolean checkAccessPrivileges(Message message) {
         Long chatID = message.getChatId();
         String chatType = message.getChat().isGroupChat() ? "Group" : message.getChat().isSuperGroupChat() ? "Supergroup" : message.getChat().isChannelChat() ? "Channel" : "Private";
+//        try {
+//            GetChatMember getChatMember = new GetChatMember();
+//            getChatMember.setChatId(chatID);
+//            getChatMember.setUserId(this.execute(new GetMe()).getId());
+//
+//            ChatMember chatMember = execute(getChatMember);
+//
+//            return chatMember.getStatus() == "administrator";
+//
+//        } catch (Exception e) {
+//            logger.debug("Ошибка проверки прав доступа у бота: " + e);
+//            return false;
+//        }
 
         switch (chatType) {
             case "Private":
                 logger.debug("Message was sent in a private chat.");
                 return true;
-            case "Group":
+            case "Group", "Supergroup":
                 logger.debug("Message was sent in a group chat.");
                 try {
                     GetChatMember getChatMember = new GetChatMember();
@@ -177,29 +195,7 @@ public class TelegramBot extends TelegramLongPollingBot {
                     getChatMember.setUserId(this.execute(new GetMe()).getId());
 
                     ChatMember chatMember = execute(getChatMember);
-
-                    if (chatMember instanceof ChatMemberRestricted restricted) {
-                        return restricted.getCanSendMessages();
-                    } else
-                        return false;
-
-                } catch (Exception e) {
-                    logger.debug("Ошибка проверки прав доступа у бота: " + e);
-                    return false;
-                }
-            case "Supergroup":
-                logger.debug("Message was sent in a group chat.");
-                try {
-                    GetChatMember getChatMember = new GetChatMember();
-                    getChatMember.setChatId(chatID);
-                    getChatMember.setUserId(this.execute(new GetMe()).getId());
-
-                    ChatMember chatMember = execute(getChatMember);
-
-                    if (chatMember instanceof ChatMemberRestricted restricted) {
-                        return restricted.getCanSendMessages();
-                    } else
-                        return false;
+                    return Objects.equals(chatMember.getStatus(), "administrator");
 
                 } catch (Exception e) {
                     logger.debug("Ошибка проверки прав доступа у бота: " + e);
