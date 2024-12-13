@@ -46,6 +46,20 @@ public class PidorGameRepository {
         }
         return chatPlayers;
     }
+    public Integer registerPlayer(Long chatID, Long userID) {
+        String insertQuery = "INSERT INTO " + PIDOR_PLAYERS_TABLE + " (chat_id, user_id) VALUES (?, ?) ON CONFLICT (chat_id, user_id) DO NOTHING";
+
+        try (Connection connection = DataSourceConfig.getDataSource().getConnection()) {
+            PreparedStatement preparedStatement = connection.prepareStatement(insertQuery);
+
+            preparedStatement.setLong(1, chatID);
+            preparedStatement.setLong(2, userID);
+            return preparedStatement.executeUpdate();
+        } catch (SQLException e) {
+            logger.error("Ошибка при регистрации игрока в БД: " + e);
+            return 0;
+        }
+    }
 
     public Map<String, Integer> getPidorStats(Long chatID) {
         Map<String, Integer> winnersList = new HashMap<>();

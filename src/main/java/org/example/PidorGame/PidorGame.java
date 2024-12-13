@@ -27,21 +27,11 @@ public class PidorGame {
         }
         public void registerPlayer(Long chatID, Long userID) {
                 String userName = usersService.getUserNameByID(userID);
-                //TODO: вынести в репозиторий
-                //TODO: добавить проверку что уже зарегистрирован
-                String insertQuery = "INSERT INTO " + PIDOR_PLAYERS_TABLE + " (chat_id, user_id) VALUES (?, ?) ON CONFLICT (chat_id, user_id) DO NOTHING";
-                try (Connection connection = DataSourceConfig.getDataSource().getConnection()) {
-                        PreparedStatement preparedStatement = connection.prepareStatement(insertQuery);
-
-                        preparedStatement.setLong(1, chatID);
-                        preparedStatement.setLong(2, userID);
-                        preparedStatement.executeUpdate();
-
-                        bot.sendMessage(chatID, "Игрок " + userName + " зарегистрирован! ");
-                } catch (SQLException e) {
-                        logger.error("Ошибка при регистрации игрока в БД: " + e);
-                        bot.sendMessage(chatID, "Произошла ошибка при регистрации игрока @" + userName + "\n" + e.getMessage());
-                }
+                Integer numOfChanges = repo.registerPlayer(chatID, userID);
+                if (numOfChanges != 0)
+                        bot.sendMessage(chatID, "Игрок " + userName + " зарегистрирован!");
+                else
+                        bot.sendMessage(chatID, "Игрок " + userName + " был зарегистрирован ранее ");
         }
         public void sendPidorStats(Long chatID) {
                 Thread thread = new Thread(() -> {
