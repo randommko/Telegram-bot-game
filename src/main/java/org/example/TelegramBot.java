@@ -6,12 +6,16 @@ import org.example.PidorGame.PidorGame;
 import org.example.QuizGame.QuizGame;
 import org.example.Users.UsersService;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
+import org.telegram.telegrambots.meta.api.methods.GetMe;
+import org.telegram.telegrambots.meta.api.methods.groupadministration.GetChatMember;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.methods.send.SendPhoto;
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageText;
 import org.telegram.telegrambots.meta.api.objects.InputFile;
 import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
+import org.telegram.telegrambots.meta.api.objects.chatmember.ChatMember;
+import org.telegram.telegrambots.meta.api.objects.chatmember.ChatMemberRestricted;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
 import org.slf4j.Logger;
@@ -156,6 +160,41 @@ public class TelegramBot extends TelegramLongPollingBot {
         } catch (TelegramApiException e) {
             logger.error("Ошибка при отправке сообщения: ", e);
         }
+    }
+    public Boolean checkAccessPrivileges(Message message) {
+        Long chatID = message.getChatId();
+        String chatType = message.getChat().isGroupChat() ? "Group" : message.getChat().isSuperGroupChat() ? "Supergroup" : message.getChat().isChannelChat() ? "Channel" : "Private";
+
+        switch (chatType) {
+            case "Private":
+                logger.debug("Message was sent in a private chat.");
+                return true;
+            case "Group":
+            case "Supergroup":
+                logger.debug("Message was sent in a group chat.");
+                try {
+                    GetChatMember getChatMember = new GetChatMember();
+                    getChatMember.setChatId(chatID);
+                    getChatMember.setUserId(this.execute(new GetMe()).getId());
+
+                    ChatMember chatMember = execute(getChatMember);
+
+                    if (chatMember instanceof ChatMemberRestricted restricted) {
+                        return restricted.getCanSendMessages();
+                    } else
+                        return false;
+
+                } catch (Exception e) {
+                    logger.debug("Ошибка проверки прав доступа у бота: " + e);
+                    return false;
+                }
+            case "Channel":
+                logger.debug("Message was sent in a channel.");
+                return false;
+            default:
+                logger.debug("Unknown chat type.");
+        }
+        return false;
     }
 
 

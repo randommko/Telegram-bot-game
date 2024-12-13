@@ -20,6 +20,7 @@ public class QuizGame {
     public Integer currentClueMessageID = null;
     public Integer currentQuestionMessageID = null;
     private final QuizRepository repo = new QuizRepository();
+    private final String warningBotMsgNoRules = "Что бы бот мог читать ответы сделайте его администратором";
 
 
     public QuizGame() {
@@ -31,15 +32,19 @@ public class QuizGame {
     }
     public void startQuizGame(Message message) {
         Long chatID = message.getChatId();
-        if (!quizMap.containsKey(chatID))
-            quizMap.put(chatID, new QuizService(chatID));
-        if (!quizMap.get(chatID).isQuizStarted) {
-            quizMap.get(chatID).startQuiz();
-            Thread thread = new Thread(() -> startGameUntilEnd(chatID));
-            thread.start();
-        } else {
-            bot.sendMessage(chatID, "Викторина уже идет!");
+        if (bot.checkAccessPrivileges(message)) {
+            if (!quizMap.containsKey(chatID))
+                quizMap.put(chatID, new QuizService(chatID));
+            if (!quizMap.get(chatID).isQuizStarted) {
+                quizMap.get(chatID).startQuiz();
+                Thread thread = new Thread(() -> startGameUntilEnd(chatID));
+                thread.start();
+            } else {
+                bot.sendMessage(chatID, "Викторина уже идет!");
+            }
         }
+        else
+            bot.sendMessage(chatID, warningBotMsgNoRules);
     }
     public void getQuizStats(Message message) {
         bot.sendMessage(message.getChatId(), quizMap.get(message.getChatId()).getQuizStats());
