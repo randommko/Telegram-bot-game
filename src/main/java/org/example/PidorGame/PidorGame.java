@@ -45,80 +45,42 @@ public class PidorGame {
         }
         public void sendPidorStats(Long chatID) {
                 Thread thread = new Thread(() -> {
-                        String query = "SELECT pst.user_id, COUNT(*) AS count " +
-                                "FROM " + PIDOR_STATS_TABLE +
-                                " AS pst JOIN " + TG_USERS_TABLE +
-                                " AS tut ON pst.user_id = tut.user_id " +
-                                "WHERE pst.chat_id = ? " +
-                                "GROUP BY pst.user_id";
-
-                        Map<String, Integer> winnersList = new HashMap<>();
-
-                        try (Connection connection = DataSourceConfig.getDataSource().getConnection()) {
-                                PreparedStatement preparedStatement = connection.prepareStatement(query);
-                                preparedStatement.setLong(1, chatID);
-                                ResultSet resultSet = preparedStatement.executeQuery();
-
-                                while (resultSet.next())
-                                        winnersList.put(
-                                                usersService.getUserNameByID(resultSet.getLong("user_id")),
-                                                resultSet.getInt("count")
-                                        );
-
-                                if (winnersList.isEmpty()) {
-                                        bot.sendMessage(chatID, "Статистика пуста.");
-                                        return;
-                                }
-
-                                StringBuilder statsMessage = new StringBuilder("Статистика пидоров:\n");
-                                winnersList.forEach((winner, count) ->
-                                        statsMessage.append(winner).append(": ").append(count).append("\n")
-                                );
-
-                                bot.sendMessage(chatID, statsMessage.toString());
-
-                        } catch (SQLException e) {
-                                logger.error("Ошибка при получении статистики из БД: ", e);
-                                bot.sendMessage(chatID, "Ошибка при получении статистики.");
+                        Map<String, Integer> winnersList = repo.getPidorStats(chatID);
+                        if (winnersList.isEmpty()) {
+                                bot.sendMessage(chatID, "Статистика пуста.");
+                                return;
                         }
+                        StringBuilder statsMessage = new StringBuilder("Статистика пидоров:\n");
+                        winnersList.forEach((winner, count) ->
+                                statsMessage.append(winner).append(": ").append(count).append("\n")
+                        );
+                        bot.sendMessage(chatID, statsMessage.toString());
                 });
                 thread.start();
         }
         public void startPidorGame(Long chatID) {
-//                if (!workingChatsMap.get(chatID).isAlive()) {
-                        Thread thread = new Thread(() -> {
-                                Long winnerID = repo.getTodayWinner(chatID);
-
-                                if (winnerID != null) {
-                                        bot.sendMessage(chatID, RAINBOW_FLAG_EMODJI + " Сегодня пидора уже выбрали. Пидор дня: " + usersService.getUserNameByID(winnerID));
-                                        return;
-                                }
-
-                                Set<Long> chatPlayers = repo.getPidorGamePlayers(chatID);
-                                if (chatPlayers.isEmpty()) {
-                                        bot.sendMessage(chatID, "Нет зарегистрированных игроков.");
-                                        return;
-                                }
-
-                                List<String> responses = repo.getRandomResponses();
-                                try {
-                                        for (String response : responses) {
-                                                bot.sendMessage(chatID, response);
-                                                Thread.sleep(1000);
-                                        }
-                                } catch (Exception e) {
-                                        bot.sendMessage(chatID, "Ищем пидора запасным вариантом...");
-                                        logger.error("Произошла ошибка при получении из БД списка соощбений: ", e);
-                                }
-
-                                winnerID = new ArrayList<>(chatPlayers).get(new Random().nextInt(chatPlayers.size()));
-                                repo.setPidorWinner(chatID, winnerID);
-                                bot.sendMessage(chatID, RAINBOW_FLAG_EMODJI + " " + repo.getWinnerResponce() + usersService.getUserNameByID(winnerID) + "!");
-                        });
-                        thread.start();
-                        workingChatsMap.put(chatID, thread);
-//                } else
-//                        bot.sendMessage(chatID, "Поиск пидора уже ведется");
-//                workingChatsMap.remove(chatID);
+                Long winnerID = repo.getTodayWinner(chatID);
+                if (winnerID != null) {
+                        bot.sendMessage(chatID, RAINBOW_FLAG_EMODJI + " Сегодня пидора уже выбрали. Пидор дня: " + usersService.getUserNameByID(winnerID));
+                        return;
+                }
+                Set<Long> chatPlayers = repo.getPidorGamePlayers(chatID);
+                if (chatPlayers.isEmpty()) {
+                        bot.sendMessage(chatID, "Нет зарегистрированных игроков.");
+                        return;
+                }
+                List<String> responses = repo.getRandomResponses();
+                try {
+                        for (String response : responses) {
+                                bot.sendMessage(chatID, response);
+                                Thread.sleep(1000);
+                        }
+                } catch (Exception e) {
+                        bot.sendMessage(chatID, "Ищем пидора запасным вариантом...");
+                        logger.error("Произошла ошибка при получении из БД списка соощбений: ", e);
+                }
+                winnerID = new ArrayList<>(chatPlayers).get(new Random().nextInt(chatPlayers.size()));
+                repo.setPidorWinner(chatID, winnerID);
+                bot.sendMessage(chatID, RAINBOW_FLAG_EMODJI + " " + repo.getWinnerResponce() + usersService.getUserNameByID(winnerID) + "!");
         }
 }

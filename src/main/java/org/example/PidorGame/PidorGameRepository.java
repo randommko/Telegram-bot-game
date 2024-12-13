@@ -1,20 +1,20 @@
 package org.example.PidorGame;
 
 import org.example.DataSourceConfig;
+import org.example.Users.UsersService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.sql.*;
+import java.sql.Date;
 import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 import static org.example.TablesDB.*;
 
 public class PidorGameRepository {
     private static final Logger logger = LoggerFactory.getLogger(PidorGameRepository.class);
+    private final UsersService usersService = new UsersService();
     public void setPidorWinner(Long chatID, Long userID) {
         LocalDate today = LocalDate.now();
         String insertQuery = "INSERT INTO " + PIDOR_STATS_TABLE + " (chat_id, date, user_id) VALUES (?, ?, ?)";
@@ -45,6 +45,31 @@ public class PidorGameRepository {
             logger.error("Ошибка получения списка игроков из БД: ", e);
         }
         return chatPlayers;
+    }
+
+    public Map<String, Integer> getPidorStats(Long chatID) {
+        Map<String, Integer> winnersList = new HashMap<>();
+        String query = "SELECT pst.user_id, COUNT(*) AS count " +
+                "FROM " + PIDOR_STATS_TABLE +
+                " AS pst JOIN " + TG_USERS_TABLE +
+                " AS tut ON pst.user_id = tut.user_id " +
+                "WHERE pst.chat_id = ? " +
+                "GROUP BY pst.user_id";
+
+        try (Connection connection = DataSourceConfig.getDataSource().getConnection()) {
+            PreparedStatement preparedStatement = connection.prepareStatement(query);
+            preparedStatement.setLong(1, chatID);
+            ResultSet resultSet = preparedStatement.executeQuery();
+
+            while (resultSet.next())
+                winnersList.put(
+                        usersService.getUserNameByID(resultSet.getLong("user_id")),
+                        resultSet.getInt("count")
+                );
+        } catch (Exception e) {
+            logger.error("Ошибка получения статистики ипидоров: " + e);
+        }
+        return winnersList;
     }
 
     public Long getTodayWinner(Long chatID) {
