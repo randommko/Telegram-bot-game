@@ -12,7 +12,6 @@ import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageTe
 import org.telegram.telegrambots.meta.api.objects.InputFile;
 import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
-import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
 import org.slf4j.Logger;
@@ -61,7 +60,7 @@ public class TelegramBot extends TelegramLongPollingBot {
                     message.getChat().getTitle()
             );
 
-        logger.info("Получено сообщение из чата " + message.getChat().getId().toString() +": "+ message.getText());
+        logger.debug("Получено сообщение из чата " + message.getChat().getId().toString() +": "+ message.getText());
         if (update.hasMessage()) {
             String command = message.getText();
             switch (command) {
