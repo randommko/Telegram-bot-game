@@ -33,7 +33,7 @@ public class UsersRepository {
                 updateUser.setString(1, user.getFirstName());
                 updateUser.setBoolean(2, Boolean.TRUE.equals(user.getIsBot())); // Предотвращаем NullPointerException
                 updateUser.setString(3, user.getLastName());
-                updateUser.setString(4, user.getUserName());
+                updateUser.setString(4, "@" + user.getUserName());
                 updateUser.setString(5, user.getLanguageCode());
                 updateUser.setBoolean(6, Boolean.TRUE.equals(user.getCanJoinGroups())); // Замена null на false
                 updateUser.setBoolean(7, Boolean.TRUE.equals(user.getCanReadAllGroupMessages()));
@@ -71,10 +71,10 @@ public class UsersRepository {
                     ") VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
             try (PreparedStatement insertUser = connection.prepareStatement(insertUserQuery)) {
                 insertUser.setLong(1, user.getId());
-                insertUser.setString(2, "@" + user.getFirstName());
+                insertUser.setString(2, user.getFirstName());
                 insertUser.setBoolean(3, Boolean.TRUE.equals(user.getIsBot())); // Предотвращаем NullPointerException
                 insertUser.setString(4, user.getLastName());
-                insertUser.setString(5, user.getUserName());
+                insertUser.setString(5, "@" + user.getUserName());
                 insertUser.setString(6, user.getLanguageCode());
                 insertUser.setBoolean(7, Boolean.TRUE.equals(user.getCanJoinGroups())); // Замена null на false
                 insertUser.setBoolean(8, Boolean.TRUE.equals(user.getCanReadAllGroupMessages()));
