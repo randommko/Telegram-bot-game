@@ -19,7 +19,7 @@ public class ChatsRepository {
 
     public void insertChatInDB(Chat chat) {
         try (Connection connection = DataSourceConfig.getDataSource().getConnection()) {
-            String insertUserQuery = "INSERT INTO " + TG_CHATS_TABLE + " (chat_id, chat_title) VALUES (?, ?)";
+            String insertUserQuery = "INSERT INTO " + TG_CHATS_TABLE + " (chat_id, chat_title) VALUES (?, ?) ON CONFLICT (chat_id) DO NOTHING";
             try (PreparedStatement insertUser = connection.prepareStatement(insertUserQuery)) {
                 insertUser.setLong(1, chat.getId());
                 insertUser.setString(2, chat.getTitle());

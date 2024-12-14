@@ -119,6 +119,7 @@ public class QuizGame {
                         sendClue(chatID);
                     } else {
                         questionEndFlag = false;
+                        //TODO: если никто не угадал, то новый вопрос 0отправляет только при истечении таймера подсказки + повторно отправляется верный ответ
                         if (!bot.editMessage(chatID, currentClueMessageID,"Правильный ответ: " + quizMap.get(chatID).getAnswer()))
                             bot.sendMessage(chatID,"Правильный ответ: " + quizMap.get(chatID).getAnswer());
 
