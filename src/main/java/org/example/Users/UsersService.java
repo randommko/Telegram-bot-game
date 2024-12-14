@@ -19,6 +19,8 @@ public class UsersService {
     }
 
     public String getUserNameByID(Long userID) {
-        return repo.getUserByID(userID).getUserName();
+        if (repo.getUserByID(userID).getUserName() != null)
+            return repo.getUserByID(userID).getUserName();
+        return repo.getUserByID(userID).getFirstName();
     }
 }
