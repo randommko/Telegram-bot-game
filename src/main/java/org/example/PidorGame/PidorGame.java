@@ -57,7 +57,7 @@ public class PidorGame {
 
                         StringBuilder statsMessage = new StringBuilder(RAINBOW_FLAG_EMODJI + "Статистика викторины:\n");
                         sortedMap.forEach((userName, score) ->
-                                statsMessage.append(userName.startsWith("@") ? RAINBOW_FLAG_EMODJI + userName.substring(1) : RAINBOW_FLAG_EMODJI + userName)
+                                        statsMessage.append(userName.startsWith("@") ? RAINBOW_FLAG_EMODJI + userName.substring(1) : RAINBOW_FLAG_EMODJI + userName)
                                         .append(": ").append(score).append(" очков\n")
                         );
                         bot.sendMessage(chatID, statsMessage.toString());
