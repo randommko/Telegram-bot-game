@@ -20,8 +20,6 @@ public class QuizGame {
     public Integer currentClueMessageID = null;
     public Integer currentQuestionMessageID = null;
     private final QuizRepository repo = new QuizRepository();
-    private final String warningBotMsgNoRules = "Что бы бот мог читать ответы сделайте его администратором";
-
 
     public QuizGame() {
         bot = TelegramBot.getInstance();
@@ -32,6 +30,7 @@ public class QuizGame {
     }
     public void startQuizGame(Message message) {
         Long chatID = message.getChatId();
+        String warningBotMsgNoRules = "Что бы бот мог читать ответы сделайте его администратором";
         if (bot.checkAccessPrivileges(message)) {
             if (!quizMap.containsKey(chatID))
                 quizMap.put(chatID, new QuizService(chatID));
@@ -51,7 +50,6 @@ public class QuizGame {
     }
     public void stopQuiz(Long chatID) {
         quizMap.get(chatID).stopQuiz();
-//        executor.shutdownNow(); // Остановка всех потоков
     }
     private void sendClue(Long chatID) {
         logger.debug("Подсказка обновлена");
@@ -119,11 +117,12 @@ public class QuizGame {
                         sendClue(chatID);
                     } else {
                         questionEndFlag = false;
-                        //TODO: если никто не угадал, то новый вопрос 0отправляет только при истечении таймера подсказки + повторно отправляется верный ответ
+                        //TODO: если никто не угадал, то новый вопрос отправляет только при истечении таймера подсказки + повторно отправляется верный ответ
                         if (!bot.editMessage(chatID, currentClueMessageID,"Правильный ответ: " + quizMap.get(chatID).getAnswer()))
                             bot.sendMessage(chatID,"Правильный ответ: " + quizMap.get(chatID).getAnswer());
 
                         quizMap.get(chatID).noAnswerCount++;
+                        currentQuestionThread.cancel(true); // Отмена задачи
                     }
                 } catch (InterruptedException e) {
                     logger.debug("Отправка подсказок была прервана (Викторина завершена?)");

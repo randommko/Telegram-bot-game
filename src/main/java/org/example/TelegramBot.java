@@ -15,7 +15,6 @@ import org.telegram.telegrambots.meta.api.objects.InputFile;
 import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.chatmember.ChatMember;
-import org.telegram.telegrambots.meta.api.objects.chatmember.ChatMemberRestricted;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
 import org.slf4j.Logger;
@@ -37,6 +36,7 @@ public class TelegramBot extends TelegramLongPollingBot {
     private final PidorGame pidorGame;
     private final QuizGame quizGame;
     private static Map<Long, LocalDate> usersUpdateTime = new HashMap<>();
+    private static Map<Long, LocalDate> chatsUpdateTime = new HashMap<>();
     private static final Logger logger = LoggerFactory.getLogger(TelegramBot.class);
 
     public TelegramBot(String botToken) {
@@ -74,9 +74,20 @@ public class TelegramBot extends TelegramLongPollingBot {
             }
         }
 
-
-        if (!chatsService.checkChat(message.getChatId()))
+        if (!chatsService.checkChat(message.getChatId())) {
             chatsService.addChat(message.getChat());
+            chatsUpdateTime.put(message.getFrom().getId(), LocalDate.now());
+        }
+        else {
+            if (!Objects.equals(chatsUpdateTime.get(message.getFrom().getId()), LocalDate.now())) {
+                chatsService.updateChat(message.getChat());
+                chatsUpdateTime.put(message.getFrom().getId(), LocalDate.now());
+            }
+        }
+
+
+//        if (!chatsService.checkChat(message.getChatId()))
+//            chatsService.addChat(message.getChat());
 
 
         logger.debug("Получено сообщение из чата " + message.getChat().getId().toString() +": "+ message.getText());

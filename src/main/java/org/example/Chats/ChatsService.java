@@ -11,4 +11,8 @@ public class ChatsService {
     public void addChat(Chat chat) {
         repo.insertChatInDB(chat);
     }
+
+    public void updateChat(Chat chat) {
+        repo.updateChatInDB(chat);
+    }
 }
