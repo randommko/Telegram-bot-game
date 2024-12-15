@@ -12,15 +12,20 @@ import java.sql.ResultSet;
 import static org.example.TablesDB.TG_CHATS_TABLE;
 
 
+
 public class ChatsRepository {
     private final Logger logger = LoggerFactory.getLogger(ChatsRepository.class);
 
     public void insertChatInDB(Chat chat) {
+        Long chatID = chat.getId();
+        String chatTitle = chat.getTitle();
+        if (chatTitle == null)
+            chatTitle = "Личный чат с: " + chat.getFirstName() + " " + chat.getLastName();
         try (Connection connection = DataSourceConfig.getDataSource().getConnection()) {
-            String insertUserQuery = "INSERT INTO " + TG_CHATS_TABLE + " (chat_id, chat_title) VALUES (?, ?) ON CONFLICT (chat_id) DO NOTHING";
-            try (PreparedStatement insertUser = connection.prepareStatement(insertUserQuery)) {
-                insertUser.setLong(1, chat.getId());
-                insertUser.setString(2, chat.getTitle());
+            String insertChatQuery = "INSERT INTO " + TG_CHATS_TABLE + " (chat_id, chat_title) VALUES (?, ?) ON CONFLICT (chat_id) DO NOTHING";
+            try (PreparedStatement insertUser = connection.prepareStatement(insertChatQuery)) {
+                insertUser.setLong(1, chatID);
+                insertUser.setString(2, chatTitle);
                 insertUser.executeUpdate();
             }
         } catch (Exception e) {
@@ -44,6 +49,26 @@ public class ChatsRepository {
         } catch (Exception e) {
             logger.error("Ошибка при поиске в БД чата: ", e);
             return null;
+        }
+    }
+    
+    public void updateChatInDB(Chat chat) {
+        Long chatID = chat.getId();
+        String chatTitle = chat.getTitle();
+        if (chatTitle == null)
+            chatTitle = "Личный чат с: " + chat.getFirstName() + " " + chat.getLastName();
+        try (Connection connection = DataSourceConfig.getDataSource().getConnection()) {
+            String updateChatQuery = "UPDATE " + TG_CHATS_TABLE + " SET " +
+                    "chat_title = ? " +
+                    "WHERE chat_id = ?"; // Условие для обновления записи по chat_id;
+            //String updateChatQuery = "INSERT INTO " + TG_CHATS_TABLE + " (chat_id, chat_title) VALUES (?, ?) ON CONFLICT (chat_id) DO NOTHING";
+            try (PreparedStatement insertUser = connection.prepareStatement(updateChatQuery)) {
+                insertUser.setString(1, chatTitle);
+                insertUser.setLong(2, chatID);
+                insertUser.executeUpdate();
+            }
+        } catch (Exception e) {
+            logger.error("Ошибка при обновлении чата в БД: ", e);
         }
     }
 }

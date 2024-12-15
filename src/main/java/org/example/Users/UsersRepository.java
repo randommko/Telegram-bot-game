@@ -111,7 +111,6 @@ public class UsersRepository {
                 checkStmt.setLong(1, userID);
                 ResultSet resultSet = checkStmt.executeQuery();
                 resultSet.next();
-                //TODO: для кати вернулся null в first_name в статистке пидоре дня
                 return new User(resultSet.getLong("user_id"),
                         resultSet.getString("first_name"),
                         resultSet.getBoolean("is_bot"),

@@ -40,8 +40,6 @@ public class QuizService {
         return answer;
     }
     public Integer checkQuizAnswer(String answer) {
-        //TODO: буквы "е" и "ё" считать одинаковыми
-
         if (normalizeAnswer(repo.getQuestionAnswerByID(currentQuestionID)).equals(normalizeAnswer(answer))) {
             noAnswerCount = 0;
             return calculatePoints(answer.toLowerCase(), clueText);
