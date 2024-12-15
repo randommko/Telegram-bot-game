@@ -28,12 +28,15 @@ public class UsersRepository {
                     "is_premium = ?, " +
                     "added_to_attachment_menu = ? " +
                     "WHERE user_id = ?"; // Условие для обновления записи по user_id
+            String userName = user.getUserName();
+            if (userName != null)
+                    userName = "@" + userName;
 
             try (PreparedStatement updateUser = connection.prepareStatement(updateUserQuery)) {
                 updateUser.setString(1, user.getFirstName());
                 updateUser.setBoolean(2, Boolean.TRUE.equals(user.getIsBot())); // Предотвращаем NullPointerException
                 updateUser.setString(3, user.getLastName());
-                updateUser.setString(4, "@" + user.getUserName());
+                updateUser.setString(4, userName);
                 updateUser.setString(5, user.getLanguageCode());
                 updateUser.setBoolean(6, Boolean.TRUE.equals(user.getCanJoinGroups())); // Замена null на false
                 updateUser.setBoolean(7, Boolean.TRUE.equals(user.getCanReadAllGroupMessages()));
