@@ -4,14 +4,12 @@ import org.example.DataSourceConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.telegram.telegrambots.meta.api.objects.Chat;
-import org.telegram.telegrambots.meta.api.objects.Message;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
 import static org.example.TablesDB.TG_CHATS_TABLE;
-import static org.example.TablesDB.TG_USERS_TABLE;
 
 
 public class ChatsRepository {
@@ -30,14 +28,14 @@ public class ChatsRepository {
         }
     }
 
-    public String getChatTitleByID(Long chatID) {
+    public Chat getChatByID(Long chatID) {
         try (Connection connection = DataSourceConfig.getDataSource().getConnection()) {
-            String userNameQuery = "SELECT chat_title FROM " + TG_CHATS_TABLE + " WHERE chat_id = ?";
+            String userNameQuery = "SELECT chat_id, chat_title FROM " + TG_CHATS_TABLE + " WHERE chat_id = ?";
             try (PreparedStatement checkStmt = connection.prepareStatement(userNameQuery)) {
                 checkStmt.setLong(1, chatID);
                 ResultSet resultSet = checkStmt.executeQuery();
                 if (resultSet.next())
-                    return resultSet.getString("chat_title");
+                    return new Chat(resultSet.getLong("chat_id"), resultSet.getString("chat_title"));
                 else {
                     logger.warn("ID чата не найден в БД");
                     return null;
