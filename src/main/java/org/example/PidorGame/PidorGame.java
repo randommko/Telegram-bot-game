@@ -27,20 +27,6 @@ public class PidorGame {
                         bot.sendMessage(chatID, "Игрок " + userName + " был зарегистрирован ранее ");
         }
         public void sendPidorStats(Long chatID) {
-//                Thread thread = new Thread(() -> {
-//                        Map<String, Integer> winnersList = repo.getPidorStats(chatID);
-//                        if (winnersList.isEmpty()) {
-//                                bot.sendMessage(chatID, "Статистика пуста.");
-//                                return;
-//                        }
-//                        StringBuilder statsMessage = new StringBuilder("Статистика пидоров:\n");
-//                        winnersList.forEach((winner, count) ->
-//                                statsMessage.append(winner).append(": ").append(count).append("\n")
-//                        );
-//                        bot.sendMessage(chatID, statsMessage.toString());
-//                });
-//                thread.start();
-
                 Thread thread = new Thread(() -> {
                         Map<String, Integer> stats = repo.getPidorStats(chatID);
 
@@ -53,8 +39,6 @@ public class PidorGame {
                         for (Map.Entry<String, Integer> entry : sortedList) {
                                 sortedMap.put(entry.getKey(), entry.getValue());
                         }
-
-
                         StringBuilder statsMessage = new StringBuilder(RAINBOW_FLAG_EMODJI + "Статистика викторины:\n");
                         sortedMap.forEach((userName, score) ->
                                         statsMessage.append(userName.startsWith("@") ? RAINBOW_FLAG_EMODJI + userName.substring(1) : RAINBOW_FLAG_EMODJI + userName)
