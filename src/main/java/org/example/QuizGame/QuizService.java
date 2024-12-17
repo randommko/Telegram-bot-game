@@ -51,7 +51,7 @@ public class QuizService {
     }
     public void startQuiz() {
         isQuizStarted = true;
-        bot.sendMessage(chatID, EmojiParser.parseToUnicode(":tada::tada::tada: 0Викторина начинается! :tada::tada::tada:"));
+        bot.sendMessage(chatID, EmojiParser.parseToUnicode(":tada::tada::tada: Викторина начинается! :tada::tada::tada:"));
     }
     public void stopQuiz() {
         isQuizStarted = false;
