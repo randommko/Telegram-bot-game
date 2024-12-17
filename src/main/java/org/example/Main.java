@@ -21,16 +21,29 @@ public class Main {
             logger.error("Ошибка при подключении к БД: ", e);
         }
 
-        try {
-            // Создаем объект TelegramBotsApi
-            TelegramBotsApi botsApi = new TelegramBotsApi(DefaultBotSession.class);
+        int maxRetries = 3; // Количество попыток
+        int attempt = 0;
 
-            // Регистрируем бота
-            botsApi.registerBot(new TelegramBot(args[0]));
+        while (attempt < maxRetries) {
+            try {
+                attempt++;
+                // Создаем объект TelegramBotsApi
+                TelegramBotsApi botsApi = new TelegramBotsApi(DefaultBotSession.class);
 
-            logger.info("Бот успешно запущен!");
-        } catch (TelegramApiException e) {
-            logger.error("Ошибка при запуске бота: ", e);
+                // Регистрируем бота
+                botsApi.registerBot(new TelegramBot(args[0]));
+
+                logger.info("Бот успешно запущен на попытке №" + attempt);
+                break; // Выход из цикла при успешном запуске
+            } catch (TelegramApiException e) {
+                logger.error("Ошибка при запуске бота на попытке №" + attempt, e);
+
+                if (attempt >= maxRetries) {
+                    logger.error("Бот не запустился после " + maxRetries + " попыток.");
+                } else {
+                    logger.info("Повторная попытка запуска...");
+                }
+            }
         }
     }
 }
