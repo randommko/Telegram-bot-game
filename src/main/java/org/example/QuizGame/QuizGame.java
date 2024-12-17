@@ -14,7 +14,7 @@ public class QuizGame {
     private final TelegramBot bot;
     private final Map<Long, QuizService> quizMap = new HashMap<>(); //ключ ID чата, значение экземпляр Quiz
     private final Logger logger = LoggerFactory.getLogger(QuizGame.class);
-    private final int quizClueTimer = 5000;
+    private final int quizClueTimer = 15000;
     private final int remainingNumberOfClue = 1;
     CompletableFuture<Void> currentQuestionThread;
     ExecutorService executor = Executors.newSingleThreadExecutor();
@@ -51,6 +51,7 @@ public class QuizGame {
     }
     public void stopQuiz(Long chatID) {
         quizMap.get(chatID).stopQuiz();
+        endClueUpdateThread("Викторина была завершена по команде");
     }
     private void sendClue(Long chatID) {
         logger.debug("Подсказка обновлена");
@@ -75,7 +76,7 @@ public class QuizGame {
             Integer points = quizMap.get(chatID).checkQuizAnswer(answer);
             if (points != -1) {
                 bot.sendReplyMessage(chatID, message.getMessageId(), "Правильный ответ! Вы заработали " + points + " очков!");
-                currentQuestionThread.cancel(true); // Отмена задачи
+                endClueUpdateThread("Получен верный ответ на вопрос");
                 quizMap.get(chatID).countAnswer(userID, points, chatID);
             }
         }
@@ -92,7 +93,7 @@ public class QuizGame {
             if (quizMap.get(chatID).currentQuestionID != null) {
                 sendQuestion(chatID);
                 sendClue(chatID);
-                startQuestionThread(chatID);
+                startClueUpdateThread(chatID);
                 try {
                     currentQuestionThread.join(); // Ожидание завершения потока
                 } catch (CancellationException e) {
@@ -107,7 +108,7 @@ public class QuizGame {
         } while (quizMap.get(chatID).isQuizStarted);
         logger.info("Бесконечный цикл викторины для чата " + chatID + " завершен");
     }
-    private void startQuestionThread(Long chatID) {
+    private void startClueUpdateThread(Long chatID) {
         currentQuestionThread = CompletableFuture.runAsync(() -> {
             boolean questionEndFlag = true;
             while ((quizMap.get(chatID).isQuizStarted) & (questionEndFlag)) {
@@ -118,10 +119,8 @@ public class QuizGame {
                         sendClue(chatID);
                     } else {
                         questionEndFlag = false;
-                        //TODO: если никто не угадал, то новый вопрос отправляет только при истечении таймера подсказки + повторно отправляется верный ответ
                         if (!bot.editMessage(chatID, currentClueMessageID,"Правильный ответ: " + quizMap.get(chatID).getAnswer()))
                             bot.sendMessage(chatID,"Правильный ответ: " + quizMap.get(chatID).getAnswer());
-
                         quizMap.get(chatID).noAnswerCount++;
                     }
                 } catch (InterruptedException e) {
@@ -130,8 +129,13 @@ public class QuizGame {
             }
             if (quizMap.get(chatID).noAnswerCount >= 3) {
                 quizMap.get(chatID).stopQuiz();
-                currentQuestionThread.cancel(true); // Отмена задачи
+                endClueUpdateThread("Три вопроса подряд без верного ответа");
             }
         }, executor);
+    }
+
+    private void endClueUpdateThread (String reason) {
+        currentQuestionThread.cancel(true); // Отмена задачи
+        logger.debug("Поток с обновлением подсказок завершен. Причина: " + reason);
     }
 }
