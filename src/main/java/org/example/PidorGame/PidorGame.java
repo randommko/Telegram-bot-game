@@ -1,13 +1,12 @@
 package org.example.PidorGame;
 
+import com.vdurmont.emoji.EmojiParser;
 import org.example.TelegramBot;
 import org.example.Users.UsersService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.*;
-
-import static org.example.Emodji.*;
 
 public class PidorGame {
         private final TelegramBot bot;
@@ -39,9 +38,9 @@ public class PidorGame {
                         for (Map.Entry<String, Integer> entry : sortedList) {
                                 sortedMap.put(entry.getKey(), entry.getValue());
                         }
-                        StringBuilder statsMessage = new StringBuilder(RAINBOW_FLAG_EMODJI + "Статистика викторины:\n");
+                        StringBuilder statsMessage = new StringBuilder(EmojiParser.parseToUnicode(":rainbow_flag: Статистика викторины:\n"));
                         sortedMap.forEach((userName, score) ->
-                                        statsMessage.append(userName.startsWith("@") ? RAINBOW_FLAG_EMODJI + userName.substring(1) : RAINBOW_FLAG_EMODJI + userName)
+                                        statsMessage.append(userName.startsWith("@") ? EmojiParser.parseToUnicode(":rainbow_flag:") + userName.substring(1) : EmojiParser.parseToUnicode(":rainbow_flag:") + userName)
                                         .append(": ").append(score).append(" побед\n")
                         );
                         bot.sendMessage(chatID, statsMessage.toString());
@@ -52,7 +51,8 @@ public class PidorGame {
         public void startPidorGame(Long chatID) {
                 Long winnerID = repo.getTodayWinner(chatID);
                 if (winnerID != null) {
-                        bot.sendMessage(chatID, RAINBOW_FLAG_EMODJI + " Сегодня пидора уже выбрали. Пидор дня: " + usersService.getUserNameByID(winnerID));
+                        bot.sendMessage(chatID,
+                                EmojiParser.parseToUnicode((":rainbow_flag: Сегодня пидора уже выбрали. Пидор дня: " + usersService.getUserNameByID(winnerID))));
                         return;
                 }
                 Set<Long> chatPlayers = repo.getPidorGamePlayers(chatID);
@@ -72,6 +72,6 @@ public class PidorGame {
                 }
                 winnerID = new ArrayList<>(chatPlayers).get(new Random().nextInt(chatPlayers.size()));
                 repo.setPidorWinner(chatID, winnerID);
-                bot.sendMessage(chatID, RAINBOW_FLAG_EMODJI + " " + repo.getWinnerResponce() + usersService.getUserNameByID(winnerID) + "!");
+                bot.sendMessage(chatID, EmojiParser.parseToUnicode(":rainbow_flag:") + " " + repo.getWinnerResponce() + usersService.getUserNameByID(winnerID) + "!");
         }
 }

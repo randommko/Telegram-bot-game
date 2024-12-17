@@ -1,12 +1,10 @@
 package org.example.QuizGame;
 
+import com.vdurmont.emoji.EmojiParser;
 import org.example.TelegramBot;
 
 import java.text.Normalizer;
 import java.util.*;
-
-import static org.example.Emodji.*;
-
 
 public class QuizService {
     private final QuizRepository repo = new QuizRepository();
@@ -53,7 +51,7 @@ public class QuizService {
     }
     public void startQuiz() {
         isQuizStarted = true;
-        bot.sendMessage(chatID, "Викторина начинается!" + PARTY_POPPER_EMODJI);
+        bot.sendMessage(chatID, EmojiParser.parseToUnicode(":tada::tada::tada: 0Викторина начинается! :tada::tada::tada:"));
     }
     public void stopQuiz() {
         isQuizStarted = false;
@@ -77,7 +75,7 @@ public class QuizService {
     public String updateClue() {
         String newClue;
         String currentAnswer = repo.getQuestionAnswerByID(currentQuestionID);
-        if (getRemainingNumberOfClue() < 2) {
+        if (getRemainingNumberOfClue() < 1) {
             newClue = currentAnswer;
             return newClue;
         }

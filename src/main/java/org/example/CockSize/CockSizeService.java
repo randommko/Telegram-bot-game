@@ -3,8 +3,8 @@ package org.example.CockSize;
 import org.example.Users.UsersService;
 
 import java.util.Random;
+import com.vdurmont.emoji.EmojiParser;
 
-import static org.example.Emodji.*;
 
 public class CockSizeService {
     private final CockSizeRepository repo = new CockSizeRepository();
@@ -68,18 +68,18 @@ public class CockSizeService {
 
     public String phraseSelection(int size, String username) {
         if (size >= 0 && size <= 5) {
-            return "The legendary cocksize of " + username + " is " + size + "cm" + LOVE_EMODJI;
+            return EmojiParser.parseToUnicode("Cocksize of " + username + " is " + size + "cm :-1:");
         } else if (size >= 6 && size <= 10) {
-            return "The mighty cocksize of " + username + " is " + size + "cm" + SECOND_EMODJI;
+            return EmojiParser.parseToUnicode("Cocksize of " + username + " is " + size + "cm :handshake:");
         } else if (size >= 11 && size <= 20) {
-            return "The epic cocksize of " + username + " is " + size + "cm" + THIRD_EMODJI;
+            return EmojiParser.parseToUnicode("Cocksize of " + username + " is " + size + "cm :tada:");
         } else if (size >= 21 && size <= 30) {
-            return "The majestic cocksize of " + username + " is " + size + "cm" + FORTH_EMODJI;
+            return EmojiParser.parseToUnicode("Cocksize of " + username + " is " + size + "cm :balloon::balloon:");
         } else if (size >= 31 && size <= 40) {
-            return "The legendary cocksize of " + username + " is " + size + "cm" + FIFTH_EMODJI;
+            return EmojiParser.parseToUnicode("Cocksize of " + username + " is " + size + "cm :palm_tree:");
         } else if (size >= 41 && size <= 50) {
-            return "The mythical cocksize of " + username + " is " + size + "cm" + SIX_EMODJI;
-        } else return "NO FUCKING WAY! Cocksize " + username + " is " + size + "cm" + SEVEN_EMODJI;
+            return EmojiParser.parseToUnicode("TCocksize of " + username + " is " + size + "cm :sparkling_heart::sparkling_heart::sparkling_heart:");
+        } else return EmojiParser.parseToUnicode("NO FUCKING WAY! Cocksize of " + username + " is " + size + "cm ");
     }
 
     public String getCockSizeImageName(Integer size) {
