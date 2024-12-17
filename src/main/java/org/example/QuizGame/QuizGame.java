@@ -1,5 +1,6 @@
 package org.example.QuizGame;
 
+import com.vdurmont.emoji.EmojiParser;
 import org.example.TelegramBot;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -7,8 +8,6 @@ import org.telegram.telegrambots.meta.api.objects.Message;
 
 import java.util.*;
 import java.util.concurrent.*;
-
-import static org.example.Emodji.*;
 
 public class QuizGame {
     private final TelegramBot bot;
@@ -55,7 +54,7 @@ public class QuizGame {
     }
     private void sendClue(Long chatID) {
         logger.debug("Подсказка обновлена");
-        String msg = PAPERCLIP_EMODJI + " Подсказка: " + quizMap.get(chatID).getClue();
+        String msg = EmojiParser.parseToUnicode(":bulb: Подсказка: " + quizMap.get(chatID).getClue());
         if (currentQuestionMessageID == null)
             bot.sendMessage(chatID, "Вопрос не был задан");
         if (currentClueMessageID == null)
@@ -65,7 +64,8 @@ public class QuizGame {
                 bot.sendMessage(chatID, msg);
     }
     private void sendQuestion(Long chatID) {
-        currentQuestionMessageID = bot.sendMessage(chatID, QUESTION_EMODJI + " Вопрос №" + quizMap.get(chatID).currentQuestionID + ": " + quizMap.get(chatID).getQuestion());
+        currentQuestionMessageID = bot.sendMessage(chatID,
+                EmojiParser.parseToUnicode(":question: Вопрос №" + quizMap.get(chatID).currentQuestionID + ": " + quizMap.get(chatID).getQuestion()));
     }
     public void checkQuizAnswer(Message message) {
         Long chatID = message.getChatId();
@@ -133,7 +133,6 @@ public class QuizGame {
             }
         }, executor);
     }
-
     private void endClueUpdateThread (String reason) {
         currentQuestionThread.cancel(true); // Отмена задачи
         logger.debug("Поток с обновлением подсказок завершен. Причина: " + reason);
