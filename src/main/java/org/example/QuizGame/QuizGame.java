@@ -14,7 +14,8 @@ public class QuizGame {
     private final TelegramBot bot;
     private final Map<Long, QuizService> quizMap = new HashMap<>(); //ключ ID чата, значение экземпляр Quiz
     private final Logger logger = LoggerFactory.getLogger(QuizGame.class);
-    private final int quizClueTimer = 15000;
+    private final int quizClueTimer = 5000;
+    private final int remainingNumberOfClue = 1;
     CompletableFuture<Void> currentQuestionThread;
     ExecutorService executor = Executors.newSingleThreadExecutor();
     public Integer currentClueMessageID = null;
@@ -112,7 +113,7 @@ public class QuizGame {
             while ((quizMap.get(chatID).isQuizStarted) & (questionEndFlag)) {
                 try {
                     Thread.sleep(quizClueTimer);
-                    if (quizMap.get(chatID).getRemainingNumberOfClue() > 2) {
+                    if (quizMap.get(chatID).getRemainingNumberOfClue() > remainingNumberOfClue) {
                         quizMap.get(chatID).updateClue();
                         sendClue(chatID);
                     } else {
@@ -122,14 +123,15 @@ public class QuizGame {
                             bot.sendMessage(chatID,"Правильный ответ: " + quizMap.get(chatID).getAnswer());
 
                         quizMap.get(chatID).noAnswerCount++;
-                        currentQuestionThread.cancel(true); // Отмена задачи
                     }
                 } catch (InterruptedException e) {
                     logger.debug("Отправка подсказок была прервана (Викторина завершена?)");
                 }
             }
-            if (quizMap.get(chatID).noAnswerCount >= 3)
+            if (quizMap.get(chatID).noAnswerCount >= 3) {
                 quizMap.get(chatID).stopQuiz();
+                currentQuestionThread.cancel(true); // Отмена задачи
+            }
         }, executor);
     }
 }
