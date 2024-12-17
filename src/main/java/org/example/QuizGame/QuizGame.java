@@ -49,8 +49,13 @@ public class QuizGame {
         bot.sendMessage(message.getChatId(), quizMap.get(message.getChatId()).getQuizStats());
     }
     public void stopQuiz(Long chatID) {
-        quizMap.get(chatID).stopQuiz();
-        endClueUpdateThread("Викторина была завершена по команде");
+        if (quizMap.get(chatID).isQuizStarted) {
+            quizMap.get(chatID).stopQuiz();
+            endClueUpdateThread("Викторина была завершена по команде");
+        } else {
+            bot.sendMessage(chatID, "Викторина не была запущена. Запустите викторину командой /quiz_start");
+        }
+
     }
     private void sendClue(Long chatID) {
         logger.debug("Подсказка обновлена");
