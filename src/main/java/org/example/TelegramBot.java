@@ -2,6 +2,7 @@ package org.example;
 
 import org.example.Chats.ChatsService;
 import org.example.CockSize.CockSizeGame;
+import org.example.Horoscope.Horoscope;
 import org.example.PidorGame.PidorGame;
 import org.example.QuizGame.QuizGame;
 import org.example.Users.UsersService;
@@ -35,6 +36,7 @@ public class TelegramBot extends TelegramLongPollingBot {
     private final CockSizeGame cockSizeGame;
     private final PidorGame pidorGame;
     private final QuizGame quizGame;
+    private final Horoscope horo = new Horoscope();
     private static Map<Long, LocalDate> usersUpdateTime = new HashMap<>();
     private static Map<Long, LocalDate> chatsUpdateTime = new HashMap<>();
     private static final Logger logger = LoggerFactory.getLogger(TelegramBot.class);
@@ -62,33 +64,8 @@ public class TelegramBot extends TelegramLongPollingBot {
             logger.debug("Пустое сообщение (например, событие, связанное с вызовами, действиями пользователей, или callback-запросами)");
             return;
         }
-
-        if (!usersService.checkUser(message.getFrom())) {
-            usersService.addUser(message.getFrom());
-            usersUpdateTime.put(message.getFrom().getId(), LocalDate.now());
-        }
-        else {
-            if (!Objects.equals(usersUpdateTime.get(message.getFrom().getId()), LocalDate.now())) {
-                usersService.updateUser(message.getFrom());
-                usersUpdateTime.put(message.getFrom().getId(), LocalDate.now());
-            }
-        }
-
-        if (!chatsService.checkChat(message.getChatId())) {
-            chatsService.addChat(message.getChat());
-            chatsUpdateTime.put(message.getFrom().getId(), LocalDate.now());
-        }
-        else {
-            if (!Objects.equals(chatsUpdateTime.get(message.getFrom().getId()), LocalDate.now())) {
-                chatsService.updateChat(message.getChat());
-                chatsUpdateTime.put(message.getFrom().getId(), LocalDate.now());
-            }
-        }
-
-
-//        if (!chatsService.checkChat(message.getChatId()))
-//            chatsService.addChat(message.getChat());
-
+        checkUser(message);
+        checkChat(message);
 
         logger.debug("Получено сообщение из чата " + message.getChat().getId().toString() +": "+ message.getText());
         if (update.hasMessage()) {
@@ -103,7 +80,33 @@ public class TelegramBot extends TelegramLongPollingBot {
                 case "/quiz_start", "/quiz_start@ChatGamePidor_Bot" -> quizGame.startQuizGame(message);
                 case "/quiz_stop", "/quiz_stop@ChatGamePidor_Bot" -> quizGame.stopQuiz(message.getChatId());
                 case "/quiz_stats", "/quiz_stats@ChatGamePidor_Bot" -> quizGame.getQuizStats(message);
+                case "/horoscope" -> sendMessage(message.getChatId(), horo.getHoroscope());
                 default -> quizGame.checkQuizAnswer(message);
+            }
+        }
+    }
+
+    private void checkUser(Message message) {
+        if (!usersService.checkUser(message.getFrom())) {
+            usersService.addUser(message.getFrom());
+            usersUpdateTime.put(message.getFrom().getId(), LocalDate.now());
+        }
+        else {
+            if (!Objects.equals(usersUpdateTime.get(message.getFrom().getId()), LocalDate.now())) {
+                usersService.updateUser(message.getFrom());
+                usersUpdateTime.put(message.getFrom().getId(), LocalDate.now());
+            }
+        }
+    }
+    private void checkChat(Message message) {
+        if (!chatsService.checkChat(message.getChatId())) {
+            chatsService.addChat(message.getChat());
+            chatsUpdateTime.put(message.getFrom().getId(), LocalDate.now());
+        }
+        else {
+            if (!Objects.equals(chatsUpdateTime.get(message.getFrom().getId()), LocalDate.now())) {
+                chatsService.updateChat(message.getChat());
+                chatsUpdateTime.put(message.getFrom().getId(), LocalDate.now());
             }
         }
     }

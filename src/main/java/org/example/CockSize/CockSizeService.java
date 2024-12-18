@@ -20,6 +20,7 @@ public class CockSizeService {
     }
 
     private static int getCockSize() {
+        //TODO: изменить алгоритм, нет смысла в членах от 25 до 45, от 15 до 20
         int randomNum = new Random().nextInt(100);        //Выбираем случайное число для попадания в распределение
 
         if (randomNum < 2)                                      //У 2% выборки
