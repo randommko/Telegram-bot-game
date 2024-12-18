@@ -64,7 +64,7 @@ public class PidorGame {
                 try {
                         for (String response : responses) {
                                 bot.sendMessage(chatID, response);
-                                Thread.sleep(1000);
+                                Thread.sleep(2000);
                         }
                 } catch (Exception e) {
                         bot.sendMessage(chatID, "Ищем пидора запасным вариантом...");
