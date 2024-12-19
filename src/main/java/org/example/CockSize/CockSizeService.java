@@ -59,6 +59,9 @@ public class CockSizeService {
         for (int i = 0; i < 4; i++) {
             cockSizeList.add(16);
         }
+        for (int i = 0; i < 3; i++) {
+            cockSizeList.add(18);
+        }
 
         for (int i = 0; i < 2; i++) {
             cockSizeList.add(20);
