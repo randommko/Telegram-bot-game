@@ -1,10 +1,8 @@
 package org.example.Horoscope;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonSetter;
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty;
 
-public class Zodiac {
+public class HoroscopeText {
 
     @JacksonXmlProperty(localName = "yesterday")
     private String yesterdayHoroscope;
@@ -20,7 +18,6 @@ public class Zodiac {
 
     public String getYesterdayHoroscope() { return yesterdayHoroscope; }
     public String getTodayHoroscope() { return todayHoroscope; }
-    public String getZodiacName() { return todayHoroscope; }
     public String getTomorrowHoroscope() { return tomorrowHoroscope; }
     public String getAfterTomorrowHoroscope() { return afterTomorrowHoroscope; }
 

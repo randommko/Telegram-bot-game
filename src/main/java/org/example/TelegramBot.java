@@ -2,7 +2,7 @@ package org.example;
 
 import org.example.Chats.ChatsService;
 import org.example.CockSize.CockSizeGame;
-import org.example.Horoscope.Horoscope;
+import org.example.Horoscope.HoroscopeService;
 import org.example.PidorGame.PidorGame;
 import org.example.QuizGame.QuizGame;
 import org.example.Users.UsersService;
@@ -36,7 +36,7 @@ public class TelegramBot extends TelegramLongPollingBot {
     private final CockSizeGame cockSizeGame;
     private final PidorGame pidorGame;
     private final QuizGame quizGame;
-    private final Horoscope horo = new Horoscope();
+    private final HoroscopeService horoscopeService;
     private static Map<Long, LocalDate> usersUpdateTime = new HashMap<>();
     private static Map<Long, LocalDate> chatsUpdateTime = new HashMap<>();
     private static final Logger logger = LoggerFactory.getLogger(TelegramBot.class);
@@ -47,6 +47,7 @@ public class TelegramBot extends TelegramLongPollingBot {
         cockSizeGame = new CockSizeGame();
         pidorGame = new PidorGame();
         quizGame = new QuizGame();
+        horoscopeService = new HoroscopeService();
     }
     @Override
     public String getBotUsername() {
@@ -68,22 +69,7 @@ public class TelegramBot extends TelegramLongPollingBot {
         checkChat(message);
 
         logger.debug("Получено сообщение из чата " + message.getChat().getId().toString() +": "+ message.getText());
-        if (update.hasMessage()) {
-            String command = message.getText();
-            switch (command) {
-                //TODO: добавить гороскоп
-                case "/bot_info", "/bot_info@ChatGamePidor_Bot", "/help", "/help@ChatGamePidor_Bot" -> botInfo(message);
-                case "/cocksize", "/cocksize@ChatGamePidor_Bot" -> cockSizeGame.cockSizeStart(message);
-                case "/pidor_reg", "/pidor_reg@ChatGamePidor_Bot" -> pidorGame.registerPlayer(message.getChatId(), message.getFrom().getId());
-                case "/pidor_stats", "/pidor_stats@ChatGamePidor_Bot" -> pidorGame.sendPidorStats(message.getChatId());
-                case "/pidor_start", "/pidor_start@ChatGamePidor_Bot" -> pidorGame.startPidorGame(message.getChatId());
-                case "/quiz_start", "/quiz_start@ChatGamePidor_Bot" -> quizGame.startQuizGame(message);
-                case "/quiz_stop", "/quiz_stop@ChatGamePidor_Bot" -> quizGame.stopQuiz(message.getChatId());
-                case "/quiz_stats", "/quiz_stats@ChatGamePidor_Bot" -> quizGame.getQuizStats(message);
-                case "/horoscope" -> sendMessage(message.getChatId(), horo.getHoroscope());
-                default -> quizGame.checkQuizAnswer(message);
-            }
-        }
+        executeCommand(update);
     }
 
     private void checkUser(Message message) {
@@ -211,6 +197,32 @@ public class TelegramBot extends TelegramLongPollingBot {
                 logger.debug("Unknown chat type.");
         }
         return false;
+    }
+    private void executeCommand(Update update) {
+        Message message = update.getMessage();
+        if (update.hasMessage()) {
+            String text = message.getText();
+            String[] parts = text.split(" ", 2); // Разделяем строку по первому пробелу
+            String command = parts[0]; // Команда
+
+            switch (command) {
+                //TODO: добавить гороскоп
+                case "/bot_info", "/bot_info@ChatGamePidor_Bot", "/help", "/help@ChatGamePidor_Bot" -> botInfo(message);
+                case "/cocksize", "/cocksize@ChatGamePidor_Bot" -> cockSizeGame.cockSizeStart(message);
+                case "/pidor_reg", "/pidor_reg@ChatGamePidor_Bot" -> pidorGame.registerPlayer(message.getChatId(), message.getFrom().getId());
+                case "/pidor_stats", "/pidor_stats@ChatGamePidor_Bot" -> pidorGame.sendPidorStats(message.getChatId());
+                case "/pidor_start", "/pidor_start@ChatGamePidor_Bot" -> pidorGame.startPidorGame(message.getChatId());
+                case "/quiz_start", "/quiz_start@ChatGamePidor_Bot" -> quizGame.startQuizGame(message);
+                case "/quiz_stop", "/quiz_stop@ChatGamePidor_Bot" -> quizGame.stopQuiz(message.getChatId());
+                case "/quiz_stats", "/quiz_stats@ChatGamePidor_Bot" -> quizGame.getQuizStats(message);
+                case "/horoscope_today" -> {
+                    String zodiacName = parts[1].toLowerCase(); // Параметр - знак зодиака
+                    horoscopeService.sendHoroscope(message.getChatId(),horoscopeService.getZodiacCodeByName(zodiacName), "today");
+                }
+                default -> quizGame.checkQuizAnswer(message);
+            }
+        }
+
     }
 
 
