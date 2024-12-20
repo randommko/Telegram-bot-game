@@ -10,8 +10,10 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 public class HoroscopeService {
     private final Map<String, String> invertZodiacMap = new HashMap<>();  //key - название знака зодиака, value - код знака зодиака
@@ -32,6 +34,7 @@ public class HoroscopeService {
         zodiacMap.put("pisces", "рыбы");
     }
     private final TelegramBot bot;
+    LocalDate lastSend;
     private Horoscope horoscope;
     private static final String URL = "https://ignio.com/r/export/utf/xml/daily/com.xml";
     private static final Logger logger = LoggerFactory.getLogger(HoroscopeService.class);
@@ -66,21 +69,23 @@ public class HoroscopeService {
                 horoscopeText;
 
         bot.sendMessage(chatID, msg);
-
+        lastSend = LocalDate.now();
     }
     public void updateHoroscope () {
-        try {
-            // Создаем XmlMapper
-            XmlMapper xmlMapper = new XmlMapper();
+        if (!Objects.equals(lastSend, LocalDate.now()))
+            try {
+                // Создаем XmlMapper
+                XmlMapper xmlMapper = new XmlMapper();
 
-            // Парсим XML в объект Horoscope
-            horoscope = xmlMapper.readValue(getHoroscopeXML(), Horoscope.class);
+                // Парсим XML в объект Horoscope
+                horoscope = xmlMapper.readValue(getHoroscopeXML(), Horoscope.class);
 
-        } catch (Exception e) {
-            logger.debug("Ошибка парсинга гороскопа" + e);
-        }
+            } catch (Exception e) {
+                logger.debug("Ошибка парсинга гороскопа" + e);
+            }
     }
     public static String getHoroscopeXML() throws IOException, InterruptedException {
+
         // Создаем клиент
         HttpClient client = HttpClient.newHttpClient();
 
