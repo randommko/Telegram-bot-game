@@ -16,6 +16,8 @@ import org.telegram.telegrambots.meta.api.objects.InputFile;
 import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.chatmember.ChatMember;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
 import org.slf4j.Logger;
@@ -23,9 +25,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.time.LocalDate;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 
 
 public class TelegramBot extends TelegramLongPollingBot {
@@ -59,6 +59,11 @@ public class TelegramBot extends TelegramLongPollingBot {
     }
     @Override
     public void onUpdateReceived(Update update) {
+        if (update.hasCallbackQuery()) {
+            executeCallback(update);
+            return;
+        }
+
         Message message = update.getMessage();
 
         if (message == null) {
@@ -71,7 +76,17 @@ public class TelegramBot extends TelegramLongPollingBot {
         logger.debug("Получено сообщение из чата " + message.getChat().getId().toString() +": "+ message.getText());
         executeCommand(update);
     }
+    private void executeCallback(Update update) {
+        String callbackData = update.getCallbackQuery().getData();
+        Long chatId = update.getCallbackQuery().getMessage().getChatId();
 
+        // Обрабатываем нажатие кнопки
+        if (callbackData.equals("button1_pressed")) {
+            sendMessage(chatId, "Вы нажали Кнопку 1");
+        } else if (callbackData.equals("button2_pressed")) {
+            sendMessage(chatId, "Вы нажали Кнопку 2");
+        }
+    }
     private void checkUser(Message message) {
         if (!usersService.checkUser(message.getFrom())) {
             usersService.addUser(message.getFrom());
@@ -219,6 +234,43 @@ public class TelegramBot extends TelegramLongPollingBot {
             }
         }
 
+    }
+    private void sendInlineKeyboard(Long chatID) {
+        // Создаем кнопки
+        InlineKeyboardButton ariesButton = new InlineKeyboardButton();
+        ariesButton.setText("Овен");
+        ariesButton.setCallbackData("aries_button_pressed");
+
+        InlineKeyboardButton taurusButton = new InlineKeyboardButton();
+        taurusButton.setText("Телец");
+        taurusButton.setCallbackData("taurus_button_pressed");
+
+        InlineKeyboardButton geminiButton = new InlineKeyboardButton();
+        geminiButton.setText("Близнецы");
+        geminiButton.setCallbackData("gemini_button_pressed");
+
+        // Создаем ряды кнопок
+        List<InlineKeyboardButton> row1 = new ArrayList<>();
+        row1.add(button1);
+        row1.add(button2);
+
+        List<List<InlineKeyboardButton>> rows = new ArrayList<>();
+        rows.add(row1);
+
+        // Устанавливаем кнопки в сообщение
+        InlineKeyboardMarkup markup = new InlineKeyboardMarkup();
+        markup.setKeyboard(rows);
+
+        SendMessage message = new SendMessage();
+        message.setChatId(chatID.toString());
+        message.setText("Выберите опцию:");
+        message.setReplyMarkup(markup);
+
+        try {
+            execute(message);
+        } catch (TelegramApiException e) {
+            e.printStackTrace();
+        }
     }
 
 
