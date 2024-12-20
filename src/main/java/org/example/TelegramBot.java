@@ -201,12 +201,10 @@ public class TelegramBot extends TelegramLongPollingBot {
     private void executeCommand(Update update) {
         Message message = update.getMessage();
         if (update.hasMessage()) {
-            String text = message.getText();
-            String[] parts = text.split(" ", 2); // Разделяем строку по первому пробелу
+            String[] parts = message.getText().split(" ", 2); // Разделяем строку по первому пробелу
             String command = parts[0]; // Команда
 
             switch (command) {
-                //TODO: добавить гороскоп
                 case "/bot_info", "/bot_info@ChatGamePidor_Bot", "/help", "/help@ChatGamePidor_Bot" -> botInfo(message);
                 case "/cocksize", "/cocksize@ChatGamePidor_Bot" -> cockSizeGame.cockSizeStart(message);
                 case "/pidor_reg", "/pidor_reg@ChatGamePidor_Bot" -> pidorGame.registerPlayer(message.getChatId(), message.getFrom().getId());
@@ -215,10 +213,7 @@ public class TelegramBot extends TelegramLongPollingBot {
                 case "/quiz_start", "/quiz_start@ChatGamePidor_Bot" -> quizGame.startQuizGame(message);
                 case "/quiz_stop", "/quiz_stop@ChatGamePidor_Bot" -> quizGame.stopQuiz(message.getChatId());
                 case "/quiz_stats", "/quiz_stats@ChatGamePidor_Bot" -> quizGame.getQuizStats(message);
-                case "/horoscope_today" -> {
-                    String zodiacName = parts[1].toLowerCase(); // Параметр - знак зодиака
-                    horoscopeService.sendHoroscope(message.getChatId(),horoscopeService.getZodiacCodeByName(zodiacName), "today");
-                }
+                case "/horoscope_today" -> horoscopeService.sendHoroscope(message, "today");
                 default -> quizGame.checkQuizAnswer(message);
             }
         }
