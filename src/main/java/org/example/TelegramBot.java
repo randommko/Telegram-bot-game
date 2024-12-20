@@ -102,14 +102,15 @@ public class TelegramBot extends TelegramLongPollingBot {
     private void botInfo(Message message) {
         Long chatID = message.getChatId();
         sendMessage(chatID, """
-                 Этот бот создан для определения пидора дня в чате! Команды:
-                 /cocksize - Измерить причиндалы
+                 Бот для развлечений! Команды:
+                 /cocksize - Измерить достоинство
+                 /horoscope_today - Гороскоп
                  /quiz_start - Запустить викторину
                  /quiz_stop - Остановить викторину
                  /quiz_stats - Статистика викторина
-                 /pidor_start - Найти пидора дня
-                 /pidor_reg - Добавиться в игру поиска пидоров
-                 /pidor_stats - Статистика пидоров""");
+                 /pidor_start - Выбрать победителя
+                 /pidor_reg - Вступить в игру
+                 /pidor_stats - Статистика""");
     }
     public Integer sendMessage(Long chatID, String text) {
         SendMessage message = new SendMessage();
@@ -213,7 +214,7 @@ public class TelegramBot extends TelegramLongPollingBot {
                 case "/quiz_start", "/quiz_start@ChatGamePidor_Bot" -> quizGame.startQuizGame(message);
                 case "/quiz_stop", "/quiz_stop@ChatGamePidor_Bot" -> quizGame.stopQuiz(message.getChatId());
                 case "/quiz_stats", "/quiz_stats@ChatGamePidor_Bot" -> quizGame.getQuizStats(message);
-                case "/horoscope_today" -> horoscopeService.sendHoroscope(message, "today");
+                case "/horoscope_today", "/horoscope_today@ChatGamePidor_Bot" -> horoscopeService.sendHoroscope(message, "today");
                 default -> quizGame.checkQuizAnswer(message);
             }
         }
