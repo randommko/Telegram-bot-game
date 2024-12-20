@@ -2,6 +2,7 @@ package org.example;
 
 import org.example.Chats.ChatsService;
 import org.example.CockSize.CockSizeGame;
+import org.example.Horoscope.HoroscopeService;
 import org.example.PidorGame.PidorGame;
 import org.example.QuizGame.QuizGame;
 import org.example.Users.UsersService;
@@ -35,6 +36,7 @@ public class TelegramBot extends TelegramLongPollingBot {
     private final CockSizeGame cockSizeGame;
     private final PidorGame pidorGame;
     private final QuizGame quizGame;
+    private final HoroscopeService horoscopeService;
     private static Map<Long, LocalDate> usersUpdateTime = new HashMap<>();
     private static Map<Long, LocalDate> chatsUpdateTime = new HashMap<>();
     private static final Logger logger = LoggerFactory.getLogger(TelegramBot.class);
@@ -45,6 +47,7 @@ public class TelegramBot extends TelegramLongPollingBot {
         cockSizeGame = new CockSizeGame();
         pidorGame = new PidorGame();
         quizGame = new QuizGame();
+        horoscopeService = new HoroscopeService();
     }
     @Override
     public String getBotUsername() {
@@ -62,7 +65,14 @@ public class TelegramBot extends TelegramLongPollingBot {
             logger.debug("Пустое сообщение (например, событие, связанное с вызовами, действиями пользователей, или callback-запросами)");
             return;
         }
+        checkUser(message);
+        checkChat(message);
 
+        logger.debug("Получено сообщение из чата " + message.getChat().getId().toString() +": "+ message.getText());
+        executeCommand(update);
+    }
+
+    private void checkUser(Message message) {
         if (!usersService.checkUser(message.getFrom())) {
             usersService.addUser(message.getFrom());
             usersUpdateTime.put(message.getFrom().getId(), LocalDate.now());
@@ -73,7 +83,8 @@ public class TelegramBot extends TelegramLongPollingBot {
                 usersUpdateTime.put(message.getFrom().getId(), LocalDate.now());
             }
         }
-
+    }
+    private void checkChat(Message message) {
         if (!chatsService.checkChat(message.getChatId())) {
             chatsService.addChat(message.getChat());
             chatsUpdateTime.put(message.getFrom().getId(), LocalDate.now());
@@ -82,28 +93,6 @@ public class TelegramBot extends TelegramLongPollingBot {
             if (!Objects.equals(chatsUpdateTime.get(message.getFrom().getId()), LocalDate.now())) {
                 chatsService.updateChat(message.getChat());
                 chatsUpdateTime.put(message.getFrom().getId(), LocalDate.now());
-            }
-        }
-
-
-//        if (!chatsService.checkChat(message.getChatId()))
-//            chatsService.addChat(message.getChat());
-
-
-        logger.debug("Получено сообщение из чата " + message.getChat().getId().toString() +": "+ message.getText());
-        if (update.hasMessage()) {
-            String command = message.getText();
-            switch (command) {
-                //TODO: добавить гороскоп
-                case "/bot_info", "/bot_info@ChatGamePidor_Bot", "/help", "/help@ChatGamePidor_Bot" -> botInfo(message);
-                case "/cocksize", "/cocksize@ChatGamePidor_Bot" -> cockSizeGame.cockSizeStart(message);
-                case "/pidor_reg", "/pidor_reg@ChatGamePidor_Bot" -> pidorGame.registerPlayer(message.getChatId(), message.getFrom().getId());
-                case "/pidor_stats", "/pidor_stats@ChatGamePidor_Bot" -> pidorGame.sendPidorStats(message.getChatId());
-                case "/pidor_start", "/pidor_start@ChatGamePidor_Bot" -> pidorGame.startPidorGame(message.getChatId());
-                case "/quiz_start", "/quiz_start@ChatGamePidor_Bot" -> quizGame.startQuizGame(message);
-                case "/quiz_stop", "/quiz_stop@ChatGamePidor_Bot" -> quizGame.stopQuiz(message.getChatId());
-                case "/quiz_stats", "/quiz_stats@ChatGamePidor_Bot" -> quizGame.getQuizStats(message);
-                default -> quizGame.checkQuizAnswer(message);
             }
         }
     }
@@ -208,6 +197,27 @@ public class TelegramBot extends TelegramLongPollingBot {
                 logger.debug("Unknown chat type.");
         }
         return false;
+    }
+    private void executeCommand(Update update) {
+        Message message = update.getMessage();
+        if (update.hasMessage()) {
+            String[] parts = message.getText().split(" ", 2); // Разделяем строку по первому пробелу
+            String command = parts[0]; // Команда
+
+            switch (command) {
+                case "/bot_info", "/bot_info@ChatGamePidor_Bot", "/help", "/help@ChatGamePidor_Bot" -> botInfo(message);
+                case "/cocksize", "/cocksize@ChatGamePidor_Bot" -> cockSizeGame.cockSizeStart(message);
+                case "/pidor_reg", "/pidor_reg@ChatGamePidor_Bot" -> pidorGame.registerPlayer(message.getChatId(), message.getFrom().getId());
+                case "/pidor_stats", "/pidor_stats@ChatGamePidor_Bot" -> pidorGame.sendPidorStats(message.getChatId());
+                case "/pidor_start", "/pidor_start@ChatGamePidor_Bot" -> pidorGame.startPidorGame(message.getChatId());
+                case "/quiz_start", "/quiz_start@ChatGamePidor_Bot" -> quizGame.startQuizGame(message);
+                case "/quiz_stop", "/quiz_stop@ChatGamePidor_Bot" -> quizGame.stopQuiz(message.getChatId());
+                case "/quiz_stats", "/quiz_stats@ChatGamePidor_Bot" -> quizGame.getQuizStats(message);
+                case "/horoscope_today" -> horoscopeService.sendHoroscope(message, "today");
+                default -> quizGame.checkQuizAnswer(message);
+            }
+        }
+
     }
 
 
