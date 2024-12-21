@@ -286,14 +286,17 @@ public class TelegramBot extends TelegramLongPollingBot {
         List<InlineKeyboardButton> row2 = new ArrayList<>();
         row2.add(cancerButton);
         row2.add(leoButton);
-        row2.add(libraButton);
+        row2.add(virgoButton);
+
 
         List<InlineKeyboardButton> row3 = new ArrayList<>();
+        row3.add(libraButton);
         row3.add(scorpioButton);
         row3.add(sagittariusButton);
-        row3.add(capricornButton);
+
 
         List<InlineKeyboardButton> row4 = new ArrayList<>();
+        row4.add(capricornButton);
         row4.add(aquariusButton);
         row4.add(piscesButton);
 
