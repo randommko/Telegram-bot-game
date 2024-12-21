@@ -28,7 +28,7 @@ jobs:
           echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
           ssh-keyscan -H ${{ secrets.SERVER_IP }} >> ~/.ssh/known_hosts
-          scp target/telegram-bot-1.0.jar ${{ secrets.SERVER_USER }}${{ secrets.SERVER_USER }}@{{ secrets.SERVER_IP }}:/usr/bin/tg_bot/
+          scp target/telegram-bot-1.0.jar ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }}:/usr/bin/tg_bot/
           ssh ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }} << 'EOF'
             # Завершение текущих процессов приложения
             pgrep -f '/usr/bin/tg_bot/telegram-bot-1.0.jar' | xargs -r kill -9
@@ -50,7 +50,3 @@ jobs:
           DB_ADDR: ${{ secrets.DB_ADDR_TG_BOT }}
           DB_USER: ${{ secrets.DB_USER_TG_BOT }}
           DB_PASS: ${{ secrets.DB_PASS_TG_BOT }}
-          SERVER_IP: ${{ secrets.SERVER_IP }}
-          SERVER_USER: ${{ secrets.SERVER_USER }}
-
-
