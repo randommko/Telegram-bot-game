@@ -1,5 +1,6 @@
 package org.example;
 
+import com.vdurmont.emoji.EmojiParser;
 import org.example.Chats.ChatsService;
 import org.example.CockSize.CockSizeGame;
 import org.example.Horoscope.HoroscopeService;
@@ -229,51 +230,51 @@ public class TelegramBot extends TelegramLongPollingBot {
     private void sendInlineKeyboard(Long chatID) {
         // Создаем кнопки
         InlineKeyboardButton ariesButton = new InlineKeyboardButton();
-        ariesButton.setText("Овен");
+        ariesButton.setText(EmojiParser.parseToUnicode(":aries: Овен"));
         ariesButton.setCallbackData("aries_button_pressed");
 
         InlineKeyboardButton taurusButton = new InlineKeyboardButton();
-        taurusButton.setText("Телец");
+        taurusButton.setText(EmojiParser.parseToUnicode(":taurus: Телец"));
         taurusButton.setCallbackData("taurus_button_pressed");
 
         InlineKeyboardButton geminiButton = new InlineKeyboardButton();
-        geminiButton.setText("Близнецы");
+        geminiButton.setText(EmojiParser.parseToUnicode(":gemini: Близнецы"));
         geminiButton.setCallbackData("gemini_button_pressed");
 
         InlineKeyboardButton cancerButton = new InlineKeyboardButton();
-        cancerButton.setText("Рак");
+        cancerButton.setText(EmojiParser.parseToUnicode(":cancer: Рак"));
         cancerButton.setCallbackData("cancer_button_pressed");
 
         InlineKeyboardButton leoButton = new InlineKeyboardButton();
-        leoButton.setText("Лев");
+        leoButton.setText(EmojiParser.parseToUnicode(":leo: Лев"));
         leoButton.setCallbackData("leo_button_pressed");
 
         InlineKeyboardButton virgoButton = new InlineKeyboardButton();
-        virgoButton.setText("Дева");
+        virgoButton.setText(EmojiParser.parseToUnicode(":virgo: Дева"));
         virgoButton.setCallbackData("virgo_button_pressed");
 
         InlineKeyboardButton libraButton = new InlineKeyboardButton();
-        libraButton.setText("Весы");
+        libraButton.setText(EmojiParser.parseToUnicode(":libra: Весы"));
         libraButton.setCallbackData("libra_button_pressed");
 
         InlineKeyboardButton scorpioButton = new InlineKeyboardButton();
-        scorpioButton.setText("Скорпион");
+        scorpioButton.setText(EmojiParser.parseToUnicode(":scorpius: Скорпион"));
         scorpioButton.setCallbackData("scorpio_button_pressed");
 
         InlineKeyboardButton sagittariusButton = new InlineKeyboardButton();
-        sagittariusButton.setText("Стрелец");
+        sagittariusButton.setText(EmojiParser.parseToUnicode(":sagittarius: Стрелец"));
         sagittariusButton.setCallbackData("sagittarius_button_pressed");
 
         InlineKeyboardButton capricornButton = new InlineKeyboardButton();
-        capricornButton.setText("Козерог");
+        capricornButton.setText(EmojiParser.parseToUnicode(":capricorn: Козерог"));
         capricornButton.setCallbackData("capricorn_button_pressed");
 
         InlineKeyboardButton aquariusButton = new InlineKeyboardButton();
-        aquariusButton.setText("Водолей");
+        aquariusButton.setText(EmojiParser.parseToUnicode(":aquarius: Водолей"));
         aquariusButton.setCallbackData("aquarius_button_pressed");
 
         InlineKeyboardButton piscesButton = new InlineKeyboardButton();
-        piscesButton.setText("Рыбы");
+        piscesButton.setText(EmojiParser.parseToUnicode(":pisces: Рыбы"));
         piscesButton.setCallbackData("pisces_button_pressed");
 
         // Создаем ряды кнопок
