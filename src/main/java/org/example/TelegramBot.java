@@ -11,6 +11,7 @@ import org.telegram.telegrambots.meta.api.methods.GetMe;
 import org.telegram.telegrambots.meta.api.methods.groupadministration.GetChatMember;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.methods.send.SendPhoto;
+import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageReplyMarkup;
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageText;
 import org.telegram.telegrambots.meta.api.objects.InputFile;
 import org.telegram.telegrambots.meta.api.objects.Message;
@@ -76,17 +77,7 @@ public class TelegramBot extends TelegramLongPollingBot {
         logger.debug("Получено сообщение из чата " + message.getChat().getId().toString() +": "+ message.getText());
         executeCommand(update);
     }
-    private void executeCallback(Update update) {
-        String callbackData = update.getCallbackQuery().getData();
-        Long chatId = update.getCallbackQuery().getMessage().getChatId();
 
-        // Обрабатываем нажатие кнопки
-        if (callbackData.equals("button1_pressed")) {
-            sendMessage(chatId, "Вы нажали Кнопку 1");
-        } else if (callbackData.equals("button2_pressed")) {
-            sendMessage(chatId, "Вы нажали Кнопку 2");
-        }
-    }
     private void checkUser(Message message) {
         if (!usersService.checkUser(message.getFrom())) {
             usersService.addUser(message.getFrom());
@@ -229,7 +220,7 @@ public class TelegramBot extends TelegramLongPollingBot {
                 case "/quiz_start", "/quiz_start@ChatGamePidor_Bot" -> quizGame.startQuizGame(message);
                 case "/quiz_stop", "/quiz_stop@ChatGamePidor_Bot" -> quizGame.stopQuiz(message.getChatId());
                 case "/quiz_stats", "/quiz_stats@ChatGamePidor_Bot" -> quizGame.getQuizStats(message);
-                case "/horoscope_today", "/horoscope_today@ChatGamePidor_Bot" -> horoscopeService.sendHoroscope(message, "today");
+                case "/horoscope_today", "/horoscope_today@ChatGamePidor_Bot" -> sendInlineKeyboard(message.getChatId());
                 default -> quizGame.checkQuizAnswer(message);
             }
         }
@@ -326,6 +317,39 @@ public class TelegramBot extends TelegramLongPollingBot {
             e.printStackTrace();
         }
     }
+    private void executeCallback(Update update) {
+        String callbackData = update.getCallbackQuery().getData();
+        Long chatId = update.getCallbackQuery().getMessage().getChatId();
+        Integer inlineMsgID = null;
+        // Обрабатываем нажатие кнопки
+        switch (callbackData) {
+            case "aries_button_pressed" -> inlineMsgID = horoscopeService.sendHoroscope(chatId, "aries", "today");
+            case "taurus_button_pressed" -> inlineMsgID = horoscopeService.sendHoroscope(chatId, "taurus", "today");
+            case "gemini_button_pressed" -> inlineMsgID = horoscopeService.sendHoroscope(chatId, "gemini", "today");
+            case "cancer_button_pressed" -> inlineMsgID = horoscopeService.sendHoroscope(chatId, "cancer", "today");
+            case "leo_button_pressed" -> inlineMsgID = horoscopeService.sendHoroscope(chatId, "leo", "today");
+            case "virgo_button_pressed" -> inlineMsgID = horoscopeService.sendHoroscope(chatId, "virgo", "today");
+            case "libra_button_pressed" -> inlineMsgID = horoscopeService.sendHoroscope(chatId, "libra", "today");
+            case "scorpio_button_pressed" -> inlineMsgID = horoscopeService.sendHoroscope(chatId, "scorpio", "today");
+            case "sagittarius_button_pressed" -> inlineMsgID = horoscopeService.sendHoroscope(chatId, "sagittarius", "today");
+            case "capricorn_button_pressed" -> inlineMsgID = horoscopeService.sendHoroscope(chatId, "capricorn", "today");
+            case "aquarius_button_pressed" -> inlineMsgID = horoscopeService.sendHoroscope(chatId, "aquarius", "today");
+            case "pisces_button_pressed" -> inlineMsgID = horoscopeService.sendHoroscope(chatId, "pisces", "today");
+            default -> sendMessage(chatId, "Ошибка работы inline кнопок");
+        }
+//        if (inlineMsgID != null)
+//            hideInlineKeyboard(chatId, inlineMsgID);
+    }
+    private void hideInlineKeyboard(Long chatId, Integer messageId) {
+        EditMessageReplyMarkup editMarkup = new EditMessageReplyMarkup();
+        editMarkup.setChatId(chatId.toString());
+        editMarkup.setMessageId(messageId);
+        editMarkup.setReplyMarkup(null); // Убираем клавиатуру
 
-
+        try {
+            execute(editMarkup);
+        } catch (TelegramApiException e) {
+            e.printStackTrace();
+        }
+    }
 }
