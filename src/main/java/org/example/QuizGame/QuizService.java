@@ -15,12 +15,10 @@ public class QuizService {
     public Integer currentQuestionID = null;
     private String clueText;
 
-
     public QuizService(Long chatID) {
         this.chatID = chatID;
         bot = TelegramBot.getInstance();
     }
-
     private static String normalizeAnswer(String answer) {
         // Приводим к нижнему регистру
         answer = answer.toLowerCase();
@@ -115,9 +113,6 @@ public class QuizService {
         return repo.getQuestionAnswerByID(currentQuestionID);
     }
     public String getQuizStats() {
-//        Map<String, Integer> stats;
-//        stats = repo.getScore(chatID);
-
         Map<String, Integer> stats = repo.getScore(chatID);
 
         // Преобразуем Map в List<Entry> и сортируем по убыванию значений
@@ -129,7 +124,6 @@ public class QuizService {
         for (Map.Entry<String, Integer> entry : sortedList) {
             sortedMap.put(entry.getKey(), entry.getValue());
         }
-
 
         StringBuilder statsMessage = new StringBuilder("Статистика викторины:\n");
         sortedMap.forEach((userName, score) ->
