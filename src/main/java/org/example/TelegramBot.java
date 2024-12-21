@@ -11,11 +11,14 @@ import org.telegram.telegrambots.meta.api.methods.GetMe;
 import org.telegram.telegrambots.meta.api.methods.groupadministration.GetChatMember;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.methods.send.SendPhoto;
+import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageReplyMarkup;
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageText;
 import org.telegram.telegrambots.meta.api.objects.InputFile;
 import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.chatmember.ChatMember;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
 import org.slf4j.Logger;
@@ -23,9 +26,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.time.LocalDate;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 
 
 public class TelegramBot extends TelegramLongPollingBot {
@@ -59,6 +60,11 @@ public class TelegramBot extends TelegramLongPollingBot {
     }
     @Override
     public void onUpdateReceived(Update update) {
+        if (update.hasCallbackQuery()) {
+            executeCallback(update);
+            return;
+        }
+
         Message message = update.getMessage();
 
         if (message == null) {
@@ -214,12 +220,136 @@ public class TelegramBot extends TelegramLongPollingBot {
                 case "/quiz_start", "/quiz_start@ChatGamePidor_Bot" -> quizGame.startQuizGame(message);
                 case "/quiz_stop", "/quiz_stop@ChatGamePidor_Bot" -> quizGame.stopQuiz(message.getChatId());
                 case "/quiz_stats", "/quiz_stats@ChatGamePidor_Bot" -> quizGame.getQuizStats(message);
-                case "/horoscope_today", "/horoscope_today@ChatGamePidor_Bot" -> horoscopeService.sendHoroscope(message, "today");
+                case "/horoscope_today", "/horoscope_today@ChatGamePidor_Bot" -> sendInlineKeyboard(message.getChatId());
                 default -> quizGame.checkQuizAnswer(message);
             }
         }
 
     }
+    private void sendInlineKeyboard(Long chatID) {
+        // Создаем кнопки
+        InlineKeyboardButton ariesButton = new InlineKeyboardButton();
+        ariesButton.setText("Овен");
+        ariesButton.setCallbackData("aries_button_pressed");
 
+        InlineKeyboardButton taurusButton = new InlineKeyboardButton();
+        taurusButton.setText("Телец");
+        taurusButton.setCallbackData("taurus_button_pressed");
 
+        InlineKeyboardButton geminiButton = new InlineKeyboardButton();
+        geminiButton.setText("Близнецы");
+        geminiButton.setCallbackData("gemini_button_pressed");
+
+        InlineKeyboardButton cancerButton = new InlineKeyboardButton();
+        cancerButton.setText("Рак");
+        cancerButton.setCallbackData("cancer_button_pressed");
+
+        InlineKeyboardButton leoButton = new InlineKeyboardButton();
+        leoButton.setText("Лев");
+        leoButton.setCallbackData("leo_button_pressed");
+
+        InlineKeyboardButton virgoButton = new InlineKeyboardButton();
+        virgoButton.setText("Дева");
+        virgoButton.setCallbackData("virgo_button_pressed");
+
+        InlineKeyboardButton libraButton = new InlineKeyboardButton();
+        libraButton.setText("Весы");
+        libraButton.setCallbackData("libra_button_pressed");
+
+        InlineKeyboardButton scorpioButton = new InlineKeyboardButton();
+        scorpioButton.setText("Скорпион");
+        scorpioButton.setCallbackData("scorpio_button_pressed");
+
+        InlineKeyboardButton sagittariusButton = new InlineKeyboardButton();
+        sagittariusButton.setText("Стрелец");
+        sagittariusButton.setCallbackData("sagittarius_button_pressed");
+
+        InlineKeyboardButton capricornButton = new InlineKeyboardButton();
+        capricornButton.setText("Козерог");
+        capricornButton.setCallbackData("capricorn_button_pressed");
+
+        InlineKeyboardButton aquariusButton = new InlineKeyboardButton();
+        aquariusButton.setText("Водолей");
+        aquariusButton.setCallbackData("aquarius_button_pressed");
+
+        InlineKeyboardButton piscesButton = new InlineKeyboardButton();
+        piscesButton.setText("Рыбы");
+        piscesButton.setCallbackData("pisces_button_pressed");
+
+        // Создаем ряды кнопок
+        List<InlineKeyboardButton> row1 = new ArrayList<>();
+        row1.add(ariesButton);
+        row1.add(taurusButton);
+        row1.add(geminiButton);
+
+        List<InlineKeyboardButton> row2 = new ArrayList<>();
+        row2.add(cancerButton);
+        row2.add(leoButton);
+        row2.add(libraButton);
+
+        List<InlineKeyboardButton> row3 = new ArrayList<>();
+        row3.add(scorpioButton);
+        row3.add(sagittariusButton);
+        row3.add(capricornButton);
+
+        List<InlineKeyboardButton> row4 = new ArrayList<>();
+        row4.add(aquariusButton);
+        row4.add(piscesButton);
+
+        List<List<InlineKeyboardButton>> rows = new ArrayList<>();
+        rows.add(row1);
+        rows.add(row2);
+        rows.add(row3);
+        rows.add(row4);
+
+        // Устанавливаем кнопки в сообщение
+        InlineKeyboardMarkup markup = new InlineKeyboardMarkup();
+        markup.setKeyboard(rows);
+
+        SendMessage message = new SendMessage();
+        message.setChatId(chatID.toString());
+        message.setText("Выберите знак зодиака:");
+        message.setReplyMarkup(markup);
+
+        try {
+            execute(message);
+        } catch (TelegramApiException e) {
+            e.printStackTrace();
+        }
+    }
+    private void executeCallback(Update update) {
+        String callbackData = update.getCallbackQuery().getData();
+        Long chatId = update.getCallbackQuery().getMessage().getChatId();
+        Integer inlineMsgID = null;
+        // Обрабатываем нажатие кнопки
+        switch (callbackData) {
+            case "aries_button_pressed" -> inlineMsgID = horoscopeService.sendHoroscope(chatId, "aries", "today");
+            case "taurus_button_pressed" -> inlineMsgID = horoscopeService.sendHoroscope(chatId, "taurus", "today");
+            case "gemini_button_pressed" -> inlineMsgID = horoscopeService.sendHoroscope(chatId, "gemini", "today");
+            case "cancer_button_pressed" -> inlineMsgID = horoscopeService.sendHoroscope(chatId, "cancer", "today");
+            case "leo_button_pressed" -> inlineMsgID = horoscopeService.sendHoroscope(chatId, "leo", "today");
+            case "virgo_button_pressed" -> inlineMsgID = horoscopeService.sendHoroscope(chatId, "virgo", "today");
+            case "libra_button_pressed" -> inlineMsgID = horoscopeService.sendHoroscope(chatId, "libra", "today");
+            case "scorpio_button_pressed" -> inlineMsgID = horoscopeService.sendHoroscope(chatId, "scorpio", "today");
+            case "sagittarius_button_pressed" -> inlineMsgID = horoscopeService.sendHoroscope(chatId, "sagittarius", "today");
+            case "capricorn_button_pressed" -> inlineMsgID = horoscopeService.sendHoroscope(chatId, "capricorn", "today");
+            case "aquarius_button_pressed" -> inlineMsgID = horoscopeService.sendHoroscope(chatId, "aquarius", "today");
+            case "pisces_button_pressed" -> inlineMsgID = horoscopeService.sendHoroscope(chatId, "pisces", "today");
+            default -> sendMessage(chatId, "Ошибка работы inline кнопок");
+        }
+//        if (inlineMsgID != null)
+//            hideInlineKeyboard(chatId, inlineMsgID);
+    }
+    private void hideInlineKeyboard(Long chatId, Integer messageId) {
+        EditMessageReplyMarkup editMarkup = new EditMessageReplyMarkup();
+        editMarkup.setChatId(chatId.toString());
+        editMarkup.setMessageId(messageId);
+        editMarkup.setReplyMarkup(null); // Убираем клавиатуру
+
+        try {
+            execute(editMarkup);
+        } catch (TelegramApiException e) {
+            e.printStackTrace();
+        }
+    }
 }
