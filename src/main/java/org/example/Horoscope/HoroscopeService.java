@@ -46,27 +46,27 @@ public class HoroscopeService {
             invertZodiacMap.put(entry.getValue(), entry.getKey());
         }
     }
-    public void sendHoroscope(Message message, String day) {
+    public Integer sendHoroscope(Long chatID, String zodiacCode, String day) {
         updateHoroscope();
 
-        String text = message.getText();
-        Long chatID = message.getChatId();
-        String[] parts = text.split(" ", 2); // Разделяем строку по первому пробелу
-        String zodiacSigns = String.join(", ", zodiacMap.values());
-        if (parts.length < 2) {
-            bot.sendMessage(chatID, "Не указан знак зодиака\n" +
-                    "Необходимо указать один из знаков: " + zodiacSigns);
-            return;
-        }
+//        String text = message.getText();
+//        Long chatID = message.getChatId();
+ //       String[] parts = text.split(" ", 2); // Разделяем строку по первому пробелу
+//        String zodiacSigns = String.join(", ", zodiacMap.values());
+//        if (parts.length < 2) {
+//            bot.sendMessage(chatID, "Не указан знак зодиака\n" +
+//                    "Необходимо указать один из знаков: " + zodiacSigns);
+//            return;
+//        }
 
-        String singName = parts[1].toLowerCase();
-        String zodiacCode = getZodiacCodeByName(singName); // Параметр - знак зодиака
+//        String singName = parts[1].toLowerCase();
+//        String zodiacCode = getZodiacCodeByName(singName); // Параметр - знак зодиака
 
-        if (!zodiacMap.containsKey(zodiacCode)) {
-            bot.sendMessage(chatID, "Не верно указан знак зодиака\n" +
-                    "Необходимо указать один из знаков: " + zodiacSigns);
-            return;
-        }
+//        if (!zodiacMap.containsKey(zodiacCode)) {
+//            bot.sendMessage(chatID, "Не верно указан знак зодиака\n" +
+//                    "Необходимо указать один из знаков: " + zodiacSigns);
+//            return;
+//        }
 
         String horoscopeText = null;
         String horoscopeDate = null;
@@ -80,11 +80,12 @@ public class HoroscopeService {
                 horoscopeDate = horoscope.getDateInfo().getTomorrow();
             }
         }
-        String msg = "Гороскоп на дату " + horoscopeDate + " для знака зодиака " + singName + "\n" +
+        String msg = "Гороскоп на " + horoscopeDate + " для знака зодиака " + zodiacMap.get(zodiacCode) + "\n" +
                 horoscopeText;
 
-        bot.sendMessage(chatID, msg);
+
         lastSend = LocalDate.now();
+        return bot.sendMessage(chatID, msg);
     }
     public void updateHoroscope () {
         if (!Objects.equals(lastSend, LocalDate.now()))
