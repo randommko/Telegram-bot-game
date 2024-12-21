@@ -4,7 +4,6 @@ import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import org.example.TelegramBot;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.telegram.telegrambots.meta.api.objects.Message;
 
 import java.io.IOException;
 import java.net.URI;
@@ -46,27 +45,8 @@ public class HoroscopeService {
             invertZodiacMap.put(entry.getValue(), entry.getKey());
         }
     }
-    public Integer sendHoroscope(Long chatID, String zodiacCode, String day) {
+    public void sendHoroscope(Long chatID, String zodiacCode, String day) {
         updateHoroscope();
-
-//        String text = message.getText();
-//        Long chatID = message.getChatId();
- //       String[] parts = text.split(" ", 2); // Разделяем строку по первому пробелу
-//        String zodiacSigns = String.join(", ", zodiacMap.values());
-//        if (parts.length < 2) {
-//            bot.sendMessage(chatID, "Не указан знак зодиака\n" +
-//                    "Необходимо указать один из знаков: " + zodiacSigns);
-//            return;
-//        }
-
-//        String singName = parts[1].toLowerCase();
-//        String zodiacCode = getZodiacCodeByName(singName); // Параметр - знак зодиака
-
-//        if (!zodiacMap.containsKey(zodiacCode)) {
-//            bot.sendMessage(chatID, "Не верно указан знак зодиака\n" +
-//                    "Необходимо указать один из знаков: " + zodiacSigns);
-//            return;
-//        }
 
         String horoscopeText = null;
         String horoscopeDate = null;
@@ -83,9 +63,8 @@ public class HoroscopeService {
         String msg = "Гороскоп на " + horoscopeDate + " для знака зодиака " + zodiacMap.get(zodiacCode) + "\n" +
                 horoscopeText;
 
-
+        bot.sendMessage(chatID, msg);
         lastSend = LocalDate.now();
-        return bot.sendMessage(chatID, msg);
     }
     public void updateHoroscope () {
         if (!Objects.equals(lastSend, LocalDate.now()))
@@ -120,8 +99,5 @@ public class HoroscopeService {
         } else {
             throw new IOException("Ошибка при получении данных: " + response.statusCode());
         }
-    }
-    public String getZodiacCodeByName(String name) {
-        return invertZodiacMap.get(name.toLowerCase());
     }
 }
