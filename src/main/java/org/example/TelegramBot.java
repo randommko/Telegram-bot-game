@@ -321,36 +321,23 @@ public class TelegramBot extends TelegramLongPollingBot {
     private void executeCallback(Update update) {
         String callbackData = update.getCallbackQuery().getData();
         Long chatId = update.getCallbackQuery().getMessage().getChatId();
-        Integer inlineMsgID = null;
+
         // Обрабатываем нажатие кнопки
         switch (callbackData) {
-            case "aries_button_pressed" -> inlineMsgID = horoscopeService.sendHoroscope(chatId, "aries", "today");
-            case "taurus_button_pressed" -> inlineMsgID = horoscopeService.sendHoroscope(chatId, "taurus", "today");
-            case "gemini_button_pressed" -> inlineMsgID = horoscopeService.sendHoroscope(chatId, "gemini", "today");
-            case "cancer_button_pressed" -> inlineMsgID = horoscopeService.sendHoroscope(chatId, "cancer", "today");
-            case "leo_button_pressed" -> inlineMsgID = horoscopeService.sendHoroscope(chatId, "leo", "today");
-            case "virgo_button_pressed" -> inlineMsgID = horoscopeService.sendHoroscope(chatId, "virgo", "today");
-            case "libra_button_pressed" -> inlineMsgID = horoscopeService.sendHoroscope(chatId, "libra", "today");
-            case "scorpio_button_pressed" -> inlineMsgID = horoscopeService.sendHoroscope(chatId, "scorpio", "today");
-            case "sagittarius_button_pressed" -> inlineMsgID = horoscopeService.sendHoroscope(chatId, "sagittarius", "today");
-            case "capricorn_button_pressed" -> inlineMsgID = horoscopeService.sendHoroscope(chatId, "capricorn", "today");
-            case "aquarius_button_pressed" -> inlineMsgID = horoscopeService.sendHoroscope(chatId, "aquarius", "today");
-            case "pisces_button_pressed" -> inlineMsgID = horoscopeService.sendHoroscope(chatId, "pisces", "today");
+            case "aries_button_pressed" -> horoscopeService.sendHoroscope(chatId, "aries", "today");
+            case "taurus_button_pressed" -> horoscopeService.sendHoroscope(chatId, "taurus", "today");
+            case "gemini_button_pressed" -> horoscopeService.sendHoroscope(chatId, "gemini", "today");
+            case "cancer_button_pressed" -> horoscopeService.sendHoroscope(chatId, "cancer", "today");
+            case "leo_button_pressed" -> horoscopeService.sendHoroscope(chatId, "leo", "today");
+            case "virgo_button_pressed" -> horoscopeService.sendHoroscope(chatId, "virgo", "today");
+            case "libra_button_pressed" -> horoscopeService.sendHoroscope(chatId, "libra", "today");
+            case "scorpio_button_pressed" -> horoscopeService.sendHoroscope(chatId, "scorpio", "today");
+            case "sagittarius_button_pressed" -> horoscopeService.sendHoroscope(chatId, "sagittarius", "today");
+            case "capricorn_button_pressed" -> horoscopeService.sendHoroscope(chatId, "capricorn", "today");
+            case "aquarius_button_pressed" -> horoscopeService.sendHoroscope(chatId, "aquarius", "today");
+            case "pisces_button_pressed" -> horoscopeService.sendHoroscope(chatId, "pisces", "today");
             default -> sendMessage(chatId, "Ошибка работы inline кнопок");
         }
-//        if (inlineMsgID != null)
-//            hideInlineKeyboard(chatId, inlineMsgID);
     }
-    private void hideInlineKeyboard(Long chatId, Integer messageId) {
-        EditMessageReplyMarkup editMarkup = new EditMessageReplyMarkup();
-        editMarkup.setChatId(chatId.toString());
-        editMarkup.setMessageId(messageId);
-        editMarkup.setReplyMarkup(null); // Убираем клавиатуру
 
-        try {
-            execute(editMarkup);
-        } catch (TelegramApiException e) {
-            e.printStackTrace();
-        }
-    }
 }
