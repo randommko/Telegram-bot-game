@@ -249,13 +249,67 @@ public class TelegramBot extends TelegramLongPollingBot {
         geminiButton.setText("Близнецы");
         geminiButton.setCallbackData("gemini_button_pressed");
 
+        InlineKeyboardButton cancerButton = new InlineKeyboardButton();
+        cancerButton.setText("Рак");
+        cancerButton.setCallbackData("cancer_button_pressed");
+
+        InlineKeyboardButton leoButton = new InlineKeyboardButton();
+        leoButton.setText("Лев");
+        leoButton.setCallbackData("leo_button_pressed");
+
+        InlineKeyboardButton virgoButton = new InlineKeyboardButton();
+        virgoButton.setText("Дева");
+        virgoButton.setCallbackData("virgo_button_pressed");
+
+        InlineKeyboardButton libraButton = new InlineKeyboardButton();
+        libraButton.setText("Весы");
+        libraButton.setCallbackData("libra_button_pressed");
+
+        InlineKeyboardButton scorpioButton = new InlineKeyboardButton();
+        scorpioButton.setText("Скорпион");
+        scorpioButton.setCallbackData("scorpio_button_pressed");
+
+        InlineKeyboardButton sagittariusButton = new InlineKeyboardButton();
+        sagittariusButton.setText("Стрелец");
+        sagittariusButton.setCallbackData("sagittarius_button_pressed");
+
+        InlineKeyboardButton capricornButton = new InlineKeyboardButton();
+        capricornButton.setText("Козерог");
+        capricornButton.setCallbackData("capricorn_button_pressed");
+
+        InlineKeyboardButton aquariusButton = new InlineKeyboardButton();
+        aquariusButton.setText("Водолей");
+        aquariusButton.setCallbackData("aquarius_button_pressed");
+
+        InlineKeyboardButton piscesButton = new InlineKeyboardButton();
+        piscesButton.setText("Рыбы");
+        piscesButton.setCallbackData("pisces_button_pressed");
+
         // Создаем ряды кнопок
         List<InlineKeyboardButton> row1 = new ArrayList<>();
-        row1.add(button1);
-        row1.add(button2);
+        row1.add(ariesButton);
+        row1.add(taurusButton);
+        row1.add(geminiButton);
+
+        List<InlineKeyboardButton> row2 = new ArrayList<>();
+        row2.add(cancerButton);
+        row2.add(leoButton);
+        row2.add(libraButton);
+
+        List<InlineKeyboardButton> row3 = new ArrayList<>();
+        row3.add(scorpioButton);
+        row3.add(sagittariusButton);
+        row3.add(capricornButton);
+
+        List<InlineKeyboardButton> row4 = new ArrayList<>();
+        row4.add(aquariusButton);
+        row4.add(piscesButton);
 
         List<List<InlineKeyboardButton>> rows = new ArrayList<>();
         rows.add(row1);
+        rows.add(row2);
+        rows.add(row3);
+        rows.add(row4);
 
         // Устанавливаем кнопки в сообщение
         InlineKeyboardMarkup markup = new InlineKeyboardMarkup();
@@ -263,7 +317,7 @@ public class TelegramBot extends TelegramLongPollingBot {
 
         SendMessage message = new SendMessage();
         message.setChatId(chatID.toString());
-        message.setText("Выберите опцию:");
+        message.setText("Выберите знак зодиака:");
         message.setReplyMarkup(markup);
 
         try {
