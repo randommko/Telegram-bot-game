@@ -13,7 +13,7 @@ public class QuizGame {
     private final TelegramBot bot;
     private final Map<Long, QuizService> quizMap = new HashMap<>(); //ключ ID чата, значение экземпляр Quiz
     private final Logger logger = LoggerFactory.getLogger(QuizGame.class);
-    private final int quizClueTimer = 5000;
+    private final int quizClueTimer = 15000;
     private final int remainingNumberOfClue = 1;
     CompletableFuture<Void> currentQuestionThread;
     ExecutorService executor = Executors.newSingleThreadExecutor();
