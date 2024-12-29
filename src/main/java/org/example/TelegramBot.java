@@ -321,6 +321,7 @@ public class TelegramBot extends TelegramLongPollingBot {
             e.printStackTrace();
         }
     }
+
     private void executeCallback(Update update) {
         String callbackData = update.getCallbackQuery().getData();
 
