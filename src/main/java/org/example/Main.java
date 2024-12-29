@@ -21,7 +21,7 @@ public class Main {
         } catch (Exception e) {
             logger.error("Ошибка при подключении к БД: ", e);
         }
-        System.out.println("Test squash");
+
         int maxRetries = 3; // Количество попыток
         int attempt = 0;
 
