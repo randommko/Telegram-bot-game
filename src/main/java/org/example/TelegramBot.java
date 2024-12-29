@@ -326,6 +326,7 @@ public class TelegramBot extends TelegramLongPollingBot {
         Long chatId = update.getCallbackQuery().getMessage().getChatId();
 
         // Обрабатываем нажатие кнопки
+        //TODO: добавить кем нажата кнопка, передать в sendHoroscope либо ИД пользователя, либо целиком callbackData
         switch (callbackData) {
             case "aries_button_pressed" -> horoscopeService.sendHoroscope(chatId, "aries", "today");
             case "taurus_button_pressed" -> horoscopeService.sendHoroscope(chatId, "taurus", "today");

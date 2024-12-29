@@ -147,7 +147,7 @@ public class CockSizeService {
         } else if (size >= 31 && size <= 40) {
             return EmojiParser.parseToUnicode("Cocksize of " + username + " is " + size + "cm :palm_tree:");
         } else if (size >= 41 && size <= 50) {
-            return EmojiParser.parseToUnicode("TCocksize of " + username + " is " + size + "cm :sparkling_heart::sparkling_heart::sparkling_heart:");
+            return EmojiParser.parseToUnicode("Cocksize of " + username + " is " + size + "cm :sparkling_heart::sparkling_heart::sparkling_heart:");
         } else return EmojiParser.parseToUnicode("NO FUCKING WAY! Cocksize of " + username + " is " + size + "cm ");
     }
 
