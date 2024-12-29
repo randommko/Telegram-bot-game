@@ -323,24 +323,23 @@ public class TelegramBot extends TelegramLongPollingBot {
     }
     private void executeCallback(Update update) {
         String callbackData = update.getCallbackQuery().getData();
-        Long chatId = update.getCallbackQuery().getMessage().getChatId();
 
         // Обрабатываем нажатие кнопки
         //TODO: добавить кем нажата кнопка, передать в sendHoroscope либо ИД пользователя, либо целиком callbackData
         switch (callbackData) {
-            case "aries_button_pressed" -> horoscopeService.sendHoroscope(chatId, "aries", "today");
-            case "taurus_button_pressed" -> horoscopeService.sendHoroscope(chatId, "taurus", "today");
-            case "gemini_button_pressed" -> horoscopeService.sendHoroscope(chatId, "gemini", "today");
-            case "cancer_button_pressed" -> horoscopeService.sendHoroscope(chatId, "cancer", "today");
-            case "leo_button_pressed" -> horoscopeService.sendHoroscope(chatId, "leo", "today");
-            case "virgo_button_pressed" -> horoscopeService.sendHoroscope(chatId, "virgo", "today");
-            case "libra_button_pressed" -> horoscopeService.sendHoroscope(chatId, "libra", "today");
-            case "scorpio_button_pressed" -> horoscopeService.sendHoroscope(chatId, "scorpio", "today");
-            case "sagittarius_button_pressed" -> horoscopeService.sendHoroscope(chatId, "sagittarius", "today");
-            case "capricorn_button_pressed" -> horoscopeService.sendHoroscope(chatId, "capricorn", "today");
-            case "aquarius_button_pressed" -> horoscopeService.sendHoroscope(chatId, "aquarius", "today");
-            case "pisces_button_pressed" -> horoscopeService.sendHoroscope(chatId, "pisces", "today");
-            default -> sendMessage(chatId, "Ошибка работы inline кнопок");
+            case "aries_button_pressed" -> horoscopeService.sendHoroscope(update, "aries", "today");
+            case "taurus_button_pressed" -> horoscopeService.sendHoroscope(update, "taurus", "today");
+            case "gemini_button_pressed" -> horoscopeService.sendHoroscope(update, "gemini", "today");
+            case "cancer_button_pressed" -> horoscopeService.sendHoroscope(update, "cancer", "today");
+            case "leo_button_pressed" -> horoscopeService.sendHoroscope(update, "leo", "today");
+            case "virgo_button_pressed" -> horoscopeService.sendHoroscope(update, "virgo", "today");
+            case "libra_button_pressed" -> horoscopeService.sendHoroscope(update, "libra", "today");
+            case "scorpio_button_pressed" -> horoscopeService.sendHoroscope(update, "scorpio", "today");
+            case "sagittarius_button_pressed" -> horoscopeService.sendHoroscope(update, "sagittarius", "today");
+            case "capricorn_button_pressed" -> horoscopeService.sendHoroscope(update, "capricorn", "today");
+            case "aquarius_button_pressed" -> horoscopeService.sendHoroscope(update, "aquarius", "today");
+            case "pisces_button_pressed" -> horoscopeService.sendHoroscope(update, "pisces", "today");
+            default -> logger.debug("Ошибка работы inline кнопок");
         }
     }
 

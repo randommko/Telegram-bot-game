@@ -2,8 +2,10 @@ package org.example.Horoscope;
 
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import org.example.TelegramBot;
+import org.example.Users.UsersService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.telegram.telegrambots.meta.api.objects.Update;
 
 import java.io.IOException;
 import java.net.URI;
@@ -16,8 +18,8 @@ import java.util.Map;
 import java.util.Objects;
 
 public class HoroscopeService {
-    private final Map<String, String> invertZodiacMap = new HashMap<>();  //key - название знака зодиака, value - код знака зодиака
     private static final Map<String, String> zodiacMap;  //key - код знака зодиака, value - название знака зодиака
+    private final UsersService usersService = new UsersService();
     static {
         zodiacMap = new HashMap<>();
         zodiacMap.put("aries", "овен");
@@ -41,11 +43,10 @@ public class HoroscopeService {
     public HoroscopeService() {
         bot = TelegramBot.getInstance();
         horoscope = new Horoscope();
-        for (Map.Entry<String, String> entry : zodiacMap.entrySet()) {
-            invertZodiacMap.put(entry.getValue(), entry.getKey());
-        }
     }
-    public void sendHoroscope(Long chatID, String zodiacCode, String day) {
+    public void sendHoroscope(Update update, String zodiacCode, String day) {
+        Long chatID = update.getCallbackQuery().getMessage().getChatId();
+        String userName = usersService.getUserNameByID(update.getCallbackQuery().getFrom().getId());
         updateHoroscope();
 
         String horoscopeText = null;
@@ -60,7 +61,7 @@ public class HoroscopeService {
                 horoscopeDate = horoscope.getDateInfo().getTomorrow();
             }
         }
-        String msg = "Гороскоп на " + horoscopeDate + " для знака зодиака " + zodiacMap.get(zodiacCode) + "\n" +
+        String msg = "Гороскоп на " + horoscopeDate + " для знака зодиака " + zodiacMap.get(zodiacCode) + " по просьбе " + userName + "\n" +
                 horoscopeText;
 
         bot.sendMessage(chatID, msg);
