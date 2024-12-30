@@ -1,6 +1,7 @@
 package org.example.QuizGame;
 
 import com.vdurmont.emoji.EmojiParser;
+import org.example.Chats.ChatsService;
 import org.example.TelegramBot;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,6 +16,7 @@ public class QuizGame {
     private final Logger logger = LoggerFactory.getLogger(QuizGame.class);
     //TODO: сделать разные параметры в зависимости от среды: ПРОД и ДЕВ
     private final int quizClueTimer = 15000;
+    private final ChatsService chatsService = new ChatsService();
     private final int remainingNumberOfClue = 1;
     CompletableFuture<Void> currentQuestionThread;
     ExecutorService executor = Executors.newSingleThreadExecutor();
@@ -79,7 +81,7 @@ public class QuizGame {
     public void checkQuizAnswer(Message message) {
         Long chatID = message.getChatId();
         if (!quizMap.get(chatID).isQuizStarted) {
-            logger.debug("Викторина не запущена для чата: " + chatID);
+            logger.debug("Викторина не запущена для чата: " + chatsService.getChatByID(chatID).getTitle());
             return;
         }
 
@@ -92,10 +94,9 @@ public class QuizGame {
             endClueUpdateThread("Получен верный ответ на вопрос");
             quizMap.get(chatID).countAnswer(userID, points, chatID);
         }
-
     }
     private void startGameUntilEnd(Long chatID) {
-        logger.info("Запускаем бесконечный цикл викторины для чата " + chatID);
+        logger.info("Запускаем бесконечный цикл викторины для чата " + chatsService.getChatByID(chatID).getTitle());
         do {
             currentClueMessageID = null;
             quizMap.get(chatID).newRandomQuestion();
@@ -112,7 +113,7 @@ public class QuizGame {
             sendClue(chatID);
             startClueUpdateThread(chatID);
             try {
-                currentQuestionThread.join(); // Ожидание завершения потока
+                currentQuestionThread.join(); // Ожидание завершения потока с подсказками
             } catch (CancellationException e) {
                 logger.debug("Получен верный ответ. Поток с подсказками был прерван: " + e);
             }
@@ -120,19 +121,19 @@ public class QuizGame {
             //TODO: так же нужно найти где обнуляется счетчик неправильных ответов после получения верного ответа
 
         } while (quizMap.get(chatID).isQuizStarted);
-        logger.info("Бесконечный цикл викторины для чата " + chatID + " завершен");
+        logger.info("Бесконечный цикл викторины для чата " + chatsService.getChatByID(chatID).getTitle() + " завершен");
     }
     private void startClueUpdateThread(Long chatID) {
         currentQuestionThread = CompletableFuture.runAsync(() -> {
-            boolean questionEndFlag = true; //признак, того что вопрос завершен
-            while ((quizMap.get(chatID).isQuizStarted) & (questionEndFlag)) {
+            boolean questionEndFlag = false; //признак, того что вопрос завершен
+            while ((quizMap.get(chatID).isQuizStarted) & (!questionEndFlag)) {
                 try {
                     Thread.sleep(quizClueTimer);
                     if (quizMap.get(chatID).getRemainingNumberOfClue() > remainingNumberOfClue) {
                         quizMap.get(chatID).updateClue();
                         sendClue(chatID);
                     } else {
-                        questionEndFlag = false;
+                        questionEndFlag = true;
                         if (!bot.editMessage(chatID, currentClueMessageID,"Правильный ответ: " + quizMap.get(chatID).getAnswer()))
                             bot.sendMessage(chatID,"Правильный ответ: " + quizMap.get(chatID).getAnswer());
                         quizMap.get(chatID).noAnswerCount++;

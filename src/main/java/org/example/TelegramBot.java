@@ -230,7 +230,6 @@ public class TelegramBot extends TelegramLongPollingBot {
                 default -> quizGame.checkQuizAnswer(message);
             }
         }
-
     }
     private void sendInlineKeyboard(Long chatID) {
         // Создаем кнопки
@@ -329,7 +328,7 @@ public class TelegramBot extends TelegramLongPollingBot {
     private void executeCallback(Update update) {
         String callbackData = update.getCallbackQuery().getData();
 
-        // Обрабатываем нажатие кнопки
+        // Обрабатываем нажатие inline кнопки
         switch (callbackData) {
             case "aries_button_pressed" -> horoscopeService.sendHoroscope(update, "aries", "today");
             case "taurus_button_pressed" -> horoscopeService.sendHoroscope(update, "taurus", "today");
