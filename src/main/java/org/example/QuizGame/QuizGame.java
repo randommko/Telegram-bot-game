@@ -11,7 +11,7 @@ import java.util.concurrent.*;
 
 public class QuizGame {
     private final TelegramBot bot;
-    private final Map<Long, QuizService> quizMap = new HashMap<>(); //ключ ID чата, значение экземпляр Quiz
+    private final Map<Long, QuizService> quizMap = new HashMap<>(); //ключ ID чата, значение экземпляр QuizService
     private final Logger logger = LoggerFactory.getLogger(QuizGame.class);
     private final int quizClueTimer = 15000;
     private final int remainingNumberOfClue = 1;
@@ -31,19 +31,23 @@ public class QuizGame {
     public void startQuizGame(Message message) {
         Long chatID = message.getChatId();
         String warningBotMsgNoRules = "Что бы бот мог читать ответы сделайте его администратором";
-        if (bot.checkAccessPrivileges(message)) {
-            if (!quizMap.containsKey(chatID))
-                quizMap.put(chatID, new QuizService(chatID));
-            if (!quizMap.get(chatID).isQuizStarted) {
-                quizMap.get(chatID).startQuiz();
-                Thread thread = new Thread(() -> startGameUntilEnd(chatID));
-                thread.start();
-            } else {
-                bot.sendMessage(chatID, "Викторина уже идет!");
-            }
-        }
-        else
+        if (!bot.checkAccessPrivileges(message)) {
             bot.sendMessage(chatID, warningBotMsgNoRules);
+            return;
+        }
+
+        if (!quizMap.containsKey(chatID))
+            quizMap.put(chatID, new QuizService(chatID));
+
+        if (quizMap.get(chatID).isQuizStarted) {
+            bot.sendMessage(chatID, "Викторина уже идет!");
+            return;
+        }
+
+        quizMap.get(chatID).startQuiz();
+        Thread thread = new Thread(() -> startGameUntilEnd(chatID));
+        thread.start();
+
     }
     public void getQuizStats(Message message) {
         bot.sendMessage(message.getChatId(), quizMap.get(message.getChatId()).getQuizStats());

@@ -75,7 +75,7 @@ public class TelegramBot extends TelegramLongPollingBot {
         checkChat(message);
 
         logger.debug("Получено сообщение из чата " + message.getChat().getId().toString() +": "+ message.getText());
-        executeCommand(update);
+        executeMessage(update);
     }
 
     private void checkUser(Message message) {
@@ -205,7 +205,7 @@ public class TelegramBot extends TelegramLongPollingBot {
         }
         return false;
     }
-    private void executeCommand(Update update) {
+    private void executeMessage(Update update) {
         Message message = update.getMessage();
         if (update.hasMessage()) {
             String[] parts = message.getText().split(" ", 2); // Разделяем строку по первому пробелу
@@ -320,7 +320,6 @@ public class TelegramBot extends TelegramLongPollingBot {
             e.printStackTrace();
         }
     }
-
     private void executeCallback(Update update) {
         String callbackData = update.getCallbackQuery().getData();
 
