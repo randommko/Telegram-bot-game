@@ -13,7 +13,7 @@ public class QuizGame {
     private final TelegramBot bot;
     private final Map<Long, QuizService> quizMap = new HashMap<>(); //ключ ID чата, значение экземпляр QuizService
     private final Logger logger = LoggerFactory.getLogger(QuizGame.class);
-    private final int quizClueTimer = 15000;
+    private final int quizClueTimer = 5000;
     private final int remainingNumberOfClue = 1;
     CompletableFuture<Void> currentQuestionThread;
     ExecutorService executor = Executors.newSingleThreadExecutor();
@@ -47,19 +47,18 @@ public class QuizGame {
         quizMap.get(chatID).startQuiz();
         Thread thread = new Thread(() -> startGameUntilEnd(chatID));
         thread.start();
-
     }
     public void getQuizStats(Message message) {
         bot.sendMessage(message.getChatId(), quizMap.get(message.getChatId()).getQuizStats());
     }
     public void stopQuiz(Long chatID) {
-        if (quizMap.get(chatID).isQuizStarted) {
-            quizMap.get(chatID).stopQuiz();
-            endClueUpdateThread("Викторина была завершена по команде");
-        } else {
-            bot.sendMessage(chatID, "Викторина не была запущена. Запустите викторину командой /quiz_start");
+        if (!quizMap.get(chatID).isQuizStarted) {
+            bot.sendMessage(chatID, "Никто не начинал викторину. Начните викторину командой /quiz_start");
+            return;
         }
 
+        quizMap.get(chatID).stopQuiz();
+        endClueUpdateThread("Викторина была завершена по команде");
     }
     private void sendClue(Long chatID) {
         logger.debug("Подсказка обновлена");
@@ -78,48 +77,53 @@ public class QuizGame {
     }
     public void checkQuizAnswer(Message message) {
         Long chatID = message.getChatId();
-        if (quizMap.get(chatID).isQuizStarted) {
-            logger.debug("Проверка ответа на вопрос викторины: " + message.getText());
-            String answer = message.getText();
-            Long userID = message.getFrom().getId();
-            Integer points = quizMap.get(chatID).checkQuizAnswer(answer);
-            if (points != -1) {
-                bot.sendReplyMessage(chatID, message.getMessageId(), "Правильный ответ! Вы заработали " + points + " очков!");
-                endClueUpdateThread("Получен верный ответ на вопрос");
-                quizMap.get(chatID).countAnswer(userID, points, chatID);
-            }
-        }
-        else {
+        if (!quizMap.get(chatID).isQuizStarted) {
             logger.debug("Викторина не запущена для чата: " + chatID);
+            return;
         }
+
+        logger.debug("Проверка ответа на вопрос викторины: " + message.getText());
+        String answer = message.getText();
+        Long userID = message.getFrom().getId();
+        Integer points = quizMap.get(chatID).checkQuizAnswer(answer);
+        if (points != -1) {
+            bot.sendReplyMessage(chatID, message.getMessageId(), "Правильный ответ! Вы заработали " + points + " очков!");
+            endClueUpdateThread("Получен верный ответ на вопрос");
+            quizMap.get(chatID).countAnswer(userID, points, chatID);
+        }
+
     }
     private void startGameUntilEnd(Long chatID) {
         logger.info("Запускаем бесконечный цикл викторины для чата " + chatID);
         do {
             currentClueMessageID = null;
             quizMap.get(chatID).newRandomQuestion();
-            quizMap.get(chatID).createClue();
-            if (quizMap.get(chatID).currentQuestionID != null) {
-                sendQuestion(chatID);
-                sendClue(chatID);
-                startClueUpdateThread(chatID);
-                try {
-                    currentQuestionThread.join(); // Ожидание завершения потока
-                } catch (CancellationException e) {
-                    logger.debug("Получен верный ответ. Поток с подсказками был прерван: " + e);
-                }
-            }
-            else {
+
+            if (quizMap.get(chatID).currentQuestionID == null) {
                 bot.sendMessage(chatID, "В БД нет вопросов");
                 logger.debug("В БД нет вопросов - викторина завершена");
                 quizMap.get(chatID).stopQuiz();
+                return;
             }
+
+            quizMap.get(chatID).createClue();
+            sendQuestion(chatID);
+            sendClue(chatID);
+            startClueUpdateThread(chatID);
+            try {
+                currentQuestionThread.join(); // Ожидание завершения потока
+            } catch (CancellationException e) {
+                logger.debug("Получен верный ответ. Поток с подсказками был прерван: " + e);
+            }
+            //TODO: сюда попробовать перенести проверку на 3 вопроса без ответа
+            //TODO: так же нужно найти где обнуляется счетчик неправильных ответов после получения верного ответа
+
         } while (quizMap.get(chatID).isQuizStarted);
         logger.info("Бесконечный цикл викторины для чата " + chatID + " завершен");
     }
     private void startClueUpdateThread(Long chatID) {
         currentQuestionThread = CompletableFuture.runAsync(() -> {
-            boolean questionEndFlag = true;
+            boolean questionEndFlag = true; //признак, того что вопрос завершен
             while ((quizMap.get(chatID).isQuizStarted) & (questionEndFlag)) {
                 try {
                     Thread.sleep(quizClueTimer);
@@ -136,6 +140,7 @@ public class QuizGame {
                     logger.debug("Отправка подсказок была прервана (Викторина завершена?)");
                 }
             }
+            //TODO: эту проверку нужно выполнять в основном потоке с вопросами.
             if (quizMap.get(chatID).noAnswerCount >= 3) {
                 quizMap.get(chatID).stopQuiz();
                 endClueUpdateThread("Три вопроса подряд без верного ответа");
