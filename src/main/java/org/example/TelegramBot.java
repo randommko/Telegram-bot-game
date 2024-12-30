@@ -209,7 +209,13 @@ public class TelegramBot extends TelegramLongPollingBot {
         Message message = update.getMessage();
         if (update.hasMessage()) {
             String[] parts = message.getText().split(" ", 2); // Разделяем строку по первому пробелу
-            String command = parts[0]; // Команда
+
+            /*
+            parts[0] - команда
+            parts[1] - параметр (сейчас не используется)
+             */
+
+            String command = parts[0];
 
             switch (command) {
                 case "/bot_info", "/bot_info@ChatGamePidor_Bot", "/help", "/help@ChatGamePidor_Bot" -> botInfo(message);
@@ -324,7 +330,6 @@ public class TelegramBot extends TelegramLongPollingBot {
         String callbackData = update.getCallbackQuery().getData();
 
         // Обрабатываем нажатие кнопки
-        //TODO: добавить кем нажата кнопка, передать в sendHoroscope либо ИД пользователя, либо целиком callbackData
         switch (callbackData) {
             case "aries_button_pressed" -> horoscopeService.sendHoroscope(update, "aries", "today");
             case "taurus_button_pressed" -> horoscopeService.sendHoroscope(update, "taurus", "today");
