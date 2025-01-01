@@ -49,6 +49,7 @@ public class TelegramBot extends TelegramLongPollingBot {
         pidorGame = new PidorGame();
         quizGame = new QuizGame();
         horoscopeService = new HoroscopeService();
+        //TODO: добавить отправку различных сообщений по CRON
     }
     @Override
     public String getBotUsername() {
@@ -75,7 +76,7 @@ public class TelegramBot extends TelegramLongPollingBot {
         checkChat(message);
 
         logger.debug("Получено сообщение из чата " + message.getChat().getId().toString() +": "+ message.getText());
-        executeCommand(update);
+        executeMessage(update);
     }
 
     private void checkUser(Message message) {
@@ -205,11 +206,17 @@ public class TelegramBot extends TelegramLongPollingBot {
         }
         return false;
     }
-    private void executeCommand(Update update) {
+    private void executeMessage(Update update) {
         Message message = update.getMessage();
         if (update.hasMessage()) {
             String[] parts = message.getText().split(" ", 2); // Разделяем строку по первому пробелу
-            String command = parts[0]; // Команда
+
+            /*
+            parts[0] - команда
+            parts[1] - параметр (сейчас не используется)
+             */
+
+            String command = parts[0];
 
             switch (command) {
                 case "/bot_info", "/bot_info@ChatGamePidor_Bot", "/help", "/help@ChatGamePidor_Bot" -> botInfo(message);
@@ -224,7 +231,6 @@ public class TelegramBot extends TelegramLongPollingBot {
                 default -> quizGame.checkQuizAnswer(message);
             }
         }
-
     }
     private void sendInlineKeyboard(Long chatID) {
         // Создаем кнопки
@@ -320,12 +326,10 @@ public class TelegramBot extends TelegramLongPollingBot {
             e.printStackTrace();
         }
     }
-
     private void executeCallback(Update update) {
         String callbackData = update.getCallbackQuery().getData();
 
-        // Обрабатываем нажатие кнопки
-        //TODO: добавить кем нажата кнопка, передать в sendHoroscope либо ИД пользователя, либо целиком callbackData
+        // Обрабатываем нажатие inline кнопки
         switch (callbackData) {
             case "aries_button_pressed" -> horoscopeService.sendHoroscope(update, "aries", "today");
             case "taurus_button_pressed" -> horoscopeService.sendHoroscope(update, "taurus", "today");

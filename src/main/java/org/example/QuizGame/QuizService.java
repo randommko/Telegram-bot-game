@@ -2,18 +2,26 @@ package org.example.QuizGame;
 
 import com.vdurmont.emoji.EmojiParser;
 import org.example.TelegramBot;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.text.Normalizer;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class QuizService {
     private final QuizRepository repo = new QuizRepository();
     public boolean isQuizStarted = false;
     private final TelegramBot bot;
     private final Long chatID;
+    public CompletableFuture<Void> currentQuestionThread;
+    public ExecutorService executor = Executors.newSingleThreadExecutor();
     public Integer noAnswerCount = 0;
     public Integer currentQuestionID = null;
     private String clueText;
+    private final Logger logger = LoggerFactory.getLogger(QuizService.class);
 
     public QuizService(Long chatID) {
         this.chatID = chatID;
@@ -143,7 +151,10 @@ public class QuizService {
         }
         return count;
     }
-
+    public void endClueUpdateThread (String reason) {
+        currentQuestionThread.cancel(true); // Отмена задачи
+        logger.debug("Поток с обновлением подсказок завершен. Причина: " + reason);
+    }
 
 
 }

@@ -14,7 +14,13 @@ public class Main {
             logger.error("Ошибка: Токен бота не передан.");
             System.exit(1);
         }
-        System.out.println("asd");
+
+        /*
+        args[0] - токен бота
+        args[1] - IP БД
+        args[2] - логин БД
+        args[3] - пароль БД
+        */
 
         try {
             DataSourceConfig.initialize(args[1], args[2], args[3]);
