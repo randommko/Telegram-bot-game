@@ -74,6 +74,10 @@ public class TelegramBot extends TelegramLongPollingBot {
         }
         checkUser(message);
         checkChat(message);
+        if (message.getText() == null) {
+            logger.debug("Сообщение не содержит текста");
+            return;
+        }
 
         logger.debug("Получено сообщение из чата " + message.getChat().getId().toString() +": "+ message.getText());
         executeMessage(update);
