@@ -14,7 +14,6 @@ public class Main {
             logger.error("Ошибка: Токен бота не передан.");
             System.exit(1);
         }
-        System.out.println("asd");
 
         /*
         args[0] - токен бота
