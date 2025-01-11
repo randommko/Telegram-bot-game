@@ -53,8 +53,14 @@ public class CockSizeRepository {
                 checkStmt.setLong(1, userID);
                 checkStmt.setDate(2, Date.valueOf(currentDate));
                 ResultSet resultSet = checkStmt.executeQuery();
-                resultSet.next();
-                return resultSet.getInt("size");
+//                resultSet.next();
+                if (resultSet.next()) {
+                    return resultSet.getInt("size");
+                } else {
+                    logger.warn("Запись не найдена для user_id: " + userID + ", date: " + currentDate);
+                    return -1; // Возвращаем значение по умолчанию, если запись не найдена
+                }
+//                return resultSet.getInt("size");
             }
         } catch (Exception e) {
             logger.error("Ошибка при поиске в БД длинны члена: ", e);
