@@ -110,19 +110,24 @@ public class UsersRepository {
             try (PreparedStatement checkStmt = connection.prepareStatement(userNameQuery)) {
                 checkStmt.setLong(1, userID);
                 ResultSet resultSet = checkStmt.executeQuery();
-                resultSet.next();
-                return new User(resultSet.getLong("user_id"),
-                        resultSet.getString("first_name"),
-                        resultSet.getBoolean("is_bot"),
-                        resultSet.getString("last_name"),
-                        resultSet.getString("user_name"),
-                        resultSet.getString("language_code"),
-                        resultSet.getBoolean("can_join_groups"),
-                        resultSet.getBoolean("can_read_all_group_messages"),
-                        resultSet.getBoolean("support_inline_queries"),
-                        resultSet.getBoolean("is_premium"),
-                        resultSet.getBoolean("added_to_attachment_menu")
-                );
+                if (resultSet.next()) {
+                    return new User(resultSet.getLong("user_id"),
+                            resultSet.getString("first_name"),
+                            resultSet.getBoolean("is_bot"),
+                            resultSet.getString("last_name"),
+                            resultSet.getString("user_name"),
+                            resultSet.getString("language_code"),
+                            resultSet.getBoolean("can_join_groups"),
+                            resultSet.getBoolean("can_read_all_group_messages"),
+                            resultSet.getBoolean("support_inline_queries"),
+                            resultSet.getBoolean("is_premium"),
+                            resultSet.getBoolean("added_to_attachment_menu")
+                    );
+                } else {
+                    logger.warn("Запись не найдена для user_id: " + userID);
+                    return null; // Возвращаем значение по умолчанию, если запись не найдена
+                }
+
             }
         } catch (Exception e) {
             logger.error("Ошибка получения Usr из БД: ", e);
