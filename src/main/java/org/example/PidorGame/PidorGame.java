@@ -49,6 +49,7 @@ public class PidorGame {
 
         }
         public void startPidorGame(Long chatID) {
+                //TODO: сделать что бы игру мог запускать только человек зарегистрированный в ней
                 Long winnerID = repo.getTodayWinner(chatID);
                 if (winnerID != null) {
                         bot.sendMessage(chatID,
