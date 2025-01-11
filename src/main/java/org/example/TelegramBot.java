@@ -13,9 +13,7 @@ import org.telegram.telegrambots.meta.api.methods.groupadministration.GetChatMem
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.methods.send.SendPhoto;
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageText;
-import org.telegram.telegrambots.meta.api.objects.InputFile;
-import org.telegram.telegrambots.meta.api.objects.Message;
-import org.telegram.telegrambots.meta.api.objects.Update;
+import org.telegram.telegrambots.meta.api.objects.*;
 import org.telegram.telegrambots.meta.api.objects.chatmember.ChatMember;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
@@ -61,7 +59,10 @@ public class TelegramBot extends TelegramLongPollingBot {
     }
     @Override
     public void onUpdateReceived(Update update) {
+
         if (update.hasCallbackQuery()) {
+            checkUser(update.getCallbackQuery().getFrom());
+            checkChat(update.getCallbackQuery().getMessage().getChat());
             executeCallback(update);
             return;
         }
@@ -72,8 +73,10 @@ public class TelegramBot extends TelegramLongPollingBot {
             logger.debug("Пустое сообщение (например, событие, связанное с вызовами, действиями пользователей, или callback-запросами)");
             return;
         }
-        checkUser(message);
-        checkChat(message);
+
+        checkUser(message.getFrom());
+        checkChat(message.getChat());
+
         if (message.getText() == null) {
             logger.debug("Сообщение не содержит текста");
             return;
@@ -83,27 +86,27 @@ public class TelegramBot extends TelegramLongPollingBot {
         executeMessage(update);
     }
 
-    private void checkUser(Message message) {
-        if (!usersService.checkUser(message.getFrom())) {
-            usersService.addUser(message.getFrom());
-            usersUpdateTime.put(message.getFrom().getId(), LocalDate.now());
+    private void checkUser(User user) {
+        if (!usersService.checkUser(user)) {
+            usersService.addUser(user);
+            usersUpdateTime.put(user.getId(), LocalDate.now());
         }
         else {
-            if (!Objects.equals(usersUpdateTime.get(message.getFrom().getId()), LocalDate.now())) {
-                usersService.updateUser(message.getFrom());
-                usersUpdateTime.put(message.getFrom().getId(), LocalDate.now());
+            if (!Objects.equals(usersUpdateTime.get(user.getId()), LocalDate.now())) {
+                usersService.updateUser(user);
+                usersUpdateTime.put(user.getId(), LocalDate.now());
             }
         }
     }
-    private void checkChat(Message message) {
-        if (!chatsService.checkChat(message.getChatId())) {
-            chatsService.addChat(message.getChat());
-            chatsUpdateTime.put(message.getFrom().getId(), LocalDate.now());
+    private void checkChat(Chat chat) {
+        if (!chatsService.checkChat(chat.getId())) {
+            chatsService.addChat(chat);
+            chatsUpdateTime.put(chat.getId(), LocalDate.now());
         }
         else {
-            if (!Objects.equals(chatsUpdateTime.get(message.getFrom().getId()), LocalDate.now())) {
-                chatsService.updateChat(message.getChat());
-                chatsUpdateTime.put(message.getFrom().getId(), LocalDate.now());
+            if (!Objects.equals(chatsUpdateTime.get(chat.getId()), LocalDate.now())) {
+                chatsService.updateChat(chat);
+                chatsUpdateTime.put(chat.getId(), LocalDate.now());
             }
         }
     }
