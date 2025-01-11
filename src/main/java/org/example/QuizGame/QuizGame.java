@@ -78,7 +78,7 @@ public class QuizGame {
     }
     public void checkQuizAnswer(Message message) {
         Long chatID = message.getChatId();
-        if (quizMap.containsKey(chatID)) {
+        if (!quizMap.containsKey(chatID)) {
             logger.debug("Проверка ответа не произведена. Викторина ни разу не запускалась в чате: " + chatsService.getChatByID(chatID).getTitle());
             return;
         }
