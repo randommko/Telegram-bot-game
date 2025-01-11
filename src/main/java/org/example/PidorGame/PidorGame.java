@@ -49,11 +49,12 @@ public class PidorGame {
 
         }
         public void startPidorGame(Long chatID, Long userID) {
+                logger.debug("Запущена игра пидорвикторина в чате: " + chatID);
                 if (!repo.getPidorGamePlayers(chatID).contains(userID)) {
                         bot.sendMessage(chatID, "Игру может начать только зарегистрированный игрок. Зарегистрируйтесь командой /pidor_reg");
                         return;
                 }
-                //TODO: сделать что бы игру мог запускать только человек зарегистрированный в ней
+
                 Long winnerID = repo.getTodayWinner(chatID);
                 if (winnerID != null) {
                         bot.sendMessage(chatID,
@@ -61,6 +62,7 @@ public class PidorGame {
                         return;
                 }
                 Set<Long> chatPlayers = repo.getPidorGamePlayers(chatID);
+                logger.debug("Количество игроков: " + chatPlayers.size());
                 if (chatPlayers.isEmpty()) {
                         bot.sendMessage(chatID, "Нет зарегистрированных игроков.");
                         return;
