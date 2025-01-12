@@ -17,8 +17,7 @@ public class QuizService {
     private final TelegramBot bot;
     private final Long chatID;
     public CompletableFuture<Void> currentQuestionThread;
-//    public ExecutorService executor = Executors.newSingleThreadExecutor();
-    private final ThreadPoolExecutor executor = (ThreadPoolExecutor) Executors.newCachedThreadPool();
+    public final ThreadPoolExecutor executorClueUpdate = (ThreadPoolExecutor) Executors.newCachedThreadPool();
     public Integer noAnswerCount = 0;
     public Integer currentQuestionID = null;
     private String clueText;
