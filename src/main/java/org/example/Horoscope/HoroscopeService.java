@@ -77,7 +77,7 @@ public class HoroscopeService {
                 horoscope = xmlMapper.readValue(getHoroscopeXML(), Horoscope.class);
 
             } catch (Exception e) {
-                logger.debug("Ошибка парсинга гороскопа" + e);
+                logger.error("Ошибка парсинга гороскопа" + e);
             }
     }
     public static String getHoroscopeXML() throws IOException, InterruptedException {

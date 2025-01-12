@@ -57,7 +57,7 @@ public class CockSizeRepository {
                 if (resultSet.next()) {
                     return resultSet.getInt("size");
                 } else {
-                    logger.debug("Для user_id: " + userID + " не найден замер члена на текущую дату, date: " + currentDate);
+                    logger.info("Для user_id: " + userID + " не найден замер члена на текущую дату, date: " + currentDate);
                     return -1; // Возвращаем значение по умолчанию, если запись не найдена
                 }
             }

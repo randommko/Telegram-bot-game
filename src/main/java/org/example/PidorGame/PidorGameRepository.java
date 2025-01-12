@@ -57,6 +57,7 @@ public class PidorGameRepository {
             return preparedStatement.executeUpdate();
         } catch (SQLException e) {
             logger.error("Ошибка при регистрации игрока в БД: " + e);
+            //TODO: почему не null?
             return 0;
         }
     }
@@ -81,7 +82,7 @@ public class PidorGameRepository {
                         resultSet.getInt("count")
                 );
         } catch (Exception e) {
-            logger.error("Ошибка получения статистики ипидоров: " + e);
+            logger.error("Ошибка получения статистики пидоров: " + e);
         }
         return winnersList;
     }
@@ -99,16 +100,15 @@ public class PidorGameRepository {
                         return resultSet.getLong("user_id");
                     }
                 }
-            } catch (Exception e) {
-                logger.error("Ошибка при приверке состоявшейся игры: ", e);
             }
-        } catch (SQLException e) {
-            logger.error("Ошибка при приверке состоявшейся игры: ", e);
+        } catch (Exception e) {
+            logger.error("Ошибка при проверке состоявшейся игры: ", e);
         }
         return null;
     }
 
     public String getWinnerResponce() {
+        //TODO: опечатка?
         String sql = "SELECT text FROM " + MESSAGES_TABLE + " WHERE group_num = 100 ORDER BY RANDOM() LIMIT 1";
 
         try (Connection conn = DataSourceConfig.getDataSource().getConnection()) {
@@ -120,7 +120,7 @@ public class PidorGameRepository {
                 }
             }
         } catch (Exception e) {
-            logger.error("Произошла ошибка при поулчении текста сообщений из БД: ", e);
+            logger.error("Произошла ошибка при получении текста сообщений из БД: ", e);
             // В случае ошибки возвращаем предопределённые ответы
             return "Победитель сегодняшней игры: ";
         }
@@ -148,7 +148,7 @@ public class PidorGameRepository {
                 }
             }
         } catch (Exception e) {
-            logger.error("Произошла ошибка при поулчении текста сообщений из БД: ", e);
+            logger.error("Произошла ошибка при получении текста сообщений из БД: ", e);
             // В случае ошибки возвращаем предопределённые ответы
             return List.of("Подготовка...", "Скоро узнаем...", "Держитесь крепче...");
         }

@@ -130,7 +130,7 @@ public class UsersRepository {
 
             }
         } catch (Exception e) {
-            logger.error("Ошибка получения Usr из БД: ", e);
+            logger.error("Ошибка получения User из БД: ", e);
             return null;
         }
     }

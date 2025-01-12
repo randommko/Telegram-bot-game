@@ -75,7 +75,7 @@ public class TelegramBot extends TelegramLongPollingBot {
             Message message = update.getMessage();
 
             if (message == null) {
-                logger.debug("Пустое сообщение (например, событие, связанное с вызовами, действиями пользователей, или callback-запросами)");
+                logger.debug("Получено пустое сообщение (например, событие, связанное с вызовами, действиями пользователей, или callback-запросами)");
                 return;
             }
 
@@ -83,7 +83,7 @@ public class TelegramBot extends TelegramLongPollingBot {
             checkChat(message.getChat());
 
             if (message.getText() == null) {
-                logger.debug("Сообщение не содержит текста");
+                logger.debug("Полученное сообщение не содержит текста");
                 return;
             }
 
@@ -91,7 +91,7 @@ public class TelegramBot extends TelegramLongPollingBot {
             executeMessage(update);
         },executor);
 
-        logger.debug("Количество активных потоков обработки команд: " + executor.getActiveCount());
+        logger.info("Количество активных потоков обработки команд: " + executor.getActiveCount());
     }
 
     private void checkUser(User user) {
@@ -173,7 +173,7 @@ public class TelegramBot extends TelegramLongPollingBot {
                 logger.error("Ошибка при отправке сообщения: ", e);
             }
         } else {
-            logger.error("Image file not found: " + imageFile.getPath());
+            logger.error("Ошибка получения изображения для отправки сообщения с картинкой: " + imageFile.getPath());
             return false;
         }
         return false;
@@ -187,7 +187,7 @@ public class TelegramBot extends TelegramLongPollingBot {
             execute(message);
             return true;
         } catch (TelegramApiException e) {
-            logger.error("Ошибка при отправке сообщения: ", e);
+            logger.error("Ошибка при попытке обновить сообщение: ", e);
             return false;
         }
     }
@@ -197,10 +197,10 @@ public class TelegramBot extends TelegramLongPollingBot {
 
         switch (chatType) {
             case "Private":
-                logger.debug("Message was sent in a private chat.");
+                logger.debug("Получено сообщение из приватного чата");
                 return true;
             case "Group", "Supergroup":
-                logger.debug("Message was sent in a group chat.");
+                logger.debug("Получено сообщение из группового чата");
                 try {
                     GetChatMember getChatMember = new GetChatMember();
                     getChatMember.setChatId(chatID);
@@ -210,14 +210,14 @@ public class TelegramBot extends TelegramLongPollingBot {
                     return Objects.equals(chatMember.getStatus(), "administrator");
 
                 } catch (Exception e) {
-                    logger.debug("Ошибка проверки прав доступа у бота: " + e);
+                    logger.error("Ошибка проверки прав доступа у бота: " + e);
                     return false;
                 }
             case "Channel":
-                logger.debug("Message was sent in a channel.");
+                logger.debug("Получено сообщение из канала");
                 return false;
             default:
-                logger.debug("Unknown chat type.");
+                logger.error("Неизвестный тип канал получения сообщений");
         }
         return false;
     }
@@ -338,7 +338,7 @@ public class TelegramBot extends TelegramLongPollingBot {
         try {
             execute(message);
         } catch (TelegramApiException e) {
-            logger.debug("Ошибка отправки inline кнопок:" + e);
+            logger.error("Ошибка отправки inline кнопок:" + e);
         }
     }
     private void executeCallback(Update update) {
@@ -358,7 +358,7 @@ public class TelegramBot extends TelegramLongPollingBot {
             case "capricorn_button_pressed" -> horoscopeService.sendHoroscope(update, "capricorn", "today");
             case "aquarius_button_pressed" -> horoscopeService.sendHoroscope(update, "aquarius", "today");
             case "pisces_button_pressed" -> horoscopeService.sendHoroscope(update, "pisces", "today");
-            default -> logger.debug("Ошибка работы inline кнопок");
+            default -> logger.error("Ошибка работы inline кнопок");
         }
     }
 
