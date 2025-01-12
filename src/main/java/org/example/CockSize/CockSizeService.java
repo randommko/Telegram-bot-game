@@ -30,58 +30,52 @@ public class CockSizeService {
         cockSizeList.add(1);
         cockSizeList.add(2);
         cockSizeList.add(3);
-        for (int i = 0; i < 2; i++) {
+        for (int i = 0; i < 2; i++)
             cockSizeList.add(5);
-        }
-        for (int i = 0; i < 2; i++) {
+
+        for (int i = 0; i < 2; i++)
             cockSizeList.add(6);
-        }
-        for (int i = 0; i < 2; i++) {
+
+        for (int i = 0; i < 2; i++)
             cockSizeList.add(7);
-        }
-        for (int i = 0; i < 2; i++) {
+
+        for (int i = 0; i < 2; i++)
             cockSizeList.add(8);
-        }
 
-        for (int i = 0; i < 5; i++) {
+        for (int i = 0; i < 5; i++)
             cockSizeList.add(10);
-        }
 
-        for (int i = 0; i < 5; i++) {
+        for (int i = 0; i < 5; i++)
             cockSizeList.add(11);
-        }
-        for (int i = 0; i < 5; i++) {
+
+        for (int i = 0; i < 5; i++)
             cockSizeList.add(13);
-        }
-        for (int i = 0; i < 4; i++) {
+
+        for (int i = 0; i < 4; i++)
             cockSizeList.add(15);
-        }
-        for (int i = 0; i < 4; i++) {
+
+        for (int i = 0; i < 4; i++)
             cockSizeList.add(16);
-        }
-        for (int i = 0; i < 3; i++) {
+
+        for (int i = 0; i < 3; i++)
             cockSizeList.add(18);
-        }
 
-        for (int i = 0; i < 2; i++) {
+        for (int i = 0; i < 2; i++)
             cockSizeList.add(20);
-        }
-        for (int i = 0; i < 2; i++) {
+
+        for (int i = 0; i < 2; i++)
             cockSizeList.add(24);
-        }
 
-        for (int i = 0; i < 1; i++) {
+        for (int i = 0; i < 1; i++)
             cockSizeList.add(40);
-        }
 
-        for (int i = 0; i < 1; i++) {
+        for (int i = 0; i < 1; i++)
             cockSizeList.add(45);
-        }
-        for (int i = 0; i < 1; i++) {
-            cockSizeList.add(49);
-        }
 
-        logger.debug("Длинны членов в розыгрыше" + cockSizeList.toString());
+        for (int i = 0; i < 1; i++)
+            cockSizeList.add(49);
+
+        logger.debug("Длинны членов в розыгрыше" + cockSizeList);
 
         // Генерируем случайный элемент
         Random random = new Random();
