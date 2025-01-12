@@ -12,7 +12,7 @@ import org.slf4j.LoggerFactory;
 public class CockSizeService {
     private final CockSizeRepository repo = new CockSizeRepository();
     private static final Logger logger = LoggerFactory.getLogger(CockSizeService.class);
-    private UsersService usersService = new UsersService();
+    private final UsersService usersService = new UsersService();
     public Integer measureCockSize(Long userID) {
         int newRandomSize = getCockSize();
         repo.setCockSizeWinner(userID, newRandomSize);
