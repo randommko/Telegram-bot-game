@@ -43,7 +43,6 @@ public class TelegramBot extends TelegramLongPollingBot {
     private static final Map<Long, LocalDate> usersUpdateTime = new HashMap<>();
     private static final Map<Long, LocalDate> chatsUpdateTime = new HashMap<>();
     private static final Logger logger = LoggerFactory.getLogger(TelegramBot.class);
-//    public ExecutorService executor = Executors.newSingleThreadExecutor();
     private final ThreadPoolExecutor executor = (ThreadPoolExecutor) Executors.newCachedThreadPool();
     public TelegramBot(String botToken) {
         this.botToken = botToken;
@@ -361,5 +360,4 @@ public class TelegramBot extends TelegramLongPollingBot {
             default -> logger.error("Ошибка работы inline кнопок");
         }
     }
-
 }
