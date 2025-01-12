@@ -7,7 +7,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.*;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -86,6 +85,6 @@ public class PidorGame {
                 }
                 winnerID = new ArrayList<>(chatPlayers).get(new Random().nextInt(chatPlayers.size()));
                 repo.setPidorWinner(chatID, winnerID);
-                bot.sendMessage(chatID, EmojiParser.parseToUnicode(":rainbow_flag:") + " " + repo.getWinnerResponce() + usersService.getUserNameByID(winnerID) + "!");
+                bot.sendMessage(chatID, EmojiParser.parseToUnicode(":rainbow_flag:") + " " + repo.getWinnerResponse() + usersService.getUserNameByID(winnerID) + "!");
         }
 }

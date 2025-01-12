@@ -57,7 +57,6 @@ public class PidorGameRepository {
             return preparedStatement.executeUpdate();
         } catch (SQLException e) {
             logger.error("Ошибка при регистрации игрока в БД: " + e);
-            //TODO: почему не null?
             return 0;
         }
     }
@@ -107,8 +106,7 @@ public class PidorGameRepository {
         return null;
     }
 
-    public String getWinnerResponce() {
-        //TODO: опечатка?
+    public String getWinnerResponse() {
         String sql = "SELECT text FROM " + MESSAGES_TABLE + " WHERE group_num = 100 ORDER BY RANDOM() LIMIT 1";
 
         try (Connection conn = DataSourceConfig.getDataSource().getConnection()) {

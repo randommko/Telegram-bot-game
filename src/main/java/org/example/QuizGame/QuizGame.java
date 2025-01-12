@@ -47,11 +47,9 @@ public class QuizGame {
         }
 
         quizMap.get(chatID).startQuiz();
-        //TODO: реализовать через ThreadPoolExecutor
+
         CompletableFuture.runAsync(() -> startGameUntilEnd(chatID), executorQuizGame);
         logger.info("Количество активных потоков с викторинами: " + executorQuizGame.getActiveCount());
-        //Thread thread = new Thread(() -> startGameUntilEnd(chatID));
-        //thread.start();
     }
     public void getQuizStats(Message message) {
         bot.sendMessage(message.getChatId(), quizMap.get(message.getChatId()).getQuizStats());
