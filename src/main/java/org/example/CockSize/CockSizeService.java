@@ -3,6 +3,7 @@ package org.example.CockSize;
 import org.example.Users.UsersService;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
 import com.vdurmont.emoji.EmojiParser;
 import org.slf4j.Logger;
@@ -14,7 +15,13 @@ public class CockSizeService {
     private static final Logger logger = LoggerFactory.getLogger(CockSizeService.class);
     private final UsersService usersService = new UsersService();
     public Integer measureCockSize(Long userID) {
-        int newRandomSize = getCockSize();
+        int newRandomSize;
+        List<Integer> lastSizes = repo.getPlayerCockSizeByDays(userID, 3);
+        do {
+            newRandomSize = getCockSize();
+        }
+        while (!lastSizes.contains(newRandomSize));
+
         repo.setCockSizeWinner(userID, newRandomSize);
         return newRandomSize;
     }
