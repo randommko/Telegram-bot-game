@@ -26,7 +26,7 @@
         <dependency>
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>
-            <version>42.6.0</version>
+            <version>42.7.2</version>
         </dependency>
 
         <dependency>
@@ -41,11 +41,13 @@
             <version>${slf4j.version}</version>
         </dependency>
 
+        <!-- Logback Classic для реализации SLF4J -->
         <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-simple</artifactId>
-            <version>${slf4j.version}</version>
+            <groupId>ch.qos.logback</groupId>
+            <artifactId>logback-classic</artifactId>
+            <version>1.4.11</version> <!-- Проверьте актуальную версию -->
         </dependency>
+
 
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
