@@ -21,6 +21,7 @@ public class QuizGame {
     public Integer currentClueMessageID = null;
     public Integer currentQuestionMessageID = null;
     private final QuizRepository repo = new QuizRepository();
+    public final ThreadPoolExecutor executorQuizGame = (ThreadPoolExecutor) Executors.newCachedThreadPool();
 
     public QuizGame() {
         bot = TelegramBot.getInstance();
@@ -46,8 +47,11 @@ public class QuizGame {
         }
 
         quizMap.get(chatID).startQuiz();
-        Thread thread = new Thread(() -> startGameUntilEnd(chatID));
-        thread.start();
+        //TODO: реализовать через ThreadPoolExecutor
+        CompletableFuture.runAsync(() -> startGameUntilEnd(chatID), executorQuizGame);
+        logger.info("Количество активных потоков с викторинами: " + executorQuizGame.getActiveCount());
+        //Thread thread = new Thread(() -> startGameUntilEnd(chatID));
+        //thread.start();
     }
     public void getQuizStats(Message message) {
         bot.sendMessage(message.getChatId(), quizMap.get(message.getChatId()).getQuizStats());
@@ -99,7 +103,7 @@ public class QuizGame {
         }
     }
     private void startGameUntilEnd(Long chatID) {
-        logger.info("Запускаем бесконечный цикл викторины для чата " + chatsService.getChatByID(chatID).getTitle());
+        logger.debug("Запускаем бесконечный цикл викторины для чата " + chatsService.getChatByID(chatID).toString());
         do {
             currentClueMessageID = null;
             quizMap.get(chatID).newRandomQuestion();
@@ -124,7 +128,8 @@ public class QuizGame {
             //TODO: так же нужно найти где обнуляется счетчик неправильных ответов после получения верного ответа
 
         } while (quizMap.get(chatID).isQuizStarted);
-        logger.info("Бесконечный цикл викторины для чата " + chatsService.getChatByID(chatID).getTitle() + " завершен");
+        logger.debug("Бесконечный цикл викторины для чата " + chatsService.getChatByID(chatID).toString() + " завершен");
+        logger.debug("Количество активных потоков с викторинами: " + executorQuizGame.getActiveCount());
     }
     private void startClueUpdateThread(Long chatID) {
         quizMap.get(chatID).currentQuestionThread = CompletableFuture.runAsync(() -> {
@@ -150,7 +155,9 @@ public class QuizGame {
                 quizMap.get(chatID).stopQuiz();
                 quizMap.get(chatID).endClueUpdateThread("Три вопроса подряд без верного ответа");
             }
-        }, quizMap.get(chatID).executor);
+        }, quizMap.get(chatID).executorClueUpdate);
+
+        logger.info("Количество активных потоков с отправкой подсказок: " + quizMap.get(chatID).executorClueUpdate.getActiveCount());
     }
 
 }

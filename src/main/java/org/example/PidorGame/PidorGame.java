@@ -7,12 +7,16 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class PidorGame {
         private final TelegramBot bot;
         private static final Logger logger = LoggerFactory.getLogger(PidorGame.class);
         private final PidorGameRepository repo = new PidorGameRepository();
         private final UsersService usersService = new UsersService();
+        public ExecutorService executor = Executors.newSingleThreadExecutor();
 
         public PidorGame() {
                 bot = TelegramBot.getInstance();
@@ -26,27 +30,24 @@ public class PidorGame {
                         bot.sendMessage(chatID, "Игрок " + userName + " был зарегистрирован ранее ");
         }
         public void sendPidorStats(Long chatID) {
-                Thread thread = new Thread(() -> {
-                        Map<String, Integer> stats = repo.getPidorStats(chatID);
+                //String - имя пользователя, Integer - количество побед
+                Map<String, Integer> stats = repo.getPidorStats(chatID);
 
-                        // Преобразуем Map в List<Entry> и сортируем по убыванию значений
-                        List<Map.Entry<String, Integer>> sortedList = new ArrayList<>(stats.entrySet());
-                        sortedList.sort((entry1, entry2) -> entry2.getValue().compareTo(entry1.getValue()));
+                // Преобразуем Map в List<Entry> и сортируем по убыванию значений
+                List<Map.Entry<String, Integer>> sortedList = new ArrayList<>(stats.entrySet());
+                sortedList.sort((entry1, entry2) -> entry2.getValue().compareTo(entry1.getValue()));
 
-                        // Если нужно, можно вернуть отсортированную карту
-                        Map<String, Integer> sortedMap = new LinkedHashMap<>();
-                        for (Map.Entry<String, Integer> entry : sortedList) {
-                                sortedMap.put(entry.getKey(), entry.getValue());
-                        }
-                        StringBuilder statsMessage = new StringBuilder(EmojiParser.parseToUnicode(":rainbow_flag: Статистика викторины:\n"));
-                        sortedMap.forEach((userName, score) ->
-                                        statsMessage.append(userName.startsWith("@") ? EmojiParser.parseToUnicode(":rainbow_flag:") + userName.substring(1) : EmojiParser.parseToUnicode(":rainbow_flag:") + userName)
-                                        .append(": ").append(score).append(" побед\n")
-                        );
-                        bot.sendMessage(chatID, statsMessage.toString());
-                });
-                thread.start();
-
+                // Если нужно, можно вернуть отсортированную карту
+                Map<String, Integer> sortedMap = new LinkedHashMap<>();
+                for (Map.Entry<String, Integer> entry : sortedList) {
+                        sortedMap.put(entry.getKey(), entry.getValue());
+                }
+                StringBuilder statsMessage = new StringBuilder(EmojiParser.parseToUnicode(":rainbow_flag: Статистика викторины:\n"));
+                sortedMap.forEach((userName, score) ->
+                                statsMessage.append(userName.startsWith("@") ? EmojiParser.parseToUnicode(":rainbow_flag:") + userName.substring(1) : EmojiParser.parseToUnicode(":rainbow_flag:") + userName)
+                                .append(": ").append(score).append(" побед\n")
+                );
+                bot.sendMessage(chatID, statsMessage.toString());
         }
         public void startPidorGame(Long chatID, Long userID) {
                 logger.debug("Запущена игра пидорвикторина в чате: " + chatID);
