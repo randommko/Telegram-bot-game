@@ -20,7 +20,7 @@ public class CockSizeService {
     }
 
     public Integer findTodayCockSize(Long userID) {
-        return repo.getPlayerCockSize(userID);
+        return repo.getTodayPlayerCockSize(userID);
     }
 
     private static int getCockSize() {

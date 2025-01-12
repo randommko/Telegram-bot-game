@@ -44,7 +44,7 @@ public class CockSizeRepository {
         return null;
     }
 
-    public int getPlayerCockSize(Long userID) {
+    public int getTodayPlayerCockSize(Long userID) {
         LocalDate currentDate = LocalDate.now();
         try (Connection connection = DataSourceConfig.getDataSource().getConnection()) {
             // Проверяем, есть ли запись для текущей даты
@@ -57,10 +57,9 @@ public class CockSizeRepository {
                 if (resultSet.next()) {
                     return resultSet.getInt("size");
                 } else {
-                    logger.warn("Запись не найдена для user_id: " + userID + ", date: " + currentDate);
+                    logger.debug("Для user_id: " + userID + " не найден замер члена на текущую дату, date: " + currentDate);
                     return -1; // Возвращаем значение по умолчанию, если запись не найдена
                 }
-//                return resultSet.getInt("size");
             }
         } catch (Exception e) {
             logger.error("Ошибка при поиске в БД длинны члена: ", e);
