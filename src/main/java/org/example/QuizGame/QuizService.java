@@ -8,8 +8,8 @@ import org.slf4j.LoggerFactory;
 import java.text.Normalizer;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadPoolExecutor;
 
 public class QuizService {
     private final QuizRepository repo = new QuizRepository();
@@ -17,7 +17,8 @@ public class QuizService {
     private final TelegramBot bot;
     private final Long chatID;
     public CompletableFuture<Void> currentQuestionThread;
-    public ExecutorService executor = Executors.newSingleThreadExecutor();
+//    public ExecutorService executor = Executors.newSingleThreadExecutor();
+    private final ThreadPoolExecutor executor = (ThreadPoolExecutor) Executors.newCachedThreadPool();
     public Integer noAnswerCount = 0;
     public Integer currentQuestionID = null;
     private String clueText;
@@ -78,14 +79,10 @@ public class QuizService {
         }
         clueText = result.toString();
     }
-    public String updateClue() {
-        String newClue;
+    public void updateClue() {
         String currentAnswer = repo.getQuestionAnswerByID(currentQuestionID);
-        if (getRemainingNumberOfClue() < 1) {
-            newClue = currentAnswer;
-            return newClue;
-        }
-
+        if (getRemainingNumberOfClue() < 1)
+            return;
         char[] clueChar = clueText.toCharArray();
         char[] answerChar = currentAnswer.toCharArray();
         int randomNum;
@@ -95,7 +92,6 @@ public class QuizService {
 
         clueChar[randomNum] = answerChar[randomNum]; // заменяем символ с индексом 1
         clueText = new String(clueChar);
-        return clueText;
     }
     public Integer getRemainingNumberOfClue() {
         int count = 0;

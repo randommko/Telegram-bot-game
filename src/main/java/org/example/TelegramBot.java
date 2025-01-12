@@ -25,6 +25,10 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.time.LocalDate;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadPoolExecutor;
 
 
 public class TelegramBot extends TelegramLongPollingBot {
@@ -39,7 +43,8 @@ public class TelegramBot extends TelegramLongPollingBot {
     private static final Map<Long, LocalDate> usersUpdateTime = new HashMap<>();
     private static final Map<Long, LocalDate> chatsUpdateTime = new HashMap<>();
     private static final Logger logger = LoggerFactory.getLogger(TelegramBot.class);
-
+//    public ExecutorService executor = Executors.newSingleThreadExecutor();
+    private final ThreadPoolExecutor executor = (ThreadPoolExecutor) Executors.newCachedThreadPool();
     public TelegramBot(String botToken) {
         this.botToken = botToken;
         instance = this;
@@ -59,31 +64,34 @@ public class TelegramBot extends TelegramLongPollingBot {
     }
     @Override
     public void onUpdateReceived(Update update) {
+        CompletableFuture.runAsync(() -> {
+            if (update.hasCallbackQuery()) {
+                checkUser(update.getCallbackQuery().getFrom());
+                checkChat(update.getCallbackQuery().getMessage().getChat());
+                executeCallback(update);
+                return;
+            }
 
-        if (update.hasCallbackQuery()) {
-            checkUser(update.getCallbackQuery().getFrom());
-            checkChat(update.getCallbackQuery().getMessage().getChat());
-            executeCallback(update);
-            return;
-        }
+            Message message = update.getMessage();
 
-        Message message = update.getMessage();
+            if (message == null) {
+                logger.debug("Пустое сообщение (например, событие, связанное с вызовами, действиями пользователей, или callback-запросами)");
+                return;
+            }
 
-        if (message == null) {
-            logger.debug("Пустое сообщение (например, событие, связанное с вызовами, действиями пользователей, или callback-запросами)");
-            return;
-        }
+            checkUser(message.getFrom());
+            checkChat(message.getChat());
 
-        checkUser(message.getFrom());
-        checkChat(message.getChat());
+            if (message.getText() == null) {
+                logger.debug("Сообщение не содержит текста");
+                return;
+            }
 
-        if (message.getText() == null) {
-            logger.debug("Сообщение не содержит текста");
-            return;
-        }
+            logger.debug("Получено сообщение из чата " + message.getChat().getId().toString() +": "+ message.getText());
+            executeMessage(update);
+        },executor);
 
-        logger.debug("Получено сообщение из чата " + message.getChat().getId().toString() +": "+ message.getText());
-        executeMessage(update);
+        logger.debug("Количество активных потоков обработки команд: " + executor.getActiveCount());
     }
 
     private void checkUser(User user) {
