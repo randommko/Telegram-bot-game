@@ -3,6 +3,7 @@ package org.example.CockSize;
 import org.example.Users.UsersService;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
 import com.vdurmont.emoji.EmojiParser;
 import org.slf4j.Logger;
@@ -12,9 +13,15 @@ import org.slf4j.LoggerFactory;
 public class CockSizeService {
     private final CockSizeRepository repo = new CockSizeRepository();
     private static final Logger logger = LoggerFactory.getLogger(CockSizeService.class);
-    private UsersService usersService = new UsersService();
+    private final UsersService usersService = new UsersService();
     public Integer measureCockSize(Long userID) {
-        int newRandomSize = getCockSize();
+        int newRandomSize;
+        List<Integer> lastSizes = repo.getPlayerCockSizeByDays(userID, 3);
+        do {
+            newRandomSize = getCockSize();
+        }
+        while (!lastSizes.contains(newRandomSize));
+
         repo.setCockSizeWinner(userID, newRandomSize);
         return newRandomSize;
     }
@@ -30,58 +37,52 @@ public class CockSizeService {
         cockSizeList.add(1);
         cockSizeList.add(2);
         cockSizeList.add(3);
-        for (int i = 0; i < 2; i++) {
+        for (int i = 0; i < 2; i++)
             cockSizeList.add(5);
-        }
-        for (int i = 0; i < 2; i++) {
+
+        for (int i = 0; i < 2; i++)
             cockSizeList.add(6);
-        }
-        for (int i = 0; i < 2; i++) {
+
+        for (int i = 0; i < 2; i++)
             cockSizeList.add(7);
-        }
-        for (int i = 0; i < 2; i++) {
+
+        for (int i = 0; i < 2; i++)
             cockSizeList.add(8);
-        }
 
-        for (int i = 0; i < 5; i++) {
+        for (int i = 0; i < 5; i++)
             cockSizeList.add(10);
-        }
 
-        for (int i = 0; i < 5; i++) {
+        for (int i = 0; i < 5; i++)
             cockSizeList.add(11);
-        }
-        for (int i = 0; i < 5; i++) {
+
+        for (int i = 0; i < 5; i++)
             cockSizeList.add(13);
-        }
-        for (int i = 0; i < 4; i++) {
+
+        for (int i = 0; i < 4; i++)
             cockSizeList.add(15);
-        }
-        for (int i = 0; i < 4; i++) {
+
+        for (int i = 0; i < 4; i++)
             cockSizeList.add(16);
-        }
-        for (int i = 0; i < 3; i++) {
+
+        for (int i = 0; i < 3; i++)
             cockSizeList.add(18);
-        }
 
-        for (int i = 0; i < 2; i++) {
+        for (int i = 0; i < 2; i++)
             cockSizeList.add(20);
-        }
-        for (int i = 0; i < 2; i++) {
+
+        for (int i = 0; i < 2; i++)
             cockSizeList.add(24);
-        }
 
-        for (int i = 0; i < 1; i++) {
+        for (int i = 0; i < 1; i++)
             cockSizeList.add(40);
-        }
 
-        for (int i = 0; i < 1; i++) {
+        for (int i = 0; i < 1; i++)
             cockSizeList.add(45);
-        }
-        for (int i = 0; i < 1; i++) {
-            cockSizeList.add(49);
-        }
 
-        logger.debug("Длинны членов в розыгрыше" + cockSizeList.toString());
+        for (int i = 0; i < 1; i++)
+            cockSizeList.add(49);
+
+        logger.debug("Длинны членов в розыгрыше" + cockSizeList);
 
         // Генерируем случайный элемент
         Random random = new Random();

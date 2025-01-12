@@ -9,6 +9,7 @@ import java.sql.Date;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.time.LocalDate;
+import java.util.List;
 
 import static org.example.TablesDB.*;
 
@@ -53,7 +54,6 @@ public class CockSizeRepository {
                 checkStmt.setLong(1, userID);
                 checkStmt.setDate(2, Date.valueOf(currentDate));
                 ResultSet resultSet = checkStmt.executeQuery();
-//                resultSet.next();
                 if (resultSet.next()) {
                     return resultSet.getInt("size");
                 } else {
@@ -64,6 +64,26 @@ public class CockSizeRepository {
         } catch (Exception e) {
             logger.error("Ошибка при поиске в БД длинны члена: ", e);
             return -1;
+        }
+    }
+
+    public List<Integer> getPlayerCockSizeByDays(Long userID, Integer days) {
+        try (Connection connection = DataSourceConfig.getDataSource().getConnection()) {
+            // Проверяем, есть ли запись для текущей даты
+            String checkQuery = "SELECT size FROM " + COCKSIZE_STATS_TABLE + " WHERE user_id = ? LIMIT = ?";
+            try (PreparedStatement checkStmt = connection.prepareStatement(checkQuery)) {
+                checkStmt.setLong(1, userID);
+                checkStmt.setInt(2, days);
+                ResultSet resultSet = checkStmt.executeQuery();
+                List<Integer> lastSizes = null;
+                while (resultSet.next()) {
+                    lastSizes.add(resultSet.getInt("size"));
+                }
+                return lastSizes;
+            }
+        } catch (Exception e) {
+            logger.error("Ошибка при поиске в БД длинны члена за последние " + days + " дней: ", e);
+            return null;
         }
     }
 }

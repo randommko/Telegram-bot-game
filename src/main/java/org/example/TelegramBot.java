@@ -36,8 +36,8 @@ public class TelegramBot extends TelegramLongPollingBot {
     private final PidorGame pidorGame;
     private final QuizGame quizGame;
     private final HoroscopeService horoscopeService;
-    private static Map<Long, LocalDate> usersUpdateTime = new HashMap<>();
-    private static Map<Long, LocalDate> chatsUpdateTime = new HashMap<>();
+    private static final Map<Long, LocalDate> usersUpdateTime = new HashMap<>();
+    private static final Map<Long, LocalDate> chatsUpdateTime = new HashMap<>();
     private static final Logger logger = LoggerFactory.getLogger(TelegramBot.class);
 
     public TelegramBot(String botToken) {
@@ -330,7 +330,7 @@ public class TelegramBot extends TelegramLongPollingBot {
         try {
             execute(message);
         } catch (TelegramApiException e) {
-            e.printStackTrace();
+            logger.debug("Ошибка отправки inline кнопок:" + e);
         }
     }
     private void executeCallback(Update update) {

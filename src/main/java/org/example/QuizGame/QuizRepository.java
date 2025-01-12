@@ -17,8 +17,6 @@ public class QuizRepository {
     public Integer getRandomQuestionID() {
         String sql = "SELECT id FROM " + QUIZ_QUESTION_TABLE + " WHERE is_actual = true ORDER BY RANDOM() LIMIT 1;";
 
-//        String sql = "SELECT id FROM " + QUIZ_QUESTION_TABLE + " WHERE is_actual = true ORDER BY used_times ASC LIMIT 1;";
-//        String sql = "SELECT id FROM " + QUIZ_QUESTION_TABLE + " WHERE is_actual = true ORDER BY used_times ASC LIMIT 1 OFFSET 5;";
         try (Connection connection = DataSourceConfig.getDataSource().getConnection()) {
             try (PreparedStatement stmt = connection.prepareStatement(sql)) {
                 try (ResultSet queryResult = stmt.executeQuery()) {
