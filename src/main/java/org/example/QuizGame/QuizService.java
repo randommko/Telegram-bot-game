@@ -9,6 +9,7 @@ import java.text.Normalizer;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.ThreadPoolExecutor;
 
 public class QuizService {
@@ -16,7 +17,7 @@ public class QuizService {
     public boolean isQuizStarted = false;
     private final TelegramBot bot;
     private final Long chatID;
-    public CompletableFuture<Void> currentQuestionThread;
+    public Future<?> currentQuestionThread;
     public final ThreadPoolExecutor executorClueUpdate = (ThreadPoolExecutor) Executors.newCachedThreadPool();
     public Integer noAnswerCount = 0;
     public Integer currentQuestionID = null;
@@ -63,6 +64,7 @@ public class QuizService {
     }
     public void stopQuiz() {
         isQuizStarted = false;
+        endClueUpdateThread("Викторина завершена");
         bot.sendMessage(chatID, "Викторина завершена");
     }
     public void createClue() {
@@ -149,8 +151,15 @@ public class QuizService {
         return count;
     }
     public void endClueUpdateThread (String reason) {
-        currentQuestionThread.cancel(true); // Отмена задачи
-        logger.debug("Поток с обновлением подсказок завершен. Причина: " + reason);
+        if (currentQuestionThread != null && !currentQuestionThread.isDone()) {
+            logger.info("Завершаем поток с подсказками. Причина: " + reason);
+            currentQuestionThread.cancel(true); // Пытаемся прервать задачу
+        } else {
+            logger.warn("Поток с обновлением подсказок не завершен. Возможно был завершен в другом месте.");
+        }
+        currentQuestionThread = null; // Очищаем ссылку
+//        currentQuestionThread.cancel(true); // Отмена задачи
+
     }
 
 
