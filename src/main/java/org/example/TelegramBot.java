@@ -24,6 +24,8 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executors;
@@ -62,6 +64,9 @@ public class TelegramBot extends TelegramLongPollingBot {
     }
     @Override
     public void onUpdateReceived(Update update) {
+        LocalDateTime currentDateTime = LocalDateTime.now();
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm:ss");
+        logger.debug("Получено сообщение в " + currentDateTime.format(formatter));
         CompletableFuture.runAsync(() -> {
             if (update.hasCallbackQuery()) {
                 checkUser(update.getCallbackQuery().getFrom());
@@ -88,8 +93,8 @@ public class TelegramBot extends TelegramLongPollingBot {
             logger.debug("Получено сообщение из чата " + message.getChat().getId().toString() +": "+ message.getText());
             executeMessage(update);
         },executor);
-
-        logger.info("Количество активных потоков обработки команд: " + executor.getActiveCount());
+        currentDateTime = LocalDateTime.now();
+        logger.info("Количество активных потоков обработки команд: " + executor.getActiveCount() + ". Время: " + currentDateTime.format(formatter));
     }
 
     private void checkUser(User user) {

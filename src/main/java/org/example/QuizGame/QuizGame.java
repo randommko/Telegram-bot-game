@@ -100,7 +100,7 @@ public class QuizGame {
         }
     }
     private void startGameUntilEnd(Long chatID) {
-        logger.info("Запускаем бесконечный цикл викторины для чата " + chatsService.getChatByID(chatID).toString());
+        logger.info("Запускаем бесконечный цикл викторины для чата " + chatsService.getChatByID(chatID).getType() + " (id = " + chatID + ")");
         do {
             currentClueMessageID = null;
             quizMap.get(chatID).newRandomQuestion();
@@ -125,7 +125,7 @@ public class QuizGame {
             //TODO: так же нужно найти где обнуляется счетчик неправильных ответов после получения верного ответа
 
         } while (quizMap.get(chatID).isQuizStarted);
-        logger.info("Бесконечный цикл викторины для чата " + chatsService.getChatByID(chatID).toString() + " завершен");
+        logger.info("Бесконечный цикл викторины для чата " + chatsService.getChatByID(chatID).getType() + " (id = " + chatID + ") завершен");
 //        logger.info("Количество активных потоков с викторинами: " + executorQuizGame.getActiveCount());
     }
     private void startClueUpdateThread(Long chatID) {
