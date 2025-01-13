@@ -17,8 +17,8 @@ public class QuizGame {
     //Время между подсказками в мс
     private final int quizClueTimer = 15000;
     private final ChatsService chatsService = new ChatsService();
-    private final int remainingNumberOfClue = 1;
-
+    public Integer currentClueMessageID = null;
+    public Integer currentQuestionMessageID = null;
     private final QuizRepository repo = new QuizRepository();
 
     public QuizGame() {
@@ -45,8 +45,7 @@ public class QuizGame {
         }
 
         quizMap.get(chatID).startQuiz();
-        startGameUntilEnd(chatID);
-//        logger.info("Количество активных потоков с викторинами: " + executorQuizGame.getActiveCount());
+        CompletableFuture.runAsync(() -> startGameUntilEnd(chatID), executorQuizGame);
     }
     public void getQuizStats(Message message) {
         bot.sendMessage(message.getChatId(), quizMap.get(message.getChatId()).getQuizStats());
@@ -99,7 +98,8 @@ public class QuizGame {
         }
     }
     private void startGameUntilEnd(Long chatID) {
-        logger.info("Запускаем бесконечный цикл викторины для чата " + chatsService.getChatByID(chatID).getType() + " (id = " + chatID + ")");
+        logger.info("Запускаем бесконечный цикл викторины для чата " + chatsService.getChatByID(chatID).getType());
+
         do {
             quizMap.get(chatID).currentClueMessageID = null;
             quizMap.get(chatID).newRandomQuestion();
@@ -108,105 +108,64 @@ public class QuizGame {
                 bot.sendMessage(chatID, "В БД нет вопросов");
                 logger.warn("В БД нет вопросов - викторина завершена");
                 quizMap.get(chatID).stopQuiz();
+                executorQuizGame.shutdownNow();
                 return;
             }
             logger.debug("Ответ на вопрос: " + quizMap.get(chatID).getAnswer());
             quizMap.get(chatID).createClue();
             sendQuestion(chatID);
             sendClue(chatID);
-            startClueUpdateThread(chatID);
-//            try {
-//                quizMap.get(chatID).currentQuestionThread.isDone(); // Ожидание завершения потока с подсказками
-//            } catch (CancellationException e) {
-//                logger.debug("Получен верный ответ. Поток с подсказками был прерван: " + e);
-//            }
 
-            // Ожидание завершения потока с подсказками
+
+            logger.debug("Ответ на вопрос в чате " + chatsService.getChatByID(chatID).getType() + ": " + quizMap.get(chatID).getAnswer());
+
+            quizMap.get(chatID).currentClueThread = CompletableFuture.runAsync(() -> {
+                startClueUpdateThread(chatID);
+            }, quizMap.get(chatID).executorClueUpdate);
+
+            logger.info("Количество активных потоков с отправкой подсказок: " + quizMap.get(chatID).executorClueUpdate.getActiveCount());
+
             try {
-                // Ожидаем завершения задачи с таймаутом
-                quizMap.get(chatID).currentQuestionThread.get(quizClueTimer + 100, TimeUnit.MILLISECONDS);
-                logger.debug("Поток с подсказками завершен.");
-            } catch (TimeoutException e) {
-                logger.debug("Поток с подсказками еще выполняется.");
+                quizMap.get(chatID).currentClueThread.join(); // Ожидание завершения потока с подсказками
+
             } catch (CancellationException e) {
                 logger.debug("Поток с подсказками был прерван: " + e);
             } catch (Exception e) {
                 logger.debug("Ошибка при ожидании завершения потока: " + e);
             }
 
-        } while (quizMap.get(chatID).isQuizStarted);
-        logger.info("Бесконечный цикл викторины для чата " + chatsService.getChatByID(chatID).getType() + " (id = " + chatID + ") завершен");
-    }
-    private void startClueUpdateThread(Long chatID) {
-//        quizMap.get(chatID).currentQuestionThread = CompletableFuture.runAsync(() -> {
-//            boolean questionEndFlag = false; //признак, того что вопрос завершен
-//            while ((quizMap.get(chatID).isQuizStarted) & (!questionEndFlag)) {
-//                try {
-//                    for (int time = 0; time < quizClueTimer; time+=1000) {
-//                        //Ждем время до отправки подсказки. Каждую секунду пишем лог
-//                        logger.debug("В чате " + chatsService.getChatByID(chatID).getType() + " до следующей подсказки осталось: " + ((quizClueTimer-time)/1000) + " секунд");
-//                        Thread.sleep(1000);
-//                    }
-//                    if (quizMap.get(chatID).getRemainingNumberOfClue() > remainingNumberOfClue) {
-//                        //Если подсказки еще остались, то обновляем подсказку и отправляем повторно
-//                        quizMap.get(chatID).updateClue();
-//                        //Повторная отправка подсказки обновляет сообщение с подсказкой
-//                        sendClue(chatID);
-//                    } else {
-//                        //Если подсказок больше не будет обновляем сообщение: отправляем верный ответ
-//                        questionEndFlag = true;
-//                        //TODO: добавить эмодзи в правильный ответ
-////                        if (!bot.editMessage(chatID, quizMap.get(chatID).currentClueMessageID,"Правильный ответ: " + quizMap.get(chatID).getAnswer()))
-//                        bot.editMessage(chatID, quizMap.get(chatID).currentClueMessageID,"Правильный ответ: " + quizMap.get(chatID).getAnswer());
-////                            bot.sendMessage(chatID,"Правильный ответ: " + quizMap.get(chatID).getAnswer());
-//                        quizMap.get(chatID).noAnswerCount++;
-//                    }
-//                } catch (InterruptedException e) {
-//                    logger.debug("Отправка подсказок была прервана (Викторина завершена?)");
-//                }
-//            }
-//            if (quizMap.get(chatID).noAnswerCount >= 3) {
-//                quizMap.get(chatID).stopQuiz();
-//                quizMap.get(chatID).endClueUpdateThread("Три вопроса подряд без верного ответа");
-//            }
-//        }, quizMap.get(chatID).executorClueUpdate);
 
-        if (quizMap.get(chatID).currentQuestionThread != null && !quizMap.get(chatID).currentQuestionThread.isDone()) {
-            logger.warn("Предыдущий поток с подсказками не был завершен корректно. Сработало принудительное завершение");
-            quizMap.get(chatID).endClueUpdateThread("Запуск нового потока с подсказками");
-        }
-
-        quizMap.get(chatID).currentQuestionThread = quizMap.get(chatID).executorClueUpdate.submit(() -> {
-            boolean questionEndFlag = false;
-            while ((quizMap.get(chatID).isQuizStarted) & (!questionEndFlag)) {
-                try {
-                    for (int time = 0; time < quizClueTimer; time += 1000) {
-                        if (Thread.interrupted()) {
-                            throw new InterruptedException(); // Проверяем прерывание
-                        }
-                        logger.debug("В чате " + chatsService.getChatByID(chatID).getType() + " до следующей подсказки осталось: " + ((quizClueTimer - time) / 1000) + " секунд");
-                        Thread.sleep(1000);
-                    }
-                    if (quizMap.get(chatID).getRemainingNumberOfClue() > remainingNumberOfClue) {
-                        quizMap.get(chatID).updateClue();
-                        sendClue(chatID);
-                    } else {
-                        questionEndFlag = true;
-                        bot.editMessage(chatID, quizMap.get(chatID).currentClueMessageID, "Правильный ответ: " + quizMap.get(chatID).getAnswer());
-                        quizMap.get(chatID).noAnswerCount++;
-                    }
-                } catch (InterruptedException e) {
-                    logger.debug("Отправка подсказок была прервана");
-                    break; // Выходим из цикла при прерывании
-                }
-            }
             if (quizMap.get(chatID).noAnswerCount >= 3) {
                 quizMap.get(chatID).stopQuiz();
                 quizMap.get(chatID).endClueUpdateThread("Три вопроса подряд без верного ответа");
             }
-        }); // Сохраняем Future для последующей отмены
 
-        logger.info("Количество активных потоков с отправкой подсказок: " + quizMap.get(chatID).executorClueUpdate.getActiveCount());
+        } while (quizMap.get(chatID).isQuizStarted);
+        logger.info("Бесконечный цикл викторины для чата " + chatsService.getChatByID(chatID).getType() + " завершен");
+    }
+    private void startClueUpdateThread(Long chatID) {
+        logger.info("Запущен поток с подсказками для чата " + chatsService.getChatByID(chatID).getType());
+
+        boolean questionEndFlag = false; //признак, того что вопрос завершен
+        while ((quizMap.get(chatID).isQuizStarted) & (!questionEndFlag)) {
+            try {
+                Thread.sleep(quizClueTimer);
+                int remainingNumberOfClue = 1;
+                if (quizMap.get(chatID).getRemainingNumberOfClue() > remainingNumberOfClue) {
+                    quizMap.get(chatID).updateClue();
+                    sendClue(chatID);
+                } else {
+                    logger.info("Правильного ответа не было получено в чате " + chatsService.getChatByID(chatID).getType());
+                    questionEndFlag = true;
+                    if (!bot.editMessage(chatID, currentClueMessageID,"Правильный ответ: " + quizMap.get(chatID).getAnswer()))
+                        bot.sendMessage(chatID,"Правильный ответ: " + quizMap.get(chatID).getAnswer());
+                    quizMap.get(chatID).noAnswerCount++;
+                }
+            } catch (Exception e) {
+                questionEndFlag = true;
+                logger.info("Поток подсказок был прерван в чате " + chatsService.getChatByID(chatID).getType());
+            }
+        }
     }
 
 }
