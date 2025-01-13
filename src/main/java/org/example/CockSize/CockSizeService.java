@@ -18,13 +18,17 @@ public class CockSizeService {
         int newRandomSize;
         List<Integer> lastSizes = repo.getPlayerCockSizeByDays(userID, 3);
         if (lastSizes != null) {
+            int count = 0;
             do {
                 newRandomSize = getCockSize();
+                count++;
             }
-            while (!lastSizes.contains(newRandomSize));
+            while (lastSizes.contains(newRandomSize));
+            logger.info("Длинна члена (" + newRandomSize + ") для пользователя " + userID + " была измерена с " + count + " попыток");
         }
         else {
             newRandomSize = getCockSize();
+            logger.info("Длинна члена (" + newRandomSize + ") для пользователя " + userID + " была измерена c первой попытки т.к. предыдущие замеры не найдены");
         }
         repo.setCockSizeWinner(userID, newRandomSize);
         return newRandomSize;

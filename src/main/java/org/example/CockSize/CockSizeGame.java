@@ -33,20 +33,21 @@ public class CockSizeGame {
             bot.sendMessage(message.getChatId(), messageText);
     }
     private Map<Integer, String> getCockSize(Long userID) {
+        //Ключ - длинна, Значение - сообщение соответсвующее длине
         Map<Integer, String> result = new HashMap<>();
 
-        Integer playerCockSize = service.findTodayCockSize(userID);
-        String msgText = service.phraseSelection(playerCockSize, service.getUserNameByID(userID));
+        Integer playerTodayCockSize = service.findTodayCockSize(userID);
+        String msgText = service.phraseSelection(playerTodayCockSize, service.getUserNameByID(userID));
 
-        if (playerCockSize != -1) {
-            result.put(playerCockSize, msgText);
+        if (playerTodayCockSize != -1) {
+            result.put(playerTodayCockSize, msgText);
             return result;
         }
 
-        playerCockSize = service.measureCockSize(userID);
-        msgText = service.phraseSelection(playerCockSize, service.getUserNameByID(userID));
+        Integer playerNewCockSize = service.measureCockSize(userID);
+        msgText = service.phraseSelection(playerNewCockSize, service.getUserNameByID(userID));
 
-        result.put(playerCockSize, msgText);
+        result.put(playerNewCockSize, msgText);
 
         return result;
     }
