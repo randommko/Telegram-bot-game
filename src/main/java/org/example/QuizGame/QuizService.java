@@ -16,7 +16,7 @@ public class QuizService {
     public boolean isQuizStarted = false;
     private final TelegramBot bot;
     private final Long chatID;
-    public CompletableFuture<Void> currentQuestionThread;
+    public CompletableFuture<Void> currentClueThread;
     public final ThreadPoolExecutor executorClueUpdate = (ThreadPoolExecutor) Executors.newCachedThreadPool();
     public Integer noAnswerCount = 0;
     public Integer currentQuestionID = null;
@@ -147,9 +147,9 @@ public class QuizService {
         return count;
     }
     public void endClueUpdateThread (String reason) {
-        currentQuestionThread.cancel(true); // Отмена задачи
+        currentClueThread.cancel(true); // Отмена задачи
+//        currentClueThread.complete(null);
+
         logger.debug("Поток с обновлением подсказок завершен. Причина: " + reason);
     }
-
-
 }
