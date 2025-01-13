@@ -14,7 +14,7 @@ public class QuizGame {
     private final TelegramBot bot;
     private final Map<Long, QuizService> quizMap = new HashMap<>(); //ключ ID чата, значение экземпляр QuizService
     private final Logger logger = LoggerFactory.getLogger(QuizGame.class);
-    //TODO: сделать разные параметры в зависимости от среды: ПРОД и ДЕВ
+    //Время между подсказками в мс
     private final int quizClueTimer = 15000;
     private final ChatsService chatsService = new ChatsService();
     private final int remainingNumberOfClue = 1;
@@ -69,7 +69,7 @@ public class QuizGame {
         else
             if (!bot.editMessage(chatID, quizMap.get(chatID).currentClueMessageID, msg))
                 bot.sendMessage(chatID, msg);
-        logger.debug("Подсказка обновлена");
+        logger.debug("Подсказка обновлена: " + quizMap.get(chatID).getClue());
     }
     private void sendQuestion(Long chatID) {
         quizMap.get(chatID).currentQuestionMessageID = bot.sendMessage(chatID,
@@ -127,15 +127,23 @@ public class QuizGame {
             boolean questionEndFlag = false; //признак, того что вопрос завершен
             while ((quizMap.get(chatID).isQuizStarted) & (!questionEndFlag)) {
                 try {
-                    logger.info("До следующей подсказки осталось: " + quizClueTimer/1000 + " секунд");
-                    Thread.sleep(quizClueTimer);
+                    for (int time = 0; time < quizClueTimer; time+=1000) {
+                        //Ждем время до отправки подсказки. Каждую секунду пишем лог
+                        logger.debug("В чате " + chatsService.getChatByID(chatID).getType() + " до следующей подсказки осталось: " + ((quizClueTimer-time)/1000) + " секунд");
+                        Thread.sleep(1000);
+                    }
                     if (quizMap.get(chatID).getRemainingNumberOfClue() > remainingNumberOfClue) {
+                        //Если подсказки еще остались, то обновляем подсказку и отправляем повторно
                         quizMap.get(chatID).updateClue();
+                        //Повторная отправка подсказки обновляет сообщение с подсказкой
                         sendClue(chatID);
                     } else {
+                        //Если подсказок больше не будет обновляем сообщение: отправляем верный ответ
                         questionEndFlag = true;
-                        if (!bot.editMessage(chatID, quizMap.get(chatID).currentClueMessageID,"Правильный ответ: " + quizMap.get(chatID).getAnswer()))
-                            bot.sendMessage(chatID,"Правильный ответ: " + quizMap.get(chatID).getAnswer());
+                        //TODO: добавить эмодзи в правильный ответ
+//                        if (!bot.editMessage(chatID, quizMap.get(chatID).currentClueMessageID,"Правильный ответ: " + quizMap.get(chatID).getAnswer()))
+                        bot.editMessage(chatID, quizMap.get(chatID).currentClueMessageID,"Правильный ответ: " + quizMap.get(chatID).getAnswer());
+//                            bot.sendMessage(chatID,"Правильный ответ: " + quizMap.get(chatID).getAnswer());
                         quizMap.get(chatID).noAnswerCount++;
                     }
                 } catch (InterruptedException e) {

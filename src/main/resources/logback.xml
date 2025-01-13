@@ -8,7 +8,7 @@
 
     <!-- Уровень логирования для приложения -->
     <!-- TRACE → DEBUG → INFO → WARN → ERROR → OFF -->
-    <root level="INFO">
+    <root level="DEBUG">
         <appender-ref ref="CONSOLE" />
     </root>
 </configuration>
