@@ -134,6 +134,7 @@ public class QuizGame {
                 quizMap.get(chatID).endClueUpdateThread("Три вопроса подряд без верного ответа");
             }
 
+
         } while (quizMap.get(chatID).isQuizStarted);
         logger.info("Бесконечный цикл викторины для чата " + chatsService.getChatByID(chatID).getType() + " завершен");
     }
