@@ -155,4 +155,6 @@ public class QuizService {
 //        currentClueThread.complete(null);
         logger.debug("Поток с обновлением подсказок завершен. Причина: " + reason);
     }
+
+
 }
