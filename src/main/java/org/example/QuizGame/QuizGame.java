@@ -18,8 +18,7 @@ public class QuizGame {
     private final int quizClueTimer = 15000;
     private final ChatsService chatsService = new ChatsService();
     private final int remainingNumberOfClue = 1;
-    public Integer currentClueMessageID = null;
-    public Integer currentQuestionMessageID = null;
+
     private final QuizRepository repo = new QuizRepository();
 
     public QuizGame() {
@@ -46,7 +45,6 @@ public class QuizGame {
         }
 
         quizMap.get(chatID).startQuiz();
-
         startGameUntilEnd(chatID);
 //        logger.info("Количество активных потоков с викторинами: " + executorQuizGame.getActiveCount());
     }
@@ -63,18 +61,18 @@ public class QuizGame {
         quizMap.get(chatID).endClueUpdateThread("Викторина была завершена по команде");
     }
     private void sendClue(Long chatID) {
-        logger.debug("Подсказка обновлена");
         String msg = EmojiParser.parseToUnicode(":bulb: Подсказка: " + quizMap.get(chatID).getClue());
-        if (currentQuestionMessageID == null)
+        if (quizMap.get(chatID).currentQuestionMessageID == null)
             bot.sendMessage(chatID, "Вопрос не был задан");
-        if (currentClueMessageID == null)
-            currentClueMessageID =  bot.sendReplyMessage(chatID, currentQuestionMessageID, msg);
+        if (quizMap.get(chatID).currentClueMessageID == null)
+            quizMap.get(chatID).currentClueMessageID =  bot.sendReplyMessage(chatID, quizMap.get(chatID).currentQuestionMessageID, msg);
         else
-            if (!bot.editMessage(chatID, currentClueMessageID, msg))
+            if (!bot.editMessage(chatID, quizMap.get(chatID).currentClueMessageID, msg))
                 bot.sendMessage(chatID, msg);
+        logger.debug("Подсказка обновлена");
     }
     private void sendQuestion(Long chatID) {
-        currentQuestionMessageID = bot.sendMessage(chatID,
+        quizMap.get(chatID).currentQuestionMessageID = bot.sendMessage(chatID,
                 EmojiParser.parseToUnicode(":question: Вопрос №" + quizMap.get(chatID).currentQuestionID + ": " + quizMap.get(chatID).getQuestion()));
     }
     public void checkQuizAnswer(Message message) {
@@ -102,7 +100,7 @@ public class QuizGame {
     private void startGameUntilEnd(Long chatID) {
         logger.info("Запускаем бесконечный цикл викторины для чата " + chatsService.getChatByID(chatID).getType() + " (id = " + chatID + ")");
         do {
-            currentClueMessageID = null;
+            quizMap.get(chatID).currentClueMessageID = null;
             quizMap.get(chatID).newRandomQuestion();
 
             if (quizMap.get(chatID).currentQuestionID == null) {
@@ -121,12 +119,8 @@ public class QuizGame {
             } catch (CancellationException e) {
                 logger.debug("Получен верный ответ. Поток с подсказками был прерван: " + e);
             }
-            //TODO: сюда попробовать перенести проверку на 3 вопроса без ответа
-            //TODO: так же нужно найти где обнуляется счетчик неправильных ответов после получения верного ответа
-
         } while (quizMap.get(chatID).isQuizStarted);
         logger.info("Бесконечный цикл викторины для чата " + chatsService.getChatByID(chatID).getType() + " (id = " + chatID + ") завершен");
-//        logger.info("Количество активных потоков с викторинами: " + executorQuizGame.getActiveCount());
     }
     private void startClueUpdateThread(Long chatID) {
         quizMap.get(chatID).currentQuestionThread = CompletableFuture.runAsync(() -> {
@@ -140,7 +134,7 @@ public class QuizGame {
                         sendClue(chatID);
                     } else {
                         questionEndFlag = true;
-                        if (!bot.editMessage(chatID, currentClueMessageID,"Правильный ответ: " + quizMap.get(chatID).getAnswer()))
+                        if (!bot.editMessage(chatID, quizMap.get(chatID).currentClueMessageID,"Правильный ответ: " + quizMap.get(chatID).getAnswer()))
                             bot.sendMessage(chatID,"Правильный ответ: " + quizMap.get(chatID).getAnswer());
                         quizMap.get(chatID).noAnswerCount++;
                     }

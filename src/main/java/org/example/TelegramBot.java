@@ -64,9 +64,6 @@ public class TelegramBot extends TelegramLongPollingBot {
     }
     @Override
     public void onUpdateReceived(Update update) {
-        LocalDateTime currentDateTime = LocalDateTime.now();
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm:ss");
-        logger.debug("Получено сообщение в " + currentDateTime.format(formatter));
         CompletableFuture.runAsync(() -> {
             if (update.hasCallbackQuery()) {
                 checkUser(update.getCallbackQuery().getFrom());
@@ -93,8 +90,8 @@ public class TelegramBot extends TelegramLongPollingBot {
             logger.debug("Получено сообщение из чата " + message.getChat().getId().toString() +": "+ message.getText());
             executeMessage(update);
         },executor);
-        currentDateTime = LocalDateTime.now();
-        logger.info("Количество активных потоков обработки команд: " + executor.getActiveCount() + ". Время: " + currentDateTime.format(formatter));
+
+        logger.info("Количество активных потоков обработки команд: " + executor.getActiveCount());
     }
 
     private void checkUser(User user) {

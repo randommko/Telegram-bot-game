@@ -20,6 +20,8 @@ public class QuizService {
     public final ThreadPoolExecutor executorClueUpdate = (ThreadPoolExecutor) Executors.newCachedThreadPool();
     public Integer noAnswerCount = 0;
     public Integer currentQuestionID = null;
+    public Integer currentClueMessageID = null;
+    public Integer currentQuestionMessageID = null;
     private String clueText;
     private final Logger logger = LoggerFactory.getLogger(QuizService.class);
 
