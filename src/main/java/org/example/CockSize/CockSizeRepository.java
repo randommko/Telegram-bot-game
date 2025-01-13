@@ -70,7 +70,7 @@ public class CockSizeRepository {
     public List<Integer> getPlayerCockSizeByDays(Long userID, Integer days) {
         try (Connection connection = DataSourceConfig.getDataSource().getConnection()) {
             // Проверяем, есть ли запись для текущей даты
-            String checkQuery = "SELECT size FROM " + COCKSIZE_STATS_TABLE + " WHERE user_id = ? LIMIT = ?";
+            String checkQuery = "SELECT size FROM " + COCKSIZE_STATS_TABLE + " WHERE user_id = ? LIMIT ?";
             try (PreparedStatement checkStmt = connection.prepareStatement(checkQuery)) {
                 checkStmt.setLong(1, userID);
                 checkStmt.setInt(2, days);
