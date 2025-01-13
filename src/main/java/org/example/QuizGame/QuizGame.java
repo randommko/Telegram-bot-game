@@ -49,7 +49,7 @@ public class QuizGame {
         }
 
         // Проверяем, завершены ли предыдущие потоки
-        if (quizMap.get(chatID).currentQuestionThread != null && !quizMap.get(chatID).currentQuestionThread.isDone()) {
+        if (quizMap.get(chatID).currentClueThread != null && !quizMap.get(chatID).currentClueThread.isDone()) {
             quizMap.get(chatID).endClueUpdateThread("Новая викторина запущена до завершения предыдущей");
         }
 
@@ -130,7 +130,7 @@ public class QuizGame {
 
             logger.debug("Ответ на вопрос в чате " + chatsService.getChatByID(chatID).getType() + ": " + quizMap.get(chatID).getAnswer());
 
-            quizMap.get(chatID).currentQuestionThread = CompletableFuture.runAsync(() -> {
+            quizMap.get(chatID).currentClueThread = CompletableFuture.runAsync(() -> {
                 startClueUpdateThread(chatID);
             }, quizMap.get(chatID).executorClueUpdate);
 
