@@ -9,6 +9,7 @@ import java.sql.Date;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 
 import static org.example.TablesDB.*;
@@ -75,7 +76,7 @@ public class CockSizeRepository {
                 checkStmt.setLong(1, userID);
                 checkStmt.setInt(2, days);
                 ResultSet resultSet = checkStmt.executeQuery();
-                List<Integer> lastSizes = null;
+                List<Integer> lastSizes = new ArrayList<>();
                 while (resultSet.next()) {
                     lastSizes.add(resultSet.getInt("size"));
                 }

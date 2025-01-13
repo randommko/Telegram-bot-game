@@ -17,11 +17,15 @@ public class CockSizeService {
     public Integer measureCockSize(Long userID) {
         int newRandomSize;
         List<Integer> lastSizes = repo.getPlayerCockSizeByDays(userID, 3);
-        do {
+        if (lastSizes != null) {
+            do {
+                newRandomSize = getCockSize();
+            }
+            while (!lastSizes.contains(newRandomSize));
+        }
+        else {
             newRandomSize = getCockSize();
         }
-        while (!lastSizes.contains(newRandomSize));
-
         repo.setCockSizeWinner(userID, newRandomSize);
         return newRandomSize;
     }
