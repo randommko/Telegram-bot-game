@@ -6,7 +6,6 @@ import org.example.TelegramBot;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.text.Normalizer;
 import java.util.*;
 import java.util.concurrent.*;
 
@@ -74,9 +73,7 @@ public class QuizService {
             sendClue();
 
             logger.debug("Ответ на вопрос: " + chatsService.getChatByID(currentChatID).getType() + ": " + getAnswer());
-
             currentClueThread = CompletableFuture.runAsync(this::startClueUpdateThread, executorClueUpdate);
-
             logger.info("Количество активных потоков с отправкой подсказок: " + executorClueUpdate.getActiveCount());
 
             try {
@@ -99,7 +96,7 @@ public class QuizService {
         logger.info("Запущен поток с подсказками для чата " + chatsService.getChatByID(currentChatID).getType());
 
         boolean questionEndFlag = false; //признак, того что вопрос завершен
-        while ((isQuizStarted) & (!questionEndFlag) & !Thread.currentThread().isInterrupted()) {
+        while (isQuizStarted && !questionEndFlag && !Thread.currentThread().isInterrupted()) {
             try {
                 Thread.sleep(quizClueTimer);
                 if (getRemainingNumberOfClue(getAnswer(), clueText) > 1) {
@@ -107,28 +104,35 @@ public class QuizService {
                     sendClue();
                 } else {
                     questionEndFlag = true;
-                    if (!bot.editMessage(currentChatID, currentClueMessageID,"Правильный ответ: " + getAnswer()))
-                        bot.sendMessage(currentChatID,"Правильный ответ: " + getAnswer());
+                    if (!bot.editMessage(currentChatID, currentClueMessageID, "Правильный ответ: " + getAnswer()))
+                        bot.sendMessage(currentChatID, "Правильный ответ: " + getAnswer());
                     noAnswerCount++;
                 }
             } catch (InterruptedException e) {
                 logger.debug("Отправка подсказок была прервана (Викторина завершена?)");
+                Thread.currentThread().interrupt(); // Восстанавливаем статус прерывания
+                break; // Выходим из цикла
             }
+        }
+
+        // Логирование завершения потока
+        if (Thread.currentThread().isInterrupted()) {
+            logger.debug("Поток с подсказками был прерван и завершен.");
+        } else if (!isQuizStarted) {
+            logger.debug("Поток с подсказками завершен, так как викторина остановлена.");
+        } else if (questionEndFlag) {
+            logger.debug("Поток с подсказками завершен, так как вопрос завершен.");
         }
     }
     public void endClueUpdateThread (String reason) {
         //TODO: функция не завершает поток с подсказками
-        currentClueThread.cancel(true); // Отмена задачи
-        if (currentClueThread == null)
-            logger.error("Поток с подсказками не найден! Куда пропал?");
-        if (!currentClueThread.isCancelled())
-            logger.warn("Поток с подсказками не был отменен!");
-        if (!currentClueThread.isDone())
-            logger.warn("Поток с подсказками не был завершен!");
-        if (currentClueThread.isCancelled())
-            logger.info("Поток с подсказками был отменен! ОК! Причина: " + reason);
-        if (currentClueThread.isDone())
-            logger.info("Поток с подсказками был завершен! ОК! Причина: " + reason);
+        //currentClueThread.cancel(true); // Отмена задачи
+        if (currentClueThread != null && !currentClueThread.isDone()) {
+            currentClueThread.cancel(true); // Прерываем поток
+            logger.info("Поток с подсказками прерван: " + reason);
+        } else {
+            logger.warn("Функция endClueUpdateThread() не смогла прервать поток с подсказками: " + reason);
+        }
     }
     public String getQuizStats() {
         Map<String, Integer> stats = repo.getScore(currentChatID);
@@ -137,7 +141,10 @@ public class QuizService {
         List<Map.Entry<String, Integer>> sortedList = new ArrayList<>(stats.entrySet());
         sortedList.sort((entry1, entry2) -> entry2.getValue().compareTo(entry1.getValue()));
 
-        // Если нужно, можно вернуть отсортированную карту
+        StringBuilder statsMessage = getStringFromSortedList(sortedList);
+        return statsMessage.toString();
+    }
+    private static StringBuilder getStringFromSortedList(List<Map.Entry<String, Integer>> sortedList) {
         Map<String, Integer> sortedMap = new LinkedHashMap<>();
         for (Map.Entry<String, Integer> entry : sortedList) {
             sortedMap.put(entry.getKey(), entry.getValue());
@@ -148,7 +155,7 @@ public class QuizService {
                 statsMessage.append(userName.startsWith("@") ? userName.substring(1) : userName)
                         .append(": ").append(score).append(" очков\n")
         );
-        return statsMessage.toString();
+        return statsMessage;
     }
     private void createClue() {
         StringBuilder result = new StringBuilder();
