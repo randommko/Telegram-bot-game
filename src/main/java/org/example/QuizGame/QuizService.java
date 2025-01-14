@@ -73,8 +73,8 @@ public class QuizService {
 
             logger.debug("Ответ на вопрос: " + chatsService.getChatByID(chatID).getType() + ": " + getAnswer());
 
-            if (!currentClueThread.isDone())
-                currentClueThread.cancel(true);
+//            if (!currentClueThread.isDone())
+//                currentClueThread.cancel(true);
 
             currentClueThread = CompletableFuture.runAsync(this::startClueUpdateThread, executorClueUpdate);
 
