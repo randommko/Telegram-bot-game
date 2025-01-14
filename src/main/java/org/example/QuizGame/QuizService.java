@@ -1,19 +1,18 @@
 package org.example.QuizGame;
 
 import com.vdurmont.emoji.EmojiParser;
+import org.example.Chats.ChatsService;
 import org.example.TelegramBot;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.text.Normalizer;
 import java.util.*;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.*;
 
 public class QuizService {
     private final QuizRepository repo = new QuizRepository();
+    private final ChatsService chatsService = new ChatsService();
     public boolean isQuizStarted = false;
     private final TelegramBot bot;
     private final Long chatID;
@@ -23,6 +22,8 @@ public class QuizService {
     public Integer currentQuestionID = null;
     public Integer currentClueMessageID = null;
     public Integer currentQuestionMessageID = null;
+    //Время между подсказками в мс
+    private final int quizClueTimer = 15000;
     private String clueText;
     private final Logger logger = LoggerFactory.getLogger(QuizService.class);
 
@@ -30,94 +31,94 @@ public class QuizService {
         this.chatID = chatID;
         bot = TelegramBot.getInstance();
     }
-    private static String normalizeAnswer(String answer) {
-        // Приводим к нижнему регистру
-        answer = answer.toLowerCase();
-
-        // Заменяем "ё" на "е"
-        answer = answer.replace('ё', 'е');
-
-        // Убираем лишние пробелы (начало, конец, несколько пробелов подряд)
-        answer = answer.trim().replaceAll("\\s+", " ");
-
-        // Убираем возможные диакритические знаки
-        answer = Normalizer.normalize(answer, Normalizer.Form.NFD);
-        answer = answer.replaceAll("[\\p{M}]", ""); // Удаляем диакритические символы
-
-        return answer;
-    }
-    public Integer checkQuizAnswer(String answer) {
-        if (normalizeAnswer(repo.getQuestionAnswerByID(currentQuestionID)).equals(normalizeAnswer(answer))) {
-            noAnswerCount = 0;
-            return calculatePoints(answer.toLowerCase(), clueText);
-        }
-        return -1;
-    }
-    public void countAnswer(Long userID, Integer points, Long chatID) {
-        repo.setScore(userID, points, chatID);
-        repo.setUserAnswer(userID, points, chatID, currentQuestionID);
-        repo.incrementQuestion(currentQuestionID);
-    }
     public void startQuiz() {
         isQuizStarted = true;
         bot.sendMessage(chatID, EmojiParser.parseToUnicode(":tada::tada::tada: Викторина начинается! :tada::tada::tada:"));
+        startGameUntilEnd();
     }
     public void stopQuiz() {
         isQuizStarted = false;
         endClueUpdateThread("Викторина завершена");
         bot.sendMessage(chatID, "Викторина завершена");
     }
-    public void createClue() {
-        StringBuilder result = new StringBuilder();
-        // Проходим по каждому символу строки
-        for (char ch : getAnswer().toCharArray()) {
-            if (Character.isDigit(ch)) { // Проверяем, является ли символ цифрой
-                result.append("*"); // Добавляем '*' count раз
-            } else if (Character.isLetter(ch)) {
-                result.append("*"); // Добавляем '*' count раз
-            }
-            else {
-                result.append(ch); // Сохраняем символ (например, пробел)
-            }
+    public Integer checkAnswer(String answer) {
+        if (normalizeAnswer(repo.getQuestionAnswerByID(currentQuestionID)).equals(normalizeAnswer(answer))) {
+            noAnswerCount = 0;
+            return calculatePoints(answer.toLowerCase(), clueText);
         }
-        clueText = result.toString();
+        return -1;
     }
-    public void updateClue() {
-        String currentAnswer = repo.getQuestionAnswerByID(currentQuestionID);
-        if (getRemainingNumberOfClue() < 1)
-            return;
-        char[] clueChar = clueText.toCharArray();
-        char[] answerChar = currentAnswer.toCharArray();
-        int randomNum;
-        do {
-            randomNum = new Random().nextInt(currentAnswer.length());
-        } while (clueChar[randomNum] != '*');
+    public void countAnswer(Long userID, Integer points) {
+        repo.setScore(userID, points, chatID);
+        repo.setUserAnswer(userID, points, chatID, currentQuestionID);
+        repo.incrementQuestion(currentQuestionID);
+    }
+    private void startGameUntilEnd() {
+        logger.info("Запускаем бесконечный цикл викторины для чата " + chatsService.getChatByID(chatID).getType());
 
-        clueChar[randomNum] = answerChar[randomNum]; // заменяем символ с индексом 1
-        clueText = new String(clueChar);
+        do {
+            currentClueMessageID = null;
+            newRandomQuestion();
+
+            if (currentQuestionID == null) {
+                bot.sendMessage(chatID, "В БД нет вопросов");
+                logger.warn("В БД нет вопросов - викторина завершена");
+                stopQuiz();
+                return;
+            }
+
+            createClue();
+            sendQuestion();
+            sendClue();
+
+            logger.debug("Ответ на вопрос: " + chatsService.getChatByID(chatID).getType() + ": " + getAnswer());
+
+            currentClueThread = CompletableFuture.runAsync(this::startClueUpdateThread, executorClueUpdate);
+
+            logger.info("Количество активных потоков с отправкой подсказок: " + executorClueUpdate.getActiveCount());
+
+            try {
+//                currentClueThread.join(); // Ожидание завершения потока с подсказками
+                currentClueThread.get(); // Ожидание завершения потока с подсказками
+            } catch (CancellationException e) {
+                logger.debug("Поток с подсказками был прерван: " + e);
+            } catch (Exception e) {
+                logger.debug("Ошибка при ожидании завершения потока: " + e);
+            }
+
+            if (noAnswerCount >= 3) {
+                stopQuiz();
+                endClueUpdateThread("Три вопроса подряд без верного ответа");
+            }
+        } while (isQuizStarted);
+        logger.info("Бесконечный цикл викторины для чата " + chatsService.getChatByID(chatID).getType() + " завершен");
     }
-    public Integer getRemainingNumberOfClue() {
-        int count = 0;
-        String currentAnswer = getAnswer();
-        float num = currentAnswer.length();
-        for (int i = 0; i < num; i++) {
-            if (clueText.toLowerCase().charAt(i) != currentAnswer.toLowerCase().charAt(i)) {
-                count++;
+    private void startClueUpdateThread() {
+        logger.info("Запущен поток с подсказками для чата " + chatsService.getChatByID(chatID).getType());
+
+        boolean questionEndFlag = false; //признак, того что вопрос завершен
+        while ((isQuizStarted) & (!questionEndFlag)) {
+            try {
+                Thread.sleep(quizClueTimer);
+                if (getRemainingNumberOfClue() > 1) {
+                    updateClue();
+                    sendClue();
+                } else {
+                    questionEndFlag = true;
+                    if (!bot.editMessage(chatID, currentClueMessageID,"Правильный ответ: " + getAnswer()))
+                        bot.sendMessage(chatID,"Правильный ответ: " + getAnswer());
+                    noAnswerCount++;
+                }
+            } catch (InterruptedException e) {
+                logger.debug("Отправка подсказок была прервана (Викторина завершена?)");
             }
         }
-        return count;
     }
-    public void newRandomQuestion() {
-        currentQuestionID = repo.getRandomQuestionID();
-    }
-    public String getClue() {
-        return clueText;
-    }
-    public String getQuestion() {
-        return repo.getQuestionTextByID(currentQuestionID);
-    }
-    public String getAnswer() {
-        return repo.getQuestionAnswerByID(currentQuestionID);
+    public void endClueUpdateThread (String reason) {
+        //TODO: функция не завершает поток с подсказками
+        currentClueThread.cancel(true); // Отмена задачи
+//        currentClueThread.complete(null);
+        logger.debug("Поток с обновлением подсказок завершен. Причина: " + reason);
     }
     public String getQuizStats() {
         Map<String, Integer> stats = repo.getScore(chatID);
@@ -139,7 +140,60 @@ public class QuizService {
         );
         return statsMessage.toString();
     }
-    public Integer calculatePoints (String userAnswer, String clue) {
+
+    private void createClue() {
+        StringBuilder result = new StringBuilder();
+        // Проходим по каждому символу строки
+        for (char ch : getAnswer().toCharArray()) {
+            if (Character.isDigit(ch)) { // Проверяем, является ли символ цифрой
+                result.append("*"); // Добавляем '*' count раз
+            } else if (Character.isLetter(ch)) {
+                result.append("*"); // Добавляем '*' count раз
+            }
+            else {
+                result.append(ch); // Сохраняем символ (например, пробел)
+            }
+        }
+        clueText = result.toString();
+    }
+    private void updateClue() {
+        String currentAnswer = repo.getQuestionAnswerByID(currentQuestionID);
+        if (getRemainingNumberOfClue() < 1)
+            return;
+        char[] clueChar = clueText.toCharArray();
+        char[] answerChar = currentAnswer.toCharArray();
+        int randomNum;
+        do {
+            randomNum = new Random().nextInt(currentAnswer.length());
+        } while (clueChar[randomNum] != '*');
+
+        clueChar[randomNum] = answerChar[randomNum]; // заменяем символ с индексом 1
+        clueText = new String(clueChar);
+    }
+    private Integer getRemainingNumberOfClue() {
+        int count = 0;
+        String currentAnswer = getAnswer();
+        float num = currentAnswer.length();
+        for (int i = 0; i < num; i++) {
+            if (clueText.toLowerCase().charAt(i) != currentAnswer.toLowerCase().charAt(i)) {
+                count++;
+            }
+        }
+        return count;
+    }
+    private void newRandomQuestion() {
+        currentQuestionID = repo.getRandomQuestionID();
+    }
+    private String getClue() {
+        return clueText;
+    }
+    private String getQuestion() {
+        return repo.getQuestionTextByID(currentQuestionID);
+    }
+    private String getAnswer() {
+        return repo.getQuestionAnswerByID(currentQuestionID);
+    }
+    private Integer calculatePoints (String userAnswer, String clue) {
         //clue - текущая подсказка
         //userAnswer - ответ пользователя
         int count = 0;
@@ -150,11 +204,35 @@ public class QuizService {
         }
         return count;
     }
-    public void endClueUpdateThread (String reason) {
-        currentClueThread.cancel(true); // Отмена задачи
-//        currentClueThread.complete(null);
-        logger.debug("Поток с обновлением подсказок завершен. Причина: " + reason);
+    private void sendQuestion() {
+        logger.debug("Вопрос в чате " + chatsService.getChatByID(chatID).getType() + " №" + currentQuestionID + ": " + getQuestion());
+        currentQuestionMessageID = bot.sendMessage(chatID,
+                EmojiParser.parseToUnicode(":question: Вопрос №" + currentQuestionID + ": " + getQuestion()));
     }
+    private void sendClue() {
+        String msg = EmojiParser.parseToUnicode(":bulb: Подсказка: " + getClue());
+        if (currentQuestionMessageID == null)
+            bot.sendMessage(chatID, "Вопрос не был задан");
+        if (currentClueMessageID == null)
+            currentClueMessageID =  bot.sendReplyMessage(chatID, currentQuestionMessageID, msg);
+        else if (!bot.editMessage(chatID, currentClueMessageID, msg))
+            bot.sendMessage(chatID, msg);
+        logger.debug("Подсказка обновлена: " + getClue());
+    }
+    private static String normalizeAnswer(String answer) {
+        // Приводим к нижнему регистру
+        answer = answer.toLowerCase();
 
+        // Заменяем "ё" на "е"
+        answer = answer.replace('ё', 'е');
 
+        // Убираем лишние пробелы (начало, конец, несколько пробелов подряд)
+        answer = answer.trim().replaceAll("\\s+", " ");
+
+        // Убираем возможные диакритические знаки
+        answer = Normalizer.normalize(answer, Normalizer.Form.NFD);
+        answer = answer.replaceAll("[\\p{M}]", ""); // Удаляем диакритические символы
+
+        return answer;
+    }
 }
