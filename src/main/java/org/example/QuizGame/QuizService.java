@@ -73,8 +73,8 @@ public class QuizService {
 
             logger.debug("Ответ на вопрос: " + chatsService.getChatByID(chatID).getType() + ": " + getAnswer());
 
-//            if (!currentClueThread.isCancelled())
-//                currentClueThread.cancel(true);
+            if (!currentClueThread.isDone())
+                currentClueThread.cancel(true);
 
             currentClueThread = CompletableFuture.runAsync(this::startClueUpdateThread, executorClueUpdate);
 
@@ -100,7 +100,7 @@ public class QuizService {
         logger.info("Запущен поток с подсказками для чата " + chatsService.getChatByID(chatID).getType());
 
         boolean questionEndFlag = false; //признак, того что вопрос завершен
-        while ((isQuizStarted) & (!questionEndFlag)) {
+        while ((isQuizStarted) & (!questionEndFlag) & !Thread.currentThread().isInterrupted()) {
             try {
                 Thread.sleep(quizClueTimer);
                 if (getRemainingNumberOfClue() > 1) {
@@ -130,10 +130,6 @@ public class QuizService {
             logger.info("Поток с подсказками был отменен! ОК! Причина: " + reason);
         if (currentClueThread.isDone())
             logger.info("Поток с подсказками был завершен! ОК! Причина: " + reason);
-
-//        currentClueThread.complete(null);
-
-
     }
     public String getQuizStats() {
         Map<String, Integer> stats = repo.getScore(chatID);
