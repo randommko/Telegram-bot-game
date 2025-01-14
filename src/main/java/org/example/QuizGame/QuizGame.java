@@ -12,9 +12,7 @@ public class QuizGame {
     private final TelegramBot bot;
     private final Map<Long, QuizService> quizMap = new HashMap<>(); //ключ ID чата, значение экземпляр QuizService
     private final Logger logger = LoggerFactory.getLogger(QuizGame.class);
-
     private final ChatsService chatsService = new ChatsService();
-
     private final QuizRepository repo = new QuizRepository();
     public QuizGame(){
         bot = TelegramBot.getInstance();

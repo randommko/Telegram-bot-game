@@ -93,6 +93,32 @@ public class TelegramBot extends TelegramLongPollingBot {
 
         logger.info("Количество активных потоков обработки команд: " + executor.getActiveCount());
     }
+    private void executeMessage(Update update) {
+        Message message = update.getMessage();
+        if (update.hasMessage()) {
+            String[] parts = message.getText().split(" ", 2); // Разделяем строку по первому пробелу
+
+            /*
+            parts[0] - команда
+            parts[1] - параметр (сейчас не используется)
+             */
+
+            String command = parts[0];
+
+            switch (command) {
+                case "/bot_info", "/bot_info@ChatGamePidor_Bot", "/help", "/help@ChatGamePidor_Bot" -> botInfo(message);
+                case "/cocksize", "/cocksize@ChatGamePidor_Bot" -> cockSizeGame.cockSizeStart(message);
+                case "/pidor_reg", "/pidor_reg@ChatGamePidor_Bot" -> pidorGame.registerPlayer(message.getChatId(), message.getFrom().getId());
+                case "/pidor_stats", "/pidor_stats@ChatGamePidor_Bot" -> pidorGame.sendPidorStats(message.getChatId());
+                case "/pidor_start", "/pidor_start@ChatGamePidor_Bot" -> pidorGame.startPidorGame(message.getChatId(), message.getFrom().getId());
+                case "/quiz_start", "/quiz_start@ChatGamePidor_Bot" -> quizGame.startQuizGame(message);
+                case "/quiz_stop", "/quiz_stop@ChatGamePidor_Bot" -> quizGame.stopQuiz(message.getChatId());
+                case "/quiz_stats", "/quiz_stats@ChatGamePidor_Bot" -> quizGame.getQuizStats(message);
+                case "/horoscope_today", "/horoscope_today@ChatGamePidor_Bot" -> sendInlineKeyboard(message.getChatId());
+                default -> quizGame.checkQuizAnswer(message);
+            }
+        }
+    }
 
     private void checkUser(User user) {
         if (!usersService.checkUser(user)) {
@@ -221,32 +247,7 @@ public class TelegramBot extends TelegramLongPollingBot {
         }
         return false;
     }
-    private void executeMessage(Update update) {
-        Message message = update.getMessage();
-        if (update.hasMessage()) {
-            String[] parts = message.getText().split(" ", 2); // Разделяем строку по первому пробелу
 
-            /*
-            parts[0] - команда
-            parts[1] - параметр (сейчас не используется)
-             */
-
-            String command = parts[0];
-
-            switch (command) {
-                case "/bot_info", "/bot_info@ChatGamePidor_Bot", "/help", "/help@ChatGamePidor_Bot" -> botInfo(message);
-                case "/cocksize", "/cocksize@ChatGamePidor_Bot" -> cockSizeGame.cockSizeStart(message);
-                case "/pidor_reg", "/pidor_reg@ChatGamePidor_Bot" -> pidorGame.registerPlayer(message.getChatId(), message.getFrom().getId());
-                case "/pidor_stats", "/pidor_stats@ChatGamePidor_Bot" -> pidorGame.sendPidorStats(message.getChatId());
-                case "/pidor_start", "/pidor_start@ChatGamePidor_Bot" -> pidorGame.startPidorGame(message.getChatId(), message.getFrom().getId());
-                case "/quiz_start", "/quiz_start@ChatGamePidor_Bot" -> quizGame.startQuizGame(message);
-                case "/quiz_stop", "/quiz_stop@ChatGamePidor_Bot" -> quizGame.stopQuiz(message.getChatId());
-                case "/quiz_stats", "/quiz_stats@ChatGamePidor_Bot" -> quizGame.getQuizStats(message);
-                case "/horoscope_today", "/horoscope_today@ChatGamePidor_Bot" -> sendInlineKeyboard(message.getChatId());
-                default -> quizGame.checkQuizAnswer(message);
-            }
-        }
-    }
     private void sendInlineKeyboard(Long chatID) {
         // Создаем кнопки
         InlineKeyboardButton ariesButton = new InlineKeyboardButton();
