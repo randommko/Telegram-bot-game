@@ -10,6 +10,8 @@ import java.text.Normalizer;
 import java.util.*;
 import java.util.concurrent.*;
 
+import static org.example.QuizGame.QuizUtil.*;
+
 public class QuizService {
     private final QuizRepository repo = new QuizRepository();
     private final ChatsService chatsService = new ChatsService();
@@ -100,7 +102,7 @@ public class QuizService {
         while ((isQuizStarted) & (!questionEndFlag) & !Thread.currentThread().isInterrupted()) {
             try {
                 Thread.sleep(quizClueTimer);
-                if (getRemainingNumberOfClue() > 1) {
+                if (getRemainingNumberOfClue(getAnswer(), clueText) > 1) {
                     updateClue();
                     sendClue();
                 } else {
@@ -148,7 +150,6 @@ public class QuizService {
         );
         return statsMessage.toString();
     }
-
     private void createClue() {
         StringBuilder result = new StringBuilder();
         // Проходим по каждому символу строки
@@ -166,7 +167,7 @@ public class QuizService {
     }
     private void updateClue() {
         String currentAnswer = repo.getQuestionAnswerByID(currentQuestionID);
-        if (getRemainingNumberOfClue() < 1)
+        if (getRemainingNumberOfClue(getAnswer(), clueText) < 1)
             return;
         char[] clueChar = clueText.toCharArray();
         char[] answerChar = currentAnswer.toCharArray();
@@ -178,22 +179,23 @@ public class QuizService {
         clueChar[randomNum] = answerChar[randomNum]; // заменяем символ с индексом 1
         clueText = new String(clueChar);
     }
-    private Integer getRemainingNumberOfClue() {
-        int count = 0;
-        String currentAnswer = getAnswer();
-        float num = currentAnswer.length();
-        for (int i = 0; i < num; i++) {
-            if (clueText.toLowerCase().charAt(i) != currentAnswer.toLowerCase().charAt(i)) {
-                count++;
-            }
-        }
-        return count;
+    private void sendQuestion() {
+        logger.debug("Вопрос в чате " + chatsService.getChatByID(currentChatID).getType() + " №" + currentQuestionID + ": " + getQuestion());
+        currentQuestionMessageID = bot.sendMessage(currentChatID,
+                EmojiParser.parseToUnicode(":question: Вопрос №" + currentQuestionID + ": " + getQuestion()));
+    }
+    private void sendClue() {
+        String msg = EmojiParser.parseToUnicode(":bulb: Подсказка: " + clueText);
+        if (currentQuestionMessageID == null)
+            bot.sendMessage(currentChatID, "Вопрос не был задан");
+        if (currentClueMessageID == null)
+            currentClueMessageID =  bot.sendReplyMessage(currentChatID, currentQuestionMessageID, msg);
+        else if (!bot.editMessage(currentChatID, currentClueMessageID, msg))
+            bot.sendMessage(currentChatID, msg);
+        logger.debug("Подсказка обновлена: " + clueText);
     }
     private void newRandomQuestion() {
         currentQuestionID = repo.getRandomQuestionID();
-    }
-    private String getClue() {
-        return clueText;
     }
     private String getQuestion() {
         return repo.getQuestionTextByID(currentQuestionID);
@@ -201,46 +203,5 @@ public class QuizService {
     private String getAnswer() {
         return repo.getQuestionAnswerByID(currentQuestionID);
     }
-    private Integer calculatePoints (String userAnswer, String clue) {
-        //clue - текущая подсказка
-        //userAnswer - ответ пользователя
-        int count = 0;
-        for (int i = 0; i < clue.length(); i++) {
-            if (clue.toLowerCase().charAt(i) != userAnswer.charAt(i)) {
-                count++;
-            }
-        }
-        return count;
-    }
-    private void sendQuestion() {
-        logger.debug("Вопрос в чате " + chatsService.getChatByID(currentChatID).getType() + " №" + currentQuestionID + ": " + getQuestion());
-        currentQuestionMessageID = bot.sendMessage(currentChatID,
-                EmojiParser.parseToUnicode(":question: Вопрос №" + currentQuestionID + ": " + getQuestion()));
-    }
-    private void sendClue() {
-        String msg = EmojiParser.parseToUnicode(":bulb: Подсказка: " + getClue());
-        if (currentQuestionMessageID == null)
-            bot.sendMessage(currentChatID, "Вопрос не был задан");
-        if (currentClueMessageID == null)
-            currentClueMessageID =  bot.sendReplyMessage(currentChatID, currentQuestionMessageID, msg);
-        else if (!bot.editMessage(currentChatID, currentClueMessageID, msg))
-            bot.sendMessage(currentChatID, msg);
-        logger.debug("Подсказка обновлена: " + getClue());
-    }
-    private static String normalizeAnswer(String answer) {
-        // Приводим к нижнему регистру
-        answer = answer.toLowerCase();
 
-        // Заменяем "ё" на "е"
-        answer = answer.replace('ё', 'е');
-
-        // Убираем лишние пробелы (начало, конец, несколько пробелов подряд)
-        answer = answer.trim().replaceAll("\\s+", " ");
-
-        // Убираем возможные диакритические знаки
-        answer = Normalizer.normalize(answer, Normalizer.Form.NFD);
-        answer = answer.replaceAll("[\\p{M}]", ""); // Удаляем диакритические символы
-
-        return answer;
-    }
 }
