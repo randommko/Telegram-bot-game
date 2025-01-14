@@ -15,7 +15,7 @@ public class QuizService {
     private final ChatsService chatsService = new ChatsService();
     public boolean isQuizStarted = false;
     private final TelegramBot bot;
-    private final Long chatID;
+    private final Long currentChatID;
     public CompletableFuture<Void> currentClueThread;
     public final ThreadPoolExecutor executorClueUpdate = (ThreadPoolExecutor) Executors.newCachedThreadPool();
     public Integer noAnswerCount = 0;
@@ -28,18 +28,18 @@ public class QuizService {
     private final Logger logger = LoggerFactory.getLogger(QuizService.class);
 
     public QuizService(Long chatID) {
-        this.chatID = chatID;
+        this.currentChatID = chatID;
         bot = TelegramBot.getInstance();
     }
     public void startQuiz() {
         isQuizStarted = true;
-        bot.sendMessage(chatID, EmojiParser.parseToUnicode(":tada::tada::tada: Викторина начинается! :tada::tada::tada:"));
+        bot.sendMessage(currentChatID, EmojiParser.parseToUnicode(":tada::tada::tada: Викторина начинается! :tada::tada::tada:"));
         startGameUntilEnd();
     }
     public void stopQuiz() {
         isQuizStarted = false;
         endClueUpdateThread("Викторина завершена");
-        bot.sendMessage(chatID, "Викторина завершена");
+        bot.sendMessage(currentChatID, "Викторина завершена");
     }
     public Integer checkAnswer(String answer) {
         if (normalizeAnswer(repo.getQuestionAnswerByID(currentQuestionID)).equals(normalizeAnswer(answer))) {
@@ -49,19 +49,19 @@ public class QuizService {
         return -1;
     }
     public void countAnswer(Long userID, Integer points) {
-        repo.setScore(userID, points, chatID);
-        repo.setUserAnswer(userID, points, chatID, currentQuestionID);
+        repo.setScore(userID, points, currentChatID);
+        repo.setUserAnswer(userID, points, currentChatID, currentQuestionID);
         repo.incrementQuestion(currentQuestionID);
     }
     private void startGameUntilEnd() {
-        logger.info("Запускаем бесконечный цикл викторины для чата " + chatsService.getChatByID(chatID).getType());
+        logger.info("Запускаем бесконечный цикл викторины для чата " + chatsService.getChatByID(currentChatID).getType());
 
         do {
             currentClueMessageID = null;
             newRandomQuestion();
 
             if (currentQuestionID == null) {
-                bot.sendMessage(chatID, "В БД нет вопросов");
+                bot.sendMessage(currentChatID, "В БД нет вопросов");
                 logger.warn("В БД нет вопросов - викторина завершена");
                 stopQuiz();
                 return;
@@ -71,10 +71,7 @@ public class QuizService {
             sendQuestion();
             sendClue();
 
-            logger.debug("Ответ на вопрос: " + chatsService.getChatByID(chatID).getType() + ": " + getAnswer());
-
-//            if (!currentClueThread.isDone())
-//                currentClueThread.cancel(true);
+            logger.debug("Ответ на вопрос: " + chatsService.getChatByID(currentChatID).getType() + ": " + getAnswer());
 
             currentClueThread = CompletableFuture.runAsync(this::startClueUpdateThread, executorClueUpdate);
 
@@ -94,10 +91,10 @@ public class QuizService {
                 endClueUpdateThread("Три вопроса подряд без верного ответа");
             }
         } while (isQuizStarted);
-        logger.info("Бесконечный цикл викторины для чата " + chatsService.getChatByID(chatID).getType() + " завершен");
+        logger.info("Бесконечный цикл викторины для чата " + chatsService.getChatByID(currentChatID).getType() + " завершен");
     }
     private void startClueUpdateThread() {
-        logger.info("Запущен поток с подсказками для чата " + chatsService.getChatByID(chatID).getType());
+        logger.info("Запущен поток с подсказками для чата " + chatsService.getChatByID(currentChatID).getType());
 
         boolean questionEndFlag = false; //признак, того что вопрос завершен
         while ((isQuizStarted) & (!questionEndFlag) & !Thread.currentThread().isInterrupted()) {
@@ -108,8 +105,8 @@ public class QuizService {
                     sendClue();
                 } else {
                     questionEndFlag = true;
-                    if (!bot.editMessage(chatID, currentClueMessageID,"Правильный ответ: " + getAnswer()))
-                        bot.sendMessage(chatID,"Правильный ответ: " + getAnswer());
+                    if (!bot.editMessage(currentChatID, currentClueMessageID,"Правильный ответ: " + getAnswer()))
+                        bot.sendMessage(currentChatID,"Правильный ответ: " + getAnswer());
                     noAnswerCount++;
                 }
             } catch (InterruptedException e) {
@@ -132,7 +129,7 @@ public class QuizService {
             logger.info("Поток с подсказками был завершен! ОК! Причина: " + reason);
     }
     public String getQuizStats() {
-        Map<String, Integer> stats = repo.getScore(chatID);
+        Map<String, Integer> stats = repo.getScore(currentChatID);
 
         // Преобразуем Map в List<Entry> и сортируем по убыванию значений
         List<Map.Entry<String, Integer>> sortedList = new ArrayList<>(stats.entrySet());
@@ -216,18 +213,18 @@ public class QuizService {
         return count;
     }
     private void sendQuestion() {
-        logger.debug("Вопрос в чате " + chatsService.getChatByID(chatID).getType() + " №" + currentQuestionID + ": " + getQuestion());
-        currentQuestionMessageID = bot.sendMessage(chatID,
+        logger.debug("Вопрос в чате " + chatsService.getChatByID(currentChatID).getType() + " №" + currentQuestionID + ": " + getQuestion());
+        currentQuestionMessageID = bot.sendMessage(currentChatID,
                 EmojiParser.parseToUnicode(":question: Вопрос №" + currentQuestionID + ": " + getQuestion()));
     }
     private void sendClue() {
         String msg = EmojiParser.parseToUnicode(":bulb: Подсказка: " + getClue());
         if (currentQuestionMessageID == null)
-            bot.sendMessage(chatID, "Вопрос не был задан");
+            bot.sendMessage(currentChatID, "Вопрос не был задан");
         if (currentClueMessageID == null)
-            currentClueMessageID =  bot.sendReplyMessage(chatID, currentQuestionMessageID, msg);
-        else if (!bot.editMessage(chatID, currentClueMessageID, msg))
-            bot.sendMessage(chatID, msg);
+            currentClueMessageID =  bot.sendReplyMessage(currentChatID, currentQuestionMessageID, msg);
+        else if (!bot.editMessage(currentChatID, currentClueMessageID, msg))
+            bot.sendMessage(currentChatID, msg);
         logger.debug("Подсказка обновлена: " + getClue());
     }
     private static String normalizeAnswer(String answer) {

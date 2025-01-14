@@ -15,7 +15,6 @@ public class PidorGame {
         private static final Logger logger = LoggerFactory.getLogger(PidorGame.class);
         private final PidorGameRepository repo = new PidorGameRepository();
         private final UsersService usersService = new UsersService();
-        public ExecutorService executor = Executors.newSingleThreadExecutor();
 
         public PidorGame() {
                 bot = TelegramBot.getInstance();
@@ -47,6 +46,7 @@ public class PidorGame {
                                 .append(": ").append(score).append(" побед\n")
                 );
                 bot.sendMessage(chatID, statsMessage.toString());
+                logger.info("Статистика пидорвикторины отправлена в чат " + chatID);
         }
         public void startPidorGame(Long chatID, Long userID) {
                 logger.info("Запущена игра пидорвикторина в чате: " + chatID);
@@ -62,7 +62,7 @@ public class PidorGame {
                         return;
                 }
                 Set<Long> chatPlayers = repo.getPidorGamePlayers(chatID);
-                logger.info("Количество игроков: " + chatPlayers.size() + "в чате " + chatID);
+                logger.info("Количество игроков \"" + chatPlayers.size() + "\" в чате " + chatID);
                 if (chatPlayers.isEmpty()) {
                         bot.sendMessage(chatID, "Нет зарегистрированных игроков.");
                         return;

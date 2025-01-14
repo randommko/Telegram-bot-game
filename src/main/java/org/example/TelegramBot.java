@@ -338,6 +338,7 @@ public class TelegramBot extends TelegramLongPollingBot {
 
         try {
             execute(message);
+            logger.info("Inline кнопки отправлены в чат " + chatsService.getChatByID(chatID).getType());
         } catch (TelegramApiException e) {
             logger.error("Ошибка отправки inline кнопок:" + e);
         }
@@ -361,5 +362,6 @@ public class TelegramBot extends TelegramLongPollingBot {
             case "pisces_button_pressed" -> horoscopeService.sendHoroscope(update, "pisces", "today");
             default -> logger.error("Ошибка работы inline кнопок");
         }
+        logger.info("Гороскоп отправлен");
     }
 }
