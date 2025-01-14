@@ -18,13 +18,7 @@ public class QuizGame {
     private final int quizClueTimer = 15000;
     private final ChatsService chatsService = new ChatsService();
     public Integer currentClueMessageID = null;
-    public Integer currentQuestionMessageID = null;
     private final QuizRepository repo = new QuizRepository();
-
-    public final ThreadPoolExecutor executorQuizGame = (ThreadPoolExecutor) Executors.newCachedThreadPool();
-    private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
-
-
     public QuizGame() {
         bot = TelegramBot.getInstance();
         List<Long> quizChatIDs = repo.initQuiz();
@@ -55,8 +49,7 @@ public class QuizGame {
 
         quizMap.get(chatID).startQuiz();
 
-        CompletableFuture.runAsync(() -> startGameUntilEnd(chatID), executorQuizGame);
-        logger.info("Количество активных потоков с викторинами: " + executorQuizGame.getActiveCount());
+        startGameUntilEnd(chatID);
     }
     public void getQuizStats(Message message) {
         bot.sendMessage(message.getChatId(), quizMap.get(message.getChatId()).getQuizStats());
@@ -119,7 +112,6 @@ public class QuizGame {
                 bot.sendMessage(chatID, "В БД нет вопросов");
                 logger.warn("В БД нет вопросов - викторина завершена");
                 quizMap.get(chatID).stopQuiz();
-                executorQuizGame.shutdownNow();
                 return;
             }
             logger.debug("Ответ на вопрос: " + quizMap.get(chatID).getAnswer());
@@ -153,7 +145,6 @@ public class QuizGame {
 
         } while (quizMap.get(chatID).isQuizStarted);
         logger.info("Бесконечный цикл викторины для чата " + chatsService.getChatByID(chatID).getType() + " завершен");
-        logger.info("Количество активных потоков с викторинами: " + executorQuizGame.getActiveCount());
     }
     private void startClueUpdateThread(Long chatID) {
         logger.info("Запущен поток с подсказками для чата " + chatsService.getChatByID(chatID).getType());
