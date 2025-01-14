@@ -54,6 +54,8 @@ public class QuizService {
         repo.setUserAnswer(userID, points, currentChatID, currentQuestionID);
         repo.incrementQuestion(currentQuestionID);
     }
+
+
     private void startGameUntilEnd() {
         logger.info("Запускаем бесконечный цикл викторины для чата " + chatsService.getChatByID(currentChatID).getType());
 
@@ -134,6 +136,8 @@ public class QuizService {
             logger.warn("Функция endClueUpdateThread() не смогла прервать поток с подсказками: " + reason);
         }
     }
+
+
     public String getQuizStats() {
         Map<String, Integer> stats = repo.getScore(currentChatID);
 
