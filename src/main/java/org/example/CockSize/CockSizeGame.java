@@ -17,7 +17,7 @@ public class CockSizeGame {
     public CockSizeGame() {
         bot = TelegramBot.getInstance();
     }
-    public void cockSizeStart(Message message) {
+    public void sendTodayCockSize(Message message) {
         Integer userSize = null;
         String messageText = null;
         Map<Integer, String> sizeMap = getCockSize(message.getFrom().getId());
@@ -54,7 +54,7 @@ public class CockSizeGame {
     private String getCockSizeImageName(Integer size) {
         return service.getCockSizeImageName(size);
     }
-
-
-
+    public void sendAVGCockSize(Message message) {
+        service.getAVGCockZise(message.getFrom().getId());
+    }
 }

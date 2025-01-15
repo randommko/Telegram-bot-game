@@ -101,4 +101,5 @@ public class HoroscopeService {
             throw new IOException("Ошибка при получении данных: " + response.statusCode());
         }
     }
+
 }

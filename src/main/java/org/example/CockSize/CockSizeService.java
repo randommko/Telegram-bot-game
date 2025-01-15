@@ -33,11 +33,9 @@ public class CockSizeService {
         repo.setCockSizeWinner(userID, newRandomSize);
         return newRandomSize;
     }
-
     public Integer findTodayCockSize(Long userID) {
         return repo.getTodayPlayerCockSize(userID);
     }
-
     private static int getCockSize() {
         ArrayList<Integer> cockSizeList = new ArrayList<>();
 
@@ -97,7 +95,6 @@ public class CockSizeService {
         int randomIndex = random.nextInt(cockSizeList.size());
         return cockSizeList.get(randomIndex);
     }
-
     public String phraseSelection(int size, String username) {
         if (size >= 0 && size <= 5) {
             return EmojiParser.parseToUnicode("Cocksize of " + username + " is " + size + "cm :-1:");
@@ -113,11 +110,9 @@ public class CockSizeService {
             return EmojiParser.parseToUnicode("Cocksize of " + username + " is " + size + "cm :sparkling_heart::sparkling_heart::sparkling_heart:");
         } else return EmojiParser.parseToUnicode("NO FUCKING WAY! Cocksize of " + username + " is " + size + "cm ");
     }
-
     public String getCockSizeImageName(Integer size) {
         return repo.getCockSizeImageName(size);
     }
-
     public String getUserNameByID(Long userID) {
         return usersService.getUserNameByID(userID);
     }
