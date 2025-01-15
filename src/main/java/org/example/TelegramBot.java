@@ -24,8 +24,6 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executors;
@@ -235,19 +233,20 @@ public class TelegramBot extends TelegramLongPollingBot {
 
             switch (command) {
                 case "/bot_info", "/bot_info@ChatGamePidor_Bot", "/help", "/help@ChatGamePidor_Bot" -> botInfo(message);
-                case "/cocksize", "/cocksize@ChatGamePidor_Bot" -> cockSizeGame.cockSizeStart(message);
+                case "/cocksize", "/cocksize@ChatGamePidor_Bot" -> cockSizeGame.sendTodayCockSize(message);
+//                case "/cocksize_stats", "/cocksize_stats@ChatGamePidor_Bot" -> cockSizeGame.sendAVGCockSize(message);
                 case "/pidor_reg", "/pidor_reg@ChatGamePidor_Bot" -> pidorGame.registerPlayer(message.getChatId(), message.getFrom().getId());
                 case "/pidor_stats", "/pidor_stats@ChatGamePidor_Bot" -> pidorGame.sendPidorStats(message.getChatId());
                 case "/pidor_start", "/pidor_start@ChatGamePidor_Bot" -> pidorGame.startPidorGame(message.getChatId(), message.getFrom().getId());
                 case "/quiz_start", "/quiz_start@ChatGamePidor_Bot" -> quizGame.startQuizGame(message);
                 case "/quiz_stop", "/quiz_stop@ChatGamePidor_Bot" -> quizGame.stopQuiz(message.getChatId());
                 case "/quiz_stats", "/quiz_stats@ChatGamePidor_Bot" -> quizGame.getQuizStats(message);
-                case "/horoscope_today", "/horoscope_today@ChatGamePidor_Bot" -> sendInlineKeyboard(message.getChatId());
+                case "/horoscope_today", "/horoscope_today@ChatGamePidor_Bot" -> sendInlineHoroscopeKeyboard(message.getChatId());
                 default -> quizGame.checkQuizAnswer(message);
             }
         }
     }
-    private void sendInlineKeyboard(Long chatID) {
+    private void sendInlineHoroscopeKeyboard(Long chatID) {
         // Создаем кнопки
         InlineKeyboardButton ariesButton = new InlineKeyboardButton();
         ariesButton.setText(EmojiParser.parseToUnicode(":aries: Овен"));
@@ -358,7 +357,33 @@ public class TelegramBot extends TelegramLongPollingBot {
             case "capricorn_button_pressed" -> horoscopeService.sendHoroscope(update, "capricorn", "today");
             case "aquarius_button_pressed" -> horoscopeService.sendHoroscope(update, "aquarius", "today");
             case "pisces_button_pressed" -> horoscopeService.sendHoroscope(update, "pisces", "today");
+            case "avg_cock_size_button_pressed" -> cockSizeGame.sendAVGCockSize(update);
             default -> logger.error("Ошибка работы inline кнопок");
+        }
+    }
+    public void sendInlineCockSizeKeyboard(Long chatID) {
+        InlineKeyboardButton AVGCockSize = new InlineKeyboardButton();
+        AVGCockSize.setText(EmojiParser.parseToUnicode("\uD83D\uDCA6\uD83D\uDCA6\uD83D\uDCA6  ОЧЕНЬ ХОЧУ!  \uD83D\uDCA6\uD83D\uDCA6\uD83D\uDCA6"));
+        AVGCockSize.setCallbackData("avg_cock_size_button_pressed");
+
+        List<InlineKeyboardButton> row1 = new ArrayList<>();
+        row1.add(AVGCockSize);
+
+        List<List<InlineKeyboardButton>> rows = new ArrayList<>();
+        rows.add(row1);
+
+        InlineKeyboardMarkup markup = new InlineKeyboardMarkup();
+        markup.setKeyboard(rows);
+
+        SendMessage message = new SendMessage();
+        message.setChatId(chatID.toString());
+        message.setText(EmojiParser.parseToUnicode("\uD83C\uDF46  Хочешь узнать статистику своего члена?  \uD83C\uDF46"));
+        message.setReplyMarkup(markup);
+
+        try {
+            execute(message);
+        } catch (TelegramApiException e) {
+            logger.error("Ошибка отправки inline кнопок для статистики члена:" + e);
         }
     }
 }
