@@ -67,7 +67,6 @@ public class CockSizeRepository {
             return -1;
         }
     }
-
     public List<Integer> getPlayerCockSizeByDays(Long userID, Integer days) {
         try (Connection connection = DataSourceConfig.getDataSource().getConnection()) {
             LocalDate dateTwoDaysAgo = LocalDate.now().minusDays(2);
@@ -85,6 +84,36 @@ public class CockSizeRepository {
             }
         } catch (Exception e) {
             logger.error("Ошибка при поиске в БД длинны члена за последние " + days + " дней: ", e);
+            return null;
+        }
+    }
+
+    public CockSizeAVG getAVGCockSize(Long userID) {
+        try (Connection connection = DataSourceConfig.getDataSource().getConnection()) {
+            String checkQuery = "SELECT " +
+                    "    AVG(size) AS average_size, " +
+                    "    COUNT(size) AS measurement_count, " +
+                    "    MIN(date) AS first_measurement_date, " +
+                    "    MAX(date) AS last_measurement_date " +
+                    "FROM " + COCKSIZE_STATS_TABLE + " WHERE user_id = ?";
+            try (PreparedStatement checkStmt = connection.prepareStatement(checkQuery)) {
+                checkStmt.setLong(1, userID);
+                ResultSet resultSet = checkStmt.executeQuery();
+                if (resultSet.next()) {
+                    return new CockSizeAVG(
+                            userID,
+                            resultSet.getFloat("average_size"),
+                            resultSet.getDate("first_measurement_date"),
+                            resultSet.getDate("last_measurement_date"),
+                            resultSet.getInt("measurement_count")
+                    );
+                } else {
+                    logger.info("Для user_id: " + userID + " не найдено ни одного замер члена");
+                    return null; // Возвращаем значение по умолчанию, если запись не найдена
+                }
+            }
+        } catch (Exception e) {
+            logger.error("Ошибка при поиске в БД средней длинны члена: ", e);
             return null;
         }
     }

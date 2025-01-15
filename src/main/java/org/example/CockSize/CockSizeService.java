@@ -116,4 +116,5 @@ public class CockSizeService {
     public String getUserNameByID(Long userID) {
         return usersService.getUserNameByID(userID);
     }
+    public CockSizeAVG getAVGCockSize(Long userID) {return repo.getAVGCockSize(userID);}
 }

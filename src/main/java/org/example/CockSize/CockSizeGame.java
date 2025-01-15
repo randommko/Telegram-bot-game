@@ -1,16 +1,29 @@
 package org.example.CockSize;
 
 
+import com.vdurmont.emoji.EmojiParser;
 import org.example.TelegramBot;
+import org.example.Users.UsersService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Message;
+import org.telegram.telegrambots.meta.api.objects.Update;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
+import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 
 public class CockSizeGame {
     CockSizeService service = new CockSizeService();
+    private static final Logger logger = LoggerFactory.getLogger(CockSizeGame.class);
+    private final UsersService usersService = new UsersService();
     private final TelegramBot bot;
     private static final String RESOURCES_PATH = "/bin/tg_bot/resources";
 
@@ -20,6 +33,8 @@ public class CockSizeGame {
     public void sendTodayCockSize(Message message) {
         Integer userSize = null;
         String messageText = null;
+        Long chatID = message.getChatId();
+
         Map<Integer, String> sizeMap = getCockSize(message.getFrom().getId());
         for (Map.Entry<Integer, String> entry : sizeMap.entrySet()) {
             userSize = entry.getKey();
@@ -29,8 +44,9 @@ public class CockSizeGame {
         String imgFileName = getCockSizeImageName(userSize);
         File img = new File(RESOURCES_PATH + "/" + imgFileName);
 
-        if (!bot.sendImgMessage(message.getChatId(), messageText, img))
-            bot.sendMessage(message.getChatId(), messageText);
+        if (!bot.sendImgMessage(chatID, messageText, img))
+            bot.sendMessage(chatID, messageText);
+        bot.sendInlineCockSizeKeyboard(chatID);
     }
     private Map<Integer, String> getCockSize(Long userID) {
         //Ключ - длинна, Значение - сообщение соответсвующее длине
@@ -54,7 +70,18 @@ public class CockSizeGame {
     private String getCockSizeImageName(Integer size) {
         return service.getCockSizeImageName(size);
     }
-    public void sendAVGCockSize(Message message) {
-        service.getAVGCockZise(message.getFrom().getId());
+    public void sendAVGCockSize(Update update) {
+        Long userID= update.getCallbackQuery().getFrom().getId();
+        Long chatID = update.getCallbackQuery().getMessage().getChatId();
+        String userName = usersService.getUserNameByID(userID);
+        CockSizeAVG result = service.getAVGCockSize(userID);
+
+        if (result == null) {
+            bot.sendMessage(chatID, userName + " ни разу не измерял свой член!");
+            return;
+        }
+        bot.sendMessage(chatID, "Статистика измерений " + userName + "\n" +
+                "За период с " + result.firstMeasurementDate + " по " + result.lastMeasurementDate + " было совершено " +
+                result.measurementCount + " измерений.\nСредняя длинна составила: " + result.AVGSize);
     }
 }

@@ -234,6 +234,7 @@ public class TelegramBot extends TelegramLongPollingBot {
             switch (command) {
                 case "/bot_info", "/bot_info@ChatGamePidor_Bot", "/help", "/help@ChatGamePidor_Bot" -> botInfo(message);
                 case "/cocksize", "/cocksize@ChatGamePidor_Bot" -> cockSizeGame.sendTodayCockSize(message);
+//                case "/cocksize_stats", "/cocksize_stats@ChatGamePidor_Bot" -> cockSizeGame.sendAVGCockSize(message);
                 case "/pidor_reg", "/pidor_reg@ChatGamePidor_Bot" -> pidorGame.registerPlayer(message.getChatId(), message.getFrom().getId());
                 case "/pidor_stats", "/pidor_stats@ChatGamePidor_Bot" -> pidorGame.sendPidorStats(message.getChatId());
                 case "/pidor_start", "/pidor_start@ChatGamePidor_Bot" -> pidorGame.startPidorGame(message.getChatId(), message.getFrom().getId());
@@ -356,12 +357,13 @@ public class TelegramBot extends TelegramLongPollingBot {
             case "capricorn_button_pressed" -> horoscopeService.sendHoroscope(update, "capricorn", "today");
             case "aquarius_button_pressed" -> horoscopeService.sendHoroscope(update, "aquarius", "today");
             case "pisces_button_pressed" -> horoscopeService.sendHoroscope(update, "pisces", "today");
+            case "avg_cock_size_button_pressed" -> cockSizeGame.sendAVGCockSize(update);
             default -> logger.error("Ошибка работы inline кнопок");
         }
     }
-    private void sendInlineCockSizeKeyboard(Long chatID) {
+    public void sendInlineCockSizeKeyboard(Long chatID) {
         InlineKeyboardButton AVGCockSize = new InlineKeyboardButton();
-        AVGCockSize.setText(EmojiParser.parseToUnicode("Узнать среднюю длину своего члена"));
+        AVGCockSize.setText(EmojiParser.parseToUnicode("\uD83D\uDCA6\uD83D\uDCA6\uD83D\uDCA6  ОЧЕНЬ ХОЧУ!  \uD83D\uDCA6\uD83D\uDCA6\uD83D\uDCA6"));
         AVGCockSize.setCallbackData("avg_cock_size_button_pressed");
 
         List<InlineKeyboardButton> row1 = new ArrayList<>();
@@ -375,13 +377,13 @@ public class TelegramBot extends TelegramLongPollingBot {
 
         SendMessage message = new SendMessage();
         message.setChatId(chatID.toString());
-        message.setText("Выберите знак зодиака:");
+        message.setText(EmojiParser.parseToUnicode("\uD83C\uDF46  Хочешь узнать статистику своего члена?  \uD83C\uDF46"));
         message.setReplyMarkup(markup);
 
         try {
             execute(message);
         } catch (TelegramApiException e) {
-            logger.error("Ошибка отправки inline кнопок:" + e);
+            logger.error("Ошибка отправки inline кнопок для статистики члена:" + e);
         }
     }
 }
