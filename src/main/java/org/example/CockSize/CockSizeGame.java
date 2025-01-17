@@ -1,16 +1,23 @@
 package org.example.CockSize;
 
 
+import com.vdurmont.emoji.EmojiParser;
 import org.example.DTO.AVGCockSizeDTO;
 import org.example.TelegramBot;
 import org.example.Users.UsersService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.telegram.telegrambots.meta.api.methods.send.SendPhoto;
+import org.telegram.telegrambots.meta.api.objects.InputFile;
 import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 
@@ -26,21 +33,39 @@ public class CockSizeGame {
     }
     public void sendTodayCockSize(Message message) {
         Integer userSize = null;
-        String messageText = null;
+        String messageForFoundSize = null;
         Long chatID = message.getChatId();
 
         Map<Integer, String> sizeMap = getCockSize(message.getFrom().getId());
         for (Map.Entry<Integer, String> entry : sizeMap.entrySet()) {
             userSize = entry.getKey();
-            messageText = entry.getValue();
+            messageForFoundSize = entry.getValue();
         }
 
         String imgFileName = getCockSizeImageName(userSize);
-        File img = new File(RESOURCES_PATH + "/" + imgFileName);
+        String filePath = RESOURCES_PATH + "/" + imgFileName;
+        File img = new File(filePath);
+        InputFile inputFile = new InputFile(new File(filePath));
 
-        if (!bot.sendImgMessage(chatID, messageText, img))
-            bot.sendMessage(chatID, messageText);
-        bot.sendInlineCockSizeKeyboard(chatID);
+        SendPhoto sendPhoto = new SendPhoto();
+        sendPhoto.setChatId(chatID);
+        sendPhoto.setPhoto(inputFile); // Ссылка на изображение или файл
+        sendPhoto.setCaption(messageForFoundSize);
+
+        // Добавление inline-кнопок
+        InlineKeyboardMarkup markup = createInlineKeyboard();
+        sendPhoto.setReplyMarkup(markup);
+        try {
+            bot.execute(sendPhoto);
+        } catch (Exception e) {
+            logger.error("Ошибка отправки длинны члена с картинкой" + e);
+            bot.sendMessage(chatID, messageForFoundSize);
+        }
+
+
+//        if (!bot.sendImgMessage(chatID, messageText, img))
+//            bot.sendMessage(chatID, messageText);
+//        bot.sendInlineCockSizeKeyboard(chatID);
     }
     private Map<Integer, String> getCockSize(Long userID) {
         //Ключ - длинна, Значение - сообщение соответсвующее длине
@@ -77,5 +102,21 @@ public class CockSizeGame {
         bot.sendMessage(chatID, "Статистика измерений " + userName + "\n" +
                 "За период с " + result.firstMeasurementDate + " по " + result.lastMeasurementDate + " было совершено " +
                 result.measurementCount + " измерений.\nСредняя длинна составила: " + result.AVGSize);
+    }
+    private InlineKeyboardMarkup createInlineKeyboard() {
+        InlineKeyboardButton AVGCockSize = new InlineKeyboardButton();
+        AVGCockSize.setText(EmojiParser.parseToUnicode("\uD83C\uDF46\uD83D\uDCA6\uD83D\uDCA6  Получить статистику своих измерений  \uD83D\uDCA6\uD83D\uDCA6\uD83C\uDF46"));
+        AVGCockSize.setCallbackData("avg_cock_size_button_pressed");
+
+        List<InlineKeyboardButton> row1 = new ArrayList<>();
+        row1.add(AVGCockSize);
+
+        List<List<InlineKeyboardButton>> rows = new ArrayList<>();
+        rows.add(row1);
+
+        InlineKeyboardMarkup markup = new InlineKeyboardMarkup();
+        markup.setKeyboard(rows);
+
+        return markup;
     }
 }
