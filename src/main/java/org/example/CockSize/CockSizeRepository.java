@@ -104,8 +104,8 @@ public class CockSizeRepository {
                     return new AVGCockSizeDTO(
                             userID,
                             resultSet.getFloat("average_size"),
-                            resultSet.getDate("first_measurement_date"),
-                            resultSet.getDate("last_measurement_date"),
+                            resultSet.getDate("first_measurement_date").toLocalDate(),
+                            resultSet.getDate("last_measurement_date").toLocalDate(),
                             resultSet.getInt("measurement_count")
                     );
                 } else {

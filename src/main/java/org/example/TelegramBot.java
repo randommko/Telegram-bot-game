@@ -234,7 +234,6 @@ public class TelegramBot extends TelegramLongPollingBot {
             switch (command) {
                 case "/bot_info", "/bot_info@ChatGamePidor_Bot", "/help", "/help@ChatGamePidor_Bot" -> botInfo(message);
                 case "/cocksize", "/cocksize@ChatGamePidor_Bot" -> cockSizeGame.sendTodayCockSize(message);
-//                case "/cocksize_stats", "/cocksize_stats@ChatGamePidor_Bot" -> cockSizeGame.sendAVGCockSize(message);
                 case "/pidor_reg", "/pidor_reg@ChatGamePidor_Bot" -> pidorGame.registerPlayer(message.getChatId(), message.getFrom().getId());
                 case "/pidor_stats", "/pidor_stats@ChatGamePidor_Bot" -> pidorGame.sendPidorStats(message.getChatId());
                 case "/pidor_start", "/pidor_start@ChatGamePidor_Bot" -> pidorGame.startPidorGame(message.getChatId(), message.getFrom().getId());

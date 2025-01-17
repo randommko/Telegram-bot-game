@@ -15,6 +15,7 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMa
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
 
 import java.io.File;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -94,13 +95,21 @@ public class CockSizeGame {
             bot.sendMessage(chatID, userName + " ни разу не измерял свой член!");
             return;
         }
-        bot.sendMessage(chatID, "Статистика измерений " + userName + "\n" +
-                "C " + result.firstMeasurementDate + " по " + result.lastMeasurementDate + " ты замерял " +
-                result.measurementCount + " раз.\nВ среднем, у тебя: " + result.AVGSize);
+        float avgSize = result.AVGSize;
+        String avgSizeFormatted = String.format("%.2f", avgSize); // Ограничиваем до 2 знаков после запятой
+
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd MMMM yyyy");
+
+        String formattedFirstMeasurementDate = result.firstMeasurementDate.format(formatter);
+        String formattedLastMeasurementDate = result.lastMeasurementDate.format(formatter);
+
+        bot.sendMessage(chatID, EmojiParser.parseToUnicode("Статистика измерений для " + userName + "\n" +
+                "C " + formattedFirstMeasurementDate + " по " + formattedLastMeasurementDate + " ты сделал " +
+                result.measurementCount + " замеров.\nВ среднем твой болт\uD83C\uDF46: " + avgSizeFormatted + "cm"));
     }
     private InlineKeyboardMarkup createInlineKeyboard() {
         InlineKeyboardButton AVGCockSize = new InlineKeyboardButton();
-        AVGCockSize.setText(EmojiParser.parseToUnicode("\uD83C\uDF46\uD83D\uDCA6  Статистика  \uD83D\uDCA6\uD83D\uDCA6"));
+        AVGCockSize.setText(EmojiParser.parseToUnicode("\uD83D\uDCA6\uD83C\uDF46\uD83D\uDCA6  Статистика  \uD83D\uDCA6\uD83C\uDF46\uD83D\uDCA6"));
         AVGCockSize.setCallbackData("avg_cock_size_button_pressed");
 
         List<InlineKeyboardButton> row1 = new ArrayList<>();
