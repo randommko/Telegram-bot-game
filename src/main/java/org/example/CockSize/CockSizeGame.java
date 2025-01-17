@@ -98,12 +98,13 @@ public class CockSizeGame {
         float avgSize = result.AVGSize;
         String avgSizeFormatted = String.format("%.2f", avgSize); // Ограничиваем до 2 знаков после запятой
 
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd MM yyyy");
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd.MM.yyyy");
 
         String formattedFirstMeasurementDate = result.firstMeasurementDate.format(formatter);
         String formattedLastMeasurementDate = result.lastMeasurementDate.format(formatter);
 
-        bot.sendMessage(chatID, EmojiParser.parseToUnicode("C " + formattedFirstMeasurementDate + " по " + formattedLastMeasurementDate + userName + " сделал " +
+        bot.sendMessage(chatID, EmojiParser.parseToUnicode("C " + formattedFirstMeasurementDate + " по " +
+                formattedLastMeasurementDate + " " + userName + " сделал " +
                 result.measurementCount + " замеров.\nВ среднем твой болт\uD83C\uDF46: " + avgSizeFormatted + "cm"));
     }
     private InlineKeyboardMarkup createInlineKeyboard() {
