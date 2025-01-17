@@ -44,7 +44,7 @@ public class CockSizeGame {
 
         String imgFileName = getCockSizeImageName(userSize);
         String filePath = RESOURCES_PATH + "/" + imgFileName;
-        File img = new File(filePath);
+
         InputFile inputFile = new InputFile(new File(filePath));
 
         SendPhoto sendPhoto = new SendPhoto();
@@ -61,11 +61,6 @@ public class CockSizeGame {
             logger.error("Ошибка отправки длинны члена с картинкой" + e);
             bot.sendMessage(chatID, messageForFoundSize);
         }
-
-
-//        if (!bot.sendImgMessage(chatID, messageText, img))
-//            bot.sendMessage(chatID, messageText);
-//        bot.sendInlineCockSizeKeyboard(chatID);
     }
     private Map<Integer, String> getCockSize(Long userID) {
         //Ключ - длинна, Значение - сообщение соответсвующее длине
@@ -100,12 +95,12 @@ public class CockSizeGame {
             return;
         }
         bot.sendMessage(chatID, "Статистика измерений " + userName + "\n" +
-                "За период с " + result.firstMeasurementDate + " по " + result.lastMeasurementDate + " было совершено " +
-                result.measurementCount + " измерений.\nСредняя длинна составила: " + result.AVGSize);
+                "C " + result.firstMeasurementDate + " по " + result.lastMeasurementDate + " ты замерял " +
+                result.measurementCount + " раз.\nВ среднем, у тебя: " + result.AVGSize);
     }
     private InlineKeyboardMarkup createInlineKeyboard() {
         InlineKeyboardButton AVGCockSize = new InlineKeyboardButton();
-        AVGCockSize.setText(EmojiParser.parseToUnicode("\uD83C\uDF46\uD83D\uDCA6\uD83D\uDCA6  Получить статистику своих измерений  \uD83D\uDCA6\uD83D\uDCA6\uD83C\uDF46"));
+        AVGCockSize.setText(EmojiParser.parseToUnicode("\uD83C\uDF46\uD83D\uDCA6  Статистика  \uD83D\uDCA6\uD83D\uDCA6"));
         AVGCockSize.setCallbackData("avg_cock_size_button_pressed");
 
         List<InlineKeyboardButton> row1 = new ArrayList<>();

@@ -361,29 +361,5 @@ public class TelegramBot extends TelegramLongPollingBot {
             default -> logger.error("Ошибка работы inline кнопок");
         }
     }
-    public void sendInlineCockSizeKeyboard(Long chatID) {
-        InlineKeyboardButton AVGCockSize = new InlineKeyboardButton();
-        AVGCockSize.setText(EmojiParser.parseToUnicode("\uD83D\uDCA6\uD83D\uDCA6\uD83D\uDCA6  ОЧЕНЬ ХОЧУ!  \uD83D\uDCA6\uD83D\uDCA6\uD83D\uDCA6"));
-        AVGCockSize.setCallbackData("avg_cock_size_button_pressed");
 
-        List<InlineKeyboardButton> row1 = new ArrayList<>();
-        row1.add(AVGCockSize);
-
-        List<List<InlineKeyboardButton>> rows = new ArrayList<>();
-        rows.add(row1);
-
-        InlineKeyboardMarkup markup = new InlineKeyboardMarkup();
-        markup.setKeyboard(rows);
-
-        SendMessage message = new SendMessage();
-        message.setChatId(chatID.toString());
-        message.setText(EmojiParser.parseToUnicode("\uD83C\uDF46  Хочешь узнать статистику своего члена?  \uD83C\uDF46"));
-        message.setReplyMarkup(markup);
-
-        try {
-            execute(message);
-        } catch (TelegramApiException e) {
-            logger.error("Ошибка отправки inline кнопок для статистики члена:" + e);
-        }
-    }
 }
