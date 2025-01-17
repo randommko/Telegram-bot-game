@@ -1,22 +1,16 @@
 package org.example.CockSize;
 
 
-import com.vdurmont.emoji.EmojiParser;
+import org.example.DTO.AVGCockSizeDTO;
 import org.example.TelegramBot;
 import org.example.Users.UsersService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
-import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
-import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
-import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
 import java.io.File;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 
@@ -74,7 +68,7 @@ public class CockSizeGame {
         Long userID= update.getCallbackQuery().getFrom().getId();
         Long chatID = update.getCallbackQuery().getMessage().getChatId();
         String userName = usersService.getUserNameByID(userID);
-        CockSizeAVG result = service.getAVGCockSize(userID);
+        AVGCockSizeDTO result = service.getAVGCockSize(userID);
 
         if (result == null) {
             bot.sendMessage(chatID, userName + " ни разу не измерял свой член!");

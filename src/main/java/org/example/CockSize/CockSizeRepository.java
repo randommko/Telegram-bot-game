@@ -1,5 +1,6 @@
 package org.example.CockSize;
 
+import org.example.DTO.AVGCockSizeDTO;
 import org.example.DataSourceConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -88,7 +89,7 @@ public class CockSizeRepository {
         }
     }
 
-    public CockSizeAVG getAVGCockSize(Long userID) {
+    public AVGCockSizeDTO getAVGCockSize(Long userID) {
         try (Connection connection = DataSourceConfig.getDataSource().getConnection()) {
             String checkQuery = "SELECT " +
                     "    AVG(size) AS average_size, " +
@@ -100,7 +101,7 @@ public class CockSizeRepository {
                 checkStmt.setLong(1, userID);
                 ResultSet resultSet = checkStmt.executeQuery();
                 if (resultSet.next()) {
-                    return new CockSizeAVG(
+                    return new AVGCockSizeDTO(
                             userID,
                             resultSet.getFloat("average_size"),
                             resultSet.getDate("first_measurement_date"),

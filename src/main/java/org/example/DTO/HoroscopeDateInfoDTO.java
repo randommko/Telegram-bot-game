@@ -1,8 +1,8 @@
-package org.example.Horoscope;
+package org.example.DTO;
 
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty;
 
-public class DateInfo {
+public class HoroscopeDateInfoDTO {
     @JacksonXmlProperty(isAttribute = true, localName = "yesterday")
     private String yesterday;
 

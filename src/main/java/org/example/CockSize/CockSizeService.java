@@ -1,5 +1,6 @@
 package org.example.CockSize;
 
+import org.example.DTO.AVGCockSizeDTO;
 import org.example.Users.UsersService;
 
 import java.util.ArrayList;
@@ -116,5 +117,5 @@ public class CockSizeService {
     public String getUserNameByID(Long userID) {
         return usersService.getUserNameByID(userID);
     }
-    public CockSizeAVG getAVGCockSize(Long userID) {return repo.getAVGCockSize(userID);}
+    public AVGCockSizeDTO getAVGCockSize(Long userID) {return repo.getAVGCockSize(userID);}
 }
