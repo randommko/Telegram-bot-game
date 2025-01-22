@@ -51,25 +51,29 @@ public class PidorGame {
         public void startPidorGame(Long chatID, Long userID) {
                 logger.info("Запущена игра пидорвикторина в чате: " + chatID);
                 Long winnerID = repo.getTodayWinner(chatID);
+
                 if (winnerID != null) {
+                        logger.info("Найден пидор на текущую дату. Информируем пользователя");
                         bot.sendMessage(chatID,
                                 EmojiParser.parseToUnicode((":rainbow_flag: Сегодня пидора уже выбрали. Пидор дня: " + usersService.getUserNameByID(winnerID))));
                         return;
                 }
 
                 if (!repo.getPidorGamePlayers(chatID).contains(userID)) {
+                        logger.info("Игру пытается запустить не зарегистрированный игрок");
                         bot.sendMessage(chatID, "Игру может начать только зарегистрированный игрок. Зарегистрируйтесь командой /pidor_reg");
                         return;
                 }
 
                 Set<Long> chatPlayers = repo.getPidorGamePlayers(chatID);
-                logger.info("Количество игроков: " + chatPlayers.size() + "в чате " + chatID);
                 if (chatPlayers.isEmpty()) {
+                        logger.info("Количество игроков: " + chatPlayers.size() + " в чате " + chatID + " Игра не началась. Нет зарегистрированных игроков.");
                         bot.sendMessage(chatID, "Нет зарегистрированных игроков.");
                         return;
                 }
 
                 if (chatPlayers.size() < 2) {
+                        logger.info("Количество игроков: " + chatPlayers.size() +  "в чате " + chatID + " Игра не началась, недостаточно игроков");
                         bot.sendMessage(chatID, "Для игры необходимо хотя бы два игрока. Зарегистрируйтесь командой /pidor_reg");
                         return;
                 }
@@ -82,7 +86,7 @@ public class PidorGame {
                         }
                 } catch (Exception e) {
                         bot.sendMessage(chatID, "Ищем пидора запасным вариантом...");
-                        logger.error("Произошла ошибка при получении из БД списка соощбений: ", e);
+                        logger.error("Произошла ошибка при получении из БД списка сообщений: ", e);
                 }
                 winnerID = new ArrayList<>(chatPlayers).get(new Random().nextInt(chatPlayers.size()));
                 repo.setPidorWinner(chatID, winnerID);
