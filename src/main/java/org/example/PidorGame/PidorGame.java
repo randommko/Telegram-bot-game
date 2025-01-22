@@ -54,9 +54,10 @@ public class PidorGame {
 
                 if (!repo.getPidorGamePlayers(chatID).contains(userID) && winnerID == null) {
                         logger.info("Игру пытается запустить не зарегистрированный игрок и пидор дня не найден");
-                        bot.sendMessage(chatID, "Сегодня пидора дня еще не выбирали. " +
-                                "Игру может начать только зарегистрированный игрок. " +
-                                "Зарегистрируйтесь командой /pidor_reg");
+                        bot.sendMessage(chatID, """
+                                Сегодня пидора дня еще не выбирали.
+                                Игру может начать только зарегистрированный игрок.
+                                Зарегистрируйтесь командой /pidor_reg""");
                         return;
                 }
 
