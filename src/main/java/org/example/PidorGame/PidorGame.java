@@ -50,17 +50,18 @@ public class PidorGame {
         }
         public void startPidorGame(Long chatID, Long userID) {
                 logger.info("Запущена игра пидорвикторина в чате: " + chatID);
-                if (!repo.getPidorGamePlayers(chatID).contains(userID)) {
-                        bot.sendMessage(chatID, "Игру может начать только зарегистрированный игрок. Зарегистрируйтесь командой /pidor_reg");
-                        return;
-                }
-
                 Long winnerID = repo.getTodayWinner(chatID);
                 if (winnerID != null) {
                         bot.sendMessage(chatID,
                                 EmojiParser.parseToUnicode((":rainbow_flag: Сегодня пидора уже выбрали. Пидор дня: " + usersService.getUserNameByID(winnerID))));
                         return;
                 }
+
+                if (!repo.getPidorGamePlayers(chatID).contains(userID)) {
+                        bot.sendMessage(chatID, "Игру может начать только зарегистрированный игрок. Зарегистрируйтесь командой /pidor_reg");
+                        return;
+                }
+
                 Set<Long> chatPlayers = repo.getPidorGamePlayers(chatID);
                 logger.info("Количество игроков: " + chatPlayers.size() + "в чате " + chatID);
                 if (chatPlayers.isEmpty()) {
