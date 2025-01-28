@@ -5,6 +5,7 @@ import org.example.Users.UsersService;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Random;
 import com.vdurmont.emoji.EmojiParser;
 import org.slf4j.Logger;
@@ -12,32 +13,18 @@ import org.slf4j.LoggerFactory;
 
 
 public class CockSizeService {
-    private final CockSizeRepository repo = new CockSizeRepository();
+    private static final CockSizeRepository repo = new CockSizeRepository();
     private static final Logger logger = LoggerFactory.getLogger(CockSizeService.class);
     private final UsersService usersService = new UsersService();
     public Integer measureCockSize(Long userID) {
-        int newRandomSize;
-        List<Integer> lastSizes = repo.getPlayerCockSizeByDays(userID, 3);
-        if (lastSizes != null) {
-            int count = 0;
-            do {
-                newRandomSize = getCockSize();
-                count++;
-            }
-            while (lastSizes.contains(newRandomSize));
-            logger.info("Длинна члена (" + newRandomSize + ") для пользователя " + userID + " была измерена с " + count + " попыток");
-        }
-        else {
-            newRandomSize = getCockSize();
-            logger.info("Длинна члена (" + newRandomSize + ") для пользователя " + userID + " была измерена c первой попытки т.к. предыдущие замеры не найдены");
-        }
+        int newRandomSize = getCockSize(userID);
         repo.setCockSizeWinner(userID, newRandomSize);
         return newRandomSize;
     }
     public Integer findTodayCockSize(Long userID) {
         return repo.getTodayPlayerCockSize(userID);
     }
-    private static int getCockSize() {
+    private static int getCockSize(Long userID) {
         ArrayList<Integer> cockSizeList = new ArrayList<>();
 
         cockSizeList.add(0);
@@ -89,6 +76,12 @@ public class CockSizeService {
         for (int i = 0; i < 1; i++)
             cockSizeList.add(49);
 
+        List<Integer> lastSizes = repo.getPlayerCockSizeByDays(userID, 3);
+        logger.debug("Прошлые замеры игрока: " + lastSizes);
+        for (int size : lastSizes) {
+            cockSizeList.removeIf(n -> Objects.equals(n, size));
+            cockSizeList.add(size);
+        }
         logger.debug("Длинны членов в розыгрыше" + cockSizeList);
 
         // Генерируем случайный элемент
