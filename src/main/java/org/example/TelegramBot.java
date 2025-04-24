@@ -241,21 +241,9 @@ public class TelegramBot extends TelegramLongPollingBot {
                 case "/quiz_stop", "/quiz_stop@ChatGamePidor_Bot" -> quizGame.stopQuiz(message.getChatId());
                 case "/quiz_stats", "/quiz_stats@ChatGamePidor_Bot" -> quizGame.getQuizStats(message);
                 case "/horoscope_today", "/horoscope_today@ChatGamePidor_Bot" -> sendInlineHoroscopeKeyboard(message.getChatId());
-                case "/test" -> test();
                 default -> quizGame.checkQuizAnswer(message);
             }
         }
-    }
-    private void test() {
-        SendMessage message = new SendMessage();
-        message.setChatId(270459384L); //указан ID пользователя, НЕ ЧАТА!!!
-        message.setText("проверка отправки сообщения");
-        try {
-            execute(message).getMessageId();
-        } catch (TelegramApiException e) {
-            logger.error("Ошибка при  отправке сообщения: ", e);
-        }
-
     }
     private void sendInlineHoroscopeKeyboard(Long chatID) {
         // Создаем кнопки
