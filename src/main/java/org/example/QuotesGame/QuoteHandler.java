@@ -56,28 +56,6 @@ public class QuoteHandler {
         }
     }
 
-
-    private boolean canSaveQuote(Long chatId, Long userId) {
-        try (Connection conn = DriverManager.getConnection(dbUrl, dbUser, dbPassword)) {
-            String sql = """
-            SELECT COUNT(*) 
-            FROM telegram_quote 
-            WHERE chat_id = ? AND saver_user_id = ? 
-            AND created_at > NOW() - INTERVAL '1 hour'
-            """;
-            try (PreparedStatement stmt = conn.prepareStatement(sql)) {
-                stmt.setLong(1, chatId);
-                stmt.setLong(2, userId);
-                ResultSet rs = stmt.executeQuery();
-                rs.next();
-                return rs.getInt(1) < 1;  // 1 в час
-            }
-        } catch (SQLException e) {
-            return false;
-        }
-    }
-
-
     private void handleSaveQuote(Message message) {
 
         if (message.hasText()) {
