@@ -38,17 +38,19 @@ public class TelegramBot extends TelegramLongPollingBot {
     private final CockSizeGame cockSizeGame;
     private final PidorGame pidorGame;
     private final QuizGame quizGame;
+    public static GigaChat aiClient = null;
     private final HoroscopeService horoscopeService;
     private static final Map<Long, LocalDate> usersUpdateTime = new HashMap<>();
     private static final Map<Long, LocalDate> chatsUpdateTime = new HashMap<>();
     private static final Logger logger = LoggerFactory.getLogger(TelegramBot.class);
     private final ThreadPoolExecutor executor = (ThreadPoolExecutor) Executors.newCachedThreadPool();
-    public TelegramBot(String botToken) {
+    public TelegramBot(String botToken, String aiToken) {
         this.botToken = botToken;
         instance = this;
         cockSizeGame = new CockSizeGame();
         pidorGame = new PidorGame();
         quizGame = new QuizGame();
+        aiClient = new GigaChat(aiToken);
         horoscopeService = new HoroscopeService();
         //TODO: добавить отправку различных сообщений по CRON
     }

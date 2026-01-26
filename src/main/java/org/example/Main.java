@@ -20,6 +20,7 @@ public class Main {
         args[1] - IP БД
         args[2] - логин БД
         args[3] - пароль БД
+        args[4] - AI токен
         */
 
         try {
@@ -38,7 +39,7 @@ public class Main {
                 TelegramBotsApi botsApi = new TelegramBotsApi(DefaultBotSession.class);
 
                 // Регистрируем бота
-                botsApi.registerBot(new TelegramBot(args[0]));
+                botsApi.registerBot(new TelegramBot(args[0], args[4]));
 
                 logger.info("Бот успешно запущен на попытке №" + attempt);
                 break; // Выход из цикла при успешном запуске

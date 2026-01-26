@@ -1,22 +1,35 @@
 package org.example.QuotesGame;
 
+import chat.giga.model.completion.ChatMessage;
+import chat.giga.model.completion.ChatMessageRole;
+import org.example.TelegramBot;
 import org.telegram.telegrambots.meta.api.objects.Message;
 
-private final OpenAIClient aiClient;
-private final Random random = new Random();
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+
+import java.util.List;
+
+import static org.example.TelegramBot.aiClient;
+
+
 public class QuoteHandler {
+    private final QuoteRepository repo = new QuoteRepository();
+    private static final Logger logger = LoggerFactory.getLogger(QuoteHandler.class);
+    private final TelegramBot bot;
 
-    this.aiClient = OpenAIOkHttpClient.builder()
-            .apiKey(openAiKey)
-        .build();
-
+    public QuoteHandler() {
+        bot = TelegramBot.getInstance();
+    }
 
     private void analyzeAndSaveQuoteIfWorth(Message message) {
+
         Long chatId = message.getChatId();
         Long userId = message.getFrom().getId();
 
         // Лимит: 1 цитата в час от пользователя
-        if (!canSaveQuote(chatId, userId)) {
+        if (!repo.canSaveQuote(chatId, userId)) {
             return;
         }
 
@@ -46,13 +59,12 @@ public class QuoteHandler {
             String aiAnswer = result.getChoices().get(0).getMessage().getContent().trim().toUpperCase();
 
             if ("ДА".equals(aiAnswer)) {
-                saveQuoteToDb(message, "AI");
-                sendMessage(chatId, "🤖 ИИ сохранил мудрую цитату: «" + text + "» ✨");
+                repo.saveQuote(text, chatId, userId);
+                bot.sendMessage(chatId, "🤖 ИИ сохранил мудрую цитату: «" + text + "» ✨");
             }
 
         } catch (Exception e) {
-            // Логируем, но не спамим чат
-            System.err.println("AI анализ не удался: " + e.getMessage());
+            logger.error("AI анализ не удался: " + e.getMessage());
         }
     }
 
@@ -80,53 +92,8 @@ public class QuoteHandler {
         Long authorId = reply.getFrom().getId();
         Long saverId = message.getFrom().getId();
 
-        try (Connection conn = DriverManager.getConnection(dbUrl, dbUser, dbPassword)) {
-            String sql = "INSERT INTO telegram_quote (chat_id, author_user_id, saver_user_id, text) VALUES (?, ?, ?, ?)";
-            try (PreparedStatement stmt = conn.prepareStatement(sql)) {
-                stmt.setLong(1, chatId);
-                stmt.setLong(2, authorId);
-                stmt.setLong(3, saverId);
-                stmt.setString(4, quoteText);
-                stmt.executeUpdate();
-            }
-            sendMessage(chatId, "Цитата сохранена как великая мудрость ✨");
-        } catch (SQLException e) {
-            e.printStackTrace();
-            sendMessage(chatId, "Ошибка сохранения. Попробуй позже 😅");
-        }
+        //тут вызов saveQoute()
     }
 
-    private void handleRandomQuote(Long chatId) {
-        try (Connection conn = DriverManager.getConnection(dbUrl, dbUser, dbPassword)) {
-            String sql = """
-                SELECT author_user_id, saver_user_id, text 
-                FROM telegram_quote 
-                WHERE chat_id = ? 
-                ORDER BY random() 
-                LIMIT 1
-                """;
 
-            try (PreparedStatement stmt = conn.prepareStatement(sql)) {
-                stmt.setLong(1, chatId);
-                try (ResultSet rs = stmt.executeQuery()) {
-                    if (rs.next()) {
-                        Long authorId = rs.getLong("author_user_id");
-                        Long saverId = rs.getLong("saver_user_id");
-                        String text = rs.getString("text");
-
-                        String authorName = getUserName(authorId); // твоя логика из telegram_user
-                        String saverName = getUserName(saverId);
-
-                        String reply = "«" + text + "»\n— " + authorName + " (сохранил: " + saverName + ")";
-                        sendMessage(chatId, reply);
-                    } else {
-                        sendMessage(chatId, "Пока нет ни одной мудрой цитаты. Сохрани первую с помощью /savequote 😉");
-                    }
-                }
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-            sendMessage(chatId, "Ошибка поиска цитаты 😅");
-        }
-    }
 }
