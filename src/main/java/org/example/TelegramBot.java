@@ -50,7 +50,6 @@ public class TelegramBot extends TelegramLongPollingBot {
         pidorGame = new PidorGame();
         quizGame = new QuizGame();
         horoscopeService = new HoroscopeService();
-        //TODO: добавить отправку различных сообщений по CRON
     }
     @Override
     public String getBotUsername() {
