@@ -13,7 +13,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
 public class QuoteRepository {
-    private static final Logger logger = LoggerFactory.getLogger(QuizRepository.class);
+    private static final Logger logger = LoggerFactory.getLogger(QuoteRepository.class);
     private final UsersService usersService = new UsersService();
 
     public boolean canSaveQuote(Long chatId, Long userId) {
@@ -34,7 +34,7 @@ public class QuoteRepository {
                 return rs.getInt(1) < 1;  // 1 в час
             }
         } catch (Exception e) {
-            logger.error("Произошла ошибка при обращении к БД: ", e);
+            logger.error("Произошла ошибка при обращении к БД в canSaveQuote(): ", e);
             return false;
         }
     }
