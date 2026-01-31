@@ -1,10 +1,12 @@
 package org.example.QuotesGame;
 
 import chat.giga.client.GigaChatClient;
+import chat.giga.model.ModelName;
 import chat.giga.model.completion.ChatMessage;
 import chat.giga.model.completion.ChatMessageRole;
 import chat.giga.model.completion.CompletionRequest;
 import chat.giga.model.completion.CompletionResponse;
+import org.example.DTO.QuoteDTO;
 import org.example.TelegramBot;
 import org.telegram.telegrambots.meta.api.objects.Message;
 
@@ -38,26 +40,26 @@ public class QuoteHandler {
         String text = message.getText();
         String prompt = """
         Это сообщение из чата друзей: "%s".
-        Стоит ли сохранить как мудрую/смешную цитату? 
+        Стоит ли его сохранить как смешную цитату? 
         Ответь ТОЛЬКО 'ДА' или 'НЕТ'.
         """.formatted(text);
 
         try {
             CompletionRequest request = CompletionRequest.builder()
-                    .model("gpt-4o-mini")
-                    .messages(List.of(ChatMessage.builder()
-                                    .role(ChatMessageRole.SYSTEM)
-                                    .content("Ты строгий критик цитат. Сохраняй только действительно мудрые или очень смешные.")
-                                    .build(),
-                            ChatMessage.builder()
-                                    .role(ChatMessageRole.USER)
-                                    .content(prompt)
-                                    .build()))
-                    .maxTokens(5)
-                    .temperature(0.1F)  // мало рандома
+                    .model(ModelName.GIGA_CHAT)          // или другой доступный
+                    .message(ChatMessage.builder()
+                            .role(ChatMessageRole.SYSTEM)
+                            .content("Ты очень смешной комик. Выбирай и сохраняй смешные и классные цитаты дружеского чата.")
+                            .build())
+                    .message(ChatMessage.builder()
+                            .role(ChatMessageRole.USER)
+                            .content(prompt)
+                            .build())
+                    .temperature(0.1F)
+                    .maxTokens(8)
                     .build();
 
-            CompletionResponse response  = aiClient.completions(request);
+            CompletionResponse response = aiClient.completions(request);
             String aiAnswer = response.choices()
                     .get(0)
                     .message()
@@ -77,34 +79,23 @@ public class QuoteHandler {
 
     public void handleSaveQuote(Message message) {
 
+        String text = message.getText();
         if (message.hasText()) {
-            String text = message.getText();
-            if (text.length() > 10 && text.length() < 300 && !isBotCommand(text)) {
+            if (text.length() > 10 && text.length() < 300 && !isBotCommand(message)) {
                 analyzeAndSaveQuoteIfWorth(message);
             }
-
-            Message reply = message.getReplyToMessage();
-            if (reply == null) {
-                bot.sendMessage(message.getChatId(), "Ответь этой командой на сообщение с цитатой 🙃");
-                return;
-            }
-
-            String quoteText = reply.getText();
-
-            if (quoteText == null || quoteText.trim().isEmpty()) {
-                bot.sendMessage(message.getChatId(), "В этом сообщении нет текста, нечего сохранять 🤔");
-                return;
-            }
-
-            Long chatId = message.getChatId();
-            Long authorId = reply.getFrom().getId();
-
-            repo.saveQuote(text, chatId, authorId);
-
         }
     }
 
-    private boolean isBotCommand(String text) {
+    public void getRandomQoute(Long chatId) {
+        QuoteDTO quoteDTO;
+        quoteDTO = repo.handleRandomQuote(chatId);
+        String text = "Цитата от " + quoteDTO.userName +"\n \"" + quoteDTO.text + "\"";
+        bot.sendMessage(chatId, text);
+    }
+    private boolean isBotCommand(Message message) {
+        String text = message.getText();
+        Long userId = message.getFrom().getId();
         if (text == null || text.isBlank()) {
             return false;
         }

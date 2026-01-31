@@ -41,11 +41,12 @@ public class QuoteRepository {
 
     public boolean saveQuote(String quoteText, Long chatId, Long authorId) {
         try (Connection connection = DataSourceConfig.getDataSource().getConnection()) {
-            String sql = "INSERT INTO telegram_quote (chat_id, author_user_id, text) VALUES (?, ?, ?)";
+            String sql = "INSERT INTO telegram_quote (chat_id, author_user_id, saver_user_id, text) VALUES (?, ?, ?)";
             try (PreparedStatement stmt = connection.prepareStatement(sql)) {
                 stmt.setLong(1, chatId);
                 stmt.setLong(2, authorId);
-                stmt.setString(3, quoteText);
+                stmt.setLong(3, 0); //0 - это AI
+                stmt.setString(4, quoteText);
                 stmt.executeUpdate();
             }
             logger.info("Цитата сохранена");
