@@ -25,13 +25,12 @@ public class QuoteHandler {
         bot = TelegramBot.getInstance();
         aiClient = TelegramBot.getAi();
     }
-
     private String analyzeAndSaveQuoteIfWorth(Message message) {
-
         Long chatId = message.getChatId();
         Long userId = message.getFrom().getId();
 
         if (!repo.canSaveQuote(chatId, userId)) {
+            logger.debug("Лимит цитат для chat={}, user={}", chatId, userId);
             return null;
         }
 
@@ -39,38 +38,99 @@ public class QuoteHandler {
         String prompt = """
         Это сообщение из чата друзей: "%s".
         Стоит ли его сохранить как смешную цитату на память?
-        Ответь ТОЛЬКО 'ДА' или 'НЕТ'.
+        Ответь в формате:
+        ДА: [короткая причина, почему смешно/мудро]
+        НЕТ: [короткая причина]
         """.formatted(text);
 
         try {
             CompletionRequest request = CompletionRequest.builder()
-                    .model(ModelName.GIGA_CHAT)          // или другой доступный
+                    .model(ModelName.GIGA_CHAT)
                     .message(ChatMessage.builder()
                             .role(ChatMessageRole.SYSTEM)
-                            .content("Ты очень смешной комик. Выбирай и сохраняй смешные и классные цитаты дружеского чата.")
+                            .content("""
+                    Ты очень смешной комик. Выбирай и сохраняй смешные и классные цитаты дружеского чата.
+                    Нецензурные выражения сохранять можно и даже приветствуется.
+                    Объясняй коротко причину своего решения в формате ДА: или НЕТ:.
+                    """)
                             .build())
                     .message(ChatMessage.builder()
                             .role(ChatMessageRole.USER)
                             .content(prompt)
                             .build())
-                    .temperature(0.1F)
-                    .maxTokens(8)
+                    .temperature(0.3F)  // чуть больше креатива
+                    .maxTokens(30)      // хватит на ответ + причину
                     .build();
 
             CompletionResponse response = aiClient.completions(request);
-            return response.choices()
+            String fullAnswer = response.choices()
                     .get(0)
                     .message()
                     .content()
-                    .trim()
-                    .toUpperCase();
+                    .trim();
 
+            logger.info("GigaChat анализ цитаты '{}': {}", text, fullAnswer);
+
+            if (fullAnswer.toUpperCase().startsWith("ДА")) {
+                logger.info("СОХРАНЯЕМ цитату: {}", fullAnswer);
+                return "ДА";
+            } else {
+                logger.info("ОТКЛОНЕНО: {}", fullAnswer);
+                return null;
+            }
 
         } catch (Exception e) {
-            logger.error("AI анализ не удался: " + e.getMessage());
+            logger.error("AI анализ не удался для '{}': {}", text, e.getMessage());
             return null;
         }
     }
+
+
+//    private String analyzeAndSaveQuoteIfWorth(Message message) {
+//
+//        Long chatId = message.getChatId();
+//        Long userId = message.getFrom().getId();
+//
+//        if (!repo.canSaveQuote(chatId, userId)) {
+//            return null;
+//        }
+//
+//        String text = message.getText();
+//        String prompt = """
+//        Это сообщение из чата друзей: "%s".
+//        Стоит ли его сохранить как смешную цитату на память?
+//        Ответь ТОЛЬКО 'ДА' или 'НЕТ'.
+//        """.formatted(text);
+//
+//        try {
+//            CompletionRequest request = CompletionRequest.builder()
+//                    .model(ModelName.GIGA_CHAT)          // или другой доступный
+//                    .message(ChatMessage.builder()
+//                            .role(ChatMessageRole.SYSTEM)
+//                            .content("Ты очень смешной комик. Выбирай и сохраняй смешные и классные цитаты дружеского чата.")
+//                            .build())
+//                    .message(ChatMessage.builder()
+//                            .role(ChatMessageRole.USER)
+//                            .content(prompt)
+//                            .build())
+//                    .temperature(0.1F)
+//                    .maxTokens(8)
+//                    .build();
+//
+//            CompletionResponse response = aiClient.completions(request);
+//            return response.choices()
+//                    .get(0)
+//                    .message()
+//                    .content()
+//                    .trim()
+//                    .toUpperCase();
+//
+//
+//        } catch (Exception e) {
+//            logger.error("AI анализ не удался: " + e.getMessage());
+//            return null;
+//        }
+//    }
 
     public void handleSaveQuote(Message message) {
 

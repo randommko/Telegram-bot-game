@@ -1,6 +1,7 @@
 package org.example.QuotesGame;
 
 
+import org.example.Chats.ChatsService;
 import org.example.DTO.QuoteDTO;
 import org.example.DataSourceConfig;
 import org.example.QuizGame.QuizRepository;
@@ -18,6 +19,7 @@ import static org.example.TablesDB.TELEGRAM_QUOTE_TABLE;
 public class QuoteRepository {
     private static final Logger logger = LoggerFactory.getLogger(QuoteRepository.class);
     private final UsersService usersService = new UsersService();
+    private final ChatsService chatsService = new ChatsService();
 
     public boolean canSaveQuote(Long chatId, Long userId) {
         //Функция для защиты от частого сохранения цитат
@@ -53,7 +55,9 @@ public class QuoteRepository {
                 logger.debug("SQL сохранения цитаты: " + sql);
                 stmt.executeUpdate();
             }
-            logger.info("Цитата сохранена");
+            logger.info("Сохранена цитата в чат: " + chatsService.getChatByID(chatId).getTitle() + "\n" +
+                    "от пользователя: " + usersService.getUserNameByID(authorId) + "\n" +
+                    "текст: " + quoteText);
         } catch (Exception e) {
             logger.error("Произошла ошибка при сохранении цитаты в БД: ", e);
             return false;
