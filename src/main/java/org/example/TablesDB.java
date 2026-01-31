@@ -11,4 +11,5 @@ public final class TablesDB {
     public static final String COCKSIZE_STATS_TABLE = "public.cocksize_stats";
     public static final String COCKSIZE_IMAGES_TABLE = "public.cocksize_imgs";
     public static final String TG_CHATS_TABLE = "public.tg_chats";
+    public  static final String TELEGRAM_QUOTE_TABLE = "telegram_quote";
 }
