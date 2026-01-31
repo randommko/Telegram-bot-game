@@ -260,7 +260,7 @@ public class TelegramBot extends TelegramLongPollingBot {
                 case "/pidor_stats", "/pidor_stats@ChatGamePidor_Bot" -> pidorGame.sendPidorStats(message.getChatId());
                 case "/pidor_start", "/pidor_start@ChatGamePidor_Bot" -> pidorGame.startPidorGame(message.getChatId(), message.getFrom().getId());
                 case "/horoscope_today", "/horoscope_today@ChatGamePidor_Bot" -> sendInlineHoroscopeKeyboard(message.getChatId());
-                case "/quote", "/quote@ChatGamePidor_Bot" -> quoteHandler.getRandomQoute(message.getChatId());
+                case "/quote", "/quote@ChatGamePidor_Bot" -> quoteHandler.getRandomQuote(message.getChatId());
                 default -> {
 
                 }

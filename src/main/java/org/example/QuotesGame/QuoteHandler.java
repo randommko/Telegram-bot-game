@@ -36,7 +36,7 @@ public class QuoteHandler {
         String text = message.getText();
         String prompt = """
         Это сообщение из чата друзей: "%s".
-        Стоит ли его сохранить как смешную цитату?
+        Стоит ли его сохранить как смешную цитату на память?
         Ответь ТОЛЬКО 'ДА' или 'НЕТ'.
         """.formatted(text);
 
@@ -82,12 +82,13 @@ public class QuoteHandler {
                 if ("ДА".equals(aiResult)) {
                     repo.saveQuote(text, chatId, userId);
                     bot.sendMessage(chatId, "🤖 ИИ сохранил мудрую цитату: «" + text + "» ✨");
+                    logger.info("ИИ сохранил мудрую цитату: «" + text + "»");
                 }
             }
         }
     }
 
-    public void getRandomQoute(Long chatId) {
+    public void getRandomQuote(Long chatId) {
         QuoteDTO quoteDTO;
         quoteDTO = repo.handleRandomQuote(chatId);
         if (quoteDTO != null) {

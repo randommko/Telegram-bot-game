@@ -12,6 +12,8 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
+import static org.example.TablesDB.TELEGRAM_QUOTE_TABLE;
+
 public class QuoteRepository {
     private static final Logger logger = LoggerFactory.getLogger(QuoteRepository.class);
     private final UsersService usersService = new UsersService();
@@ -41,17 +43,18 @@ public class QuoteRepository {
 
     public boolean saveQuote(String quoteText, Long chatId, Long authorId) {
         try (Connection connection = DataSourceConfig.getDataSource().getConnection()) {
-            String sql = "INSERT INTO telegram_quote (chat_id, author_user_id, text) VALUES (?, ?, ?)";
+            String sql = "INSERT INTO " + TELEGRAM_QUOTE_TABLE + " (chat_id, author_user_id, text) VALUES (?, ?, ?)";
             try (PreparedStatement stmt = connection.prepareStatement(sql)) {
                 stmt.setLong(1, chatId);
                 stmt.setLong(2, authorId);
 //                stmt.setInt(3, 0); //0 - это AI
                 stmt.setString(3, quoteText);
+                logger.info("SQL сохранения цитаты: " + sql);
                 stmt.executeUpdate();
             }
             logger.info("Цитата сохранена");
         } catch (Exception e) {
-            logger.error("Произошла ошибка при обращении к БД: ", e);
+            logger.error("Произошла ошибка при сохранении цитаты в БД: ", e);
             return false;
         }
         return false;
