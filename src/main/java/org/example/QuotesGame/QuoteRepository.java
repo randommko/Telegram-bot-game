@@ -60,7 +60,7 @@ public class QuoteRepository {
     public QuoteDTO handleRandomQuote(Long chatId) {
         try (Connection connection = DataSourceConfig.getDataSource().getConnection()) {
             String sql = """
-                SELECT author_user_id, saver_user_id, text 
+                SELECT author_user_id, text 
                 FROM telegram_quote 
                 WHERE chat_id = ? 
                 ORDER BY random() 
