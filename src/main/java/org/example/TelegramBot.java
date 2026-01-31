@@ -9,7 +9,6 @@ import org.example.Chats.ChatsService;
 import org.example.CockSize.CockSizeGame;
 import org.example.Horoscope.HoroscopeService;
 import org.example.PidorGame.PidorGame;
-import org.example.QuizGame.QuizGame;
 import org.example.QuotesGame.QuoteHandler;
 import org.example.Users.UsersService;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
@@ -42,7 +41,7 @@ public class TelegramBot extends TelegramLongPollingBot {
     private final ChatsService chatsService = new ChatsService();
     private final CockSizeGame cockSizeGame;
     private final PidorGame pidorGame;
-    private final QuizGame quizGame;
+//    private final QuizGame quizGame;
     private static GigaChatClient aiClient = null;
     private  final QuoteHandler quoteHandler;
     private final HoroscopeService horoscopeService;
@@ -55,7 +54,7 @@ public class TelegramBot extends TelegramLongPollingBot {
         instance = this;
         cockSizeGame = new CockSizeGame();
         pidorGame = new PidorGame();
-        quizGame = new QuizGame();
+//        quizGame = new QuizGame();
 
         aiClient = GigaChatClient.builder()
                 .verifySslCerts(false)  //для тестов
@@ -263,7 +262,7 @@ public class TelegramBot extends TelegramLongPollingBot {
                 case "/horoscope_today", "/horoscope_today@ChatGamePidor_Bot" -> sendInlineHoroscopeKeyboard(message.getChatId());
                 case "/quote", "/quote@ChatGamePidor_Bot" -> quoteHandler.getRandomQoute(message.getChatId());
                 default -> {
-                    break;
+
                 }
             }
         }

@@ -13,10 +13,6 @@ import org.telegram.telegrambots.meta.api.objects.Message;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.List;
-
-
-
 public class QuoteHandler {
     private final QuoteRepository repo = new QuoteRepository();
     private static final Logger logger = LoggerFactory.getLogger(QuoteHandler.class);
@@ -40,7 +36,7 @@ public class QuoteHandler {
         String text = message.getText();
         String prompt = """
         Это сообщение из чата друзей: "%s".
-        Стоит ли его сохранить как смешную цитату? 
+        Стоит ли его сохранить как смешную цитату?
         Ответь ТОЛЬКО 'ДА' или 'НЕТ'.
         """.formatted(text);
 
@@ -60,17 +56,13 @@ public class QuoteHandler {
                     .build();
 
             CompletionResponse response = aiClient.completions(request);
-            String aiAnswer = response.choices()
+            return response.choices()
                     .get(0)
                     .message()
                     .content()
                     .trim()
                     .toUpperCase();
-            return aiAnswer;
-//            if ("ДА".equals(aiAnswer)) {
-//                repo.saveQuote(text, chatId, userId);
-//                bot.sendMessage(chatId, "🤖 ИИ сохранил мудрую цитату: «" + text + "» ✨");
-//            }
+
 
         } catch (Exception e) {
             logger.error("AI анализ не удался: " + e.getMessage());
@@ -86,9 +78,8 @@ public class QuoteHandler {
 
         if (message.hasText()) {
             if (text.length() > 10 && text.length() < 300 && !isBotCommand(message)) {
-//                String aiResult = analyzeAndSaveQuoteIfWorth(message);
-//                if ("ДА".equals(aiResult)) {
-                if (true) {
+                String aiResult = analyzeAndSaveQuoteIfWorth(message);
+                if ("ДА".equals(aiResult)) {
                     repo.saveQuote(text, chatId, userId);
                     bot.sendMessage(chatId, "🤖 ИИ сохранил мудрую цитату: «" + text + "» ✨");
                 }
@@ -99,8 +90,12 @@ public class QuoteHandler {
     public void getRandomQoute(Long chatId) {
         QuoteDTO quoteDTO;
         quoteDTO = repo.handleRandomQuote(chatId);
-        String text = "Цитата от " + quoteDTO.userName +"\n \"" + quoteDTO.text + "\"";
-        bot.sendMessage(chatId, text);
+        if (quoteDTO != null) {
+            String text = "Цитата от " + quoteDTO.userName + "\n \"" + quoteDTO.text + "\"";
+            bot.sendMessage(chatId, text);
+            return;
+        }
+        bot.sendMessage(chatId, "Нет сохраненных цитат");
     }
     private boolean isBotCommand(Message message) {
         String text = message.getText();
