@@ -13,6 +13,8 @@ import org.telegram.telegrambots.meta.api.objects.Message;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.time.format.DateTimeFormatter;
+
 public class QuoteHandler {
     private final QuoteRepository repo = new QuoteRepository();
     private static final Logger logger = LoggerFactory.getLogger(QuoteHandler.class);
@@ -81,7 +83,7 @@ public class QuoteHandler {
                 String aiResult = analyzeAndSaveQuoteIfWorth(message);
                 if ("ДА".equals(aiResult)) {
                     repo.saveQuote(text, chatId, userId);
-                    bot.sendMessage(chatId, "🤖 ИИ сохранил мудрую цитату: «" + text + "» ✨");
+//                    bot.sendMessage(chatId, "🤖 ИИ сохранил мудрую цитату: «" + text + "» ✨");
                     logger.info("ИИ сохранил мудрую цитату: «" + text + "»");
                 }
             }
@@ -92,7 +94,8 @@ public class QuoteHandler {
         QuoteDTO quoteDTO;
         quoteDTO = repo.handleRandomQuote(chatId);
         if (quoteDTO != null) {
-            String text = "Цитата от " + quoteDTO.userName + "\n \"" + quoteDTO.text + "\"";
+            String text = quoteDTO.date.toLocalDateTime().format(DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm"))
+                    + ", " + quoteDTO.userName + " сказал: \"" + quoteDTO.text + "\"";
             bot.sendMessage(chatId, text);
             return;
         }

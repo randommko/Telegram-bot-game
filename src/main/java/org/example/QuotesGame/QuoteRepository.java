@@ -11,6 +11,7 @@ import org.slf4j.LoggerFactory;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.Timestamp;
 
 import static org.example.TablesDB.TELEGRAM_QUOTE_TABLE;
 
@@ -25,7 +26,7 @@ public class QuoteRepository {
             String sql = """
             SELECT COUNT(*) 
             FROM telegram_quote 
-            WHERE chat_id = ? AND saver_user_id = ? 
+            WHERE chat_id = ? AND author_user_id = ? 
             AND created_at > NOW() - INTERVAL '1 hour'
             """;
             try (PreparedStatement stmt = connection.prepareStatement(sql)) {
@@ -49,7 +50,7 @@ public class QuoteRepository {
                 stmt.setLong(2, authorId);
 //                stmt.setInt(3, 0); //0 - это AI
                 stmt.setString(3, quoteText);
-                logger.info("SQL сохранения цитаты: " + sql);
+                logger.debug("SQL сохранения цитаты: " + sql);
                 stmt.executeUpdate();
             }
             logger.info("Цитата сохранена");
@@ -63,7 +64,7 @@ public class QuoteRepository {
     public QuoteDTO handleRandomQuote(Long chatId) {
         try (Connection connection = DataSourceConfig.getDataSource().getConnection()) {
             String sql = """
-                SELECT author_user_id, text 
+                SELECT author_user_id, text, created_at 
                 FROM telegram_quote 
                 WHERE chat_id = ? 
                 ORDER BY random() 
@@ -76,10 +77,11 @@ public class QuoteRepository {
                     if (rs.next()) {
                         Long authorId = rs.getLong("author_user_id");
                         String text = rs.getString("text");
+                        Timestamp date = rs.getTimestamp("created_at");
 
                         String authorName = usersService.getUserNameByID(authorId); // твоя логика из telegram_user
 
-                        return new QuoteDTO(text, authorName);
+                        return new QuoteDTO(text, authorName, date);
                     } else {
                         return null;
                     }
