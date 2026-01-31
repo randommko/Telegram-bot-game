@@ -39,6 +39,7 @@ jobs:
               ${{ secrets.DB_ADDR_TG_BOT }} \
               ${{ secrets.DB_USER_TG_BOT }} \
               ${{ secrets.DB_PASS_TG_BOT }} \
+              ${{ secrets.GIGACHAT_API_KEY }} \
               > /var/log/telegram-bot.log 2>&1 &
           
               echo "Deployment complete."
@@ -50,3 +51,4 @@ jobs:
           DB_ADDR: ${{ secrets.DB_ADDR_TG_BOT }}
           DB_USER: ${{ secrets.DB_USER_TG_BOT }}
           DB_PASS: ${{ secrets.DB_PASS_TG_BOT }}
+          GIGACHAT_API_KEY : ${{ secrets.GIGACHAT_API_KEY }}
