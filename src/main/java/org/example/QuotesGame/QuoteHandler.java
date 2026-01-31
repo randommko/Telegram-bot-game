@@ -28,13 +28,13 @@ public class QuoteHandler {
         aiClient = TelegramBot.getAi();
     }
 
-    private void analyzeAndSaveQuoteIfWorth(Message message) {
+    private String analyzeAndSaveQuoteIfWorth(Message message) {
 
         Long chatId = message.getChatId();
         Long userId = message.getFrom().getId();
 
         if (!repo.canSaveQuote(chatId, userId)) {
-            return;
+            return null;
         }
 
         String text = message.getText();
@@ -66,23 +66,32 @@ public class QuoteHandler {
                     .content()
                     .trim()
                     .toUpperCase();
-
-            if ("ДА".equals(aiAnswer)) {
-                repo.saveQuote(text, chatId, userId);
-                bot.sendMessage(chatId, "🤖 ИИ сохранил мудрую цитату: «" + text + "» ✨");
-            }
+            return aiAnswer;
+//            if ("ДА".equals(aiAnswer)) {
+//                repo.saveQuote(text, chatId, userId);
+//                bot.sendMessage(chatId, "🤖 ИИ сохранил мудрую цитату: «" + text + "» ✨");
+//            }
 
         } catch (Exception e) {
             logger.error("AI анализ не удался: " + e.getMessage());
+            return null;
         }
     }
 
     public void handleSaveQuote(Message message) {
 
         String text = message.getText();
+        Long chatId = message.getChatId();
+        Long userId = message.getFrom().getId();
+
         if (message.hasText()) {
             if (text.length() > 10 && text.length() < 300 && !isBotCommand(message)) {
-                analyzeAndSaveQuoteIfWorth(message);
+//                String aiResult = analyzeAndSaveQuoteIfWorth(message);
+//                if ("ДА".equals(aiResult)) {
+                if (true) {
+                    repo.saveQuote(text, chatId, userId);
+                    bot.sendMessage(chatId, "🤖 ИИ сохранил мудрую цитату: «" + text + "» ✨");
+                }
             }
         }
     }
