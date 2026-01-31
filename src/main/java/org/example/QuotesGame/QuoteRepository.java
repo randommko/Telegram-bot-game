@@ -18,6 +18,7 @@ public class QuoteRepository {
 
     public boolean canSaveQuote(Long chatId, Long userId) {
         //Функция для защиты от частого сохранения цитат
+        // Лимит: 1 цитата в час от пользователя
         try (Connection connection = DataSourceConfig.getDataSource().getConnection()) {
             String sql = """
             SELECT COUNT(*) 

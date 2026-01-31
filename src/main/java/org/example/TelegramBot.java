@@ -1,11 +1,16 @@
 package org.example;
 
+import chat.giga.client.GigaChatClient;
+import chat.giga.client.auth.AuthClient;
+import chat.giga.client.auth.AuthClientBuilder;
+import chat.giga.model.Scope;
 import com.vdurmont.emoji.EmojiParser;
 import org.example.Chats.ChatsService;
 import org.example.CockSize.CockSizeGame;
 import org.example.Horoscope.HoroscopeService;
 import org.example.PidorGame.PidorGame;
 import org.example.QuizGame.QuizGame;
+import org.example.QuotesGame.QuoteHandler;
 import org.example.Users.UsersService;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.methods.GetMe;
@@ -38,7 +43,8 @@ public class TelegramBot extends TelegramLongPollingBot {
     private final CockSizeGame cockSizeGame;
     private final PidorGame pidorGame;
     private final QuizGame quizGame;
-    public static GigaChat aiClient = null;
+    private static GigaChatClient aiClient = null;
+    private  final QuoteHandler quoteHandler;
     private final HoroscopeService horoscopeService;
     private static final Map<Long, LocalDate> usersUpdateTime = new HashMap<>();
     private static final Map<Long, LocalDate> chatsUpdateTime = new HashMap<>();
@@ -50,8 +56,18 @@ public class TelegramBot extends TelegramLongPollingBot {
         cockSizeGame = new CockSizeGame();
         pidorGame = new PidorGame();
         quizGame = new QuizGame();
-        aiClient = new GigaChat(aiToken);
+
+        aiClient = GigaChatClient.builder()
+                .authClient(AuthClient.builder()
+                        .withOAuth(AuthClientBuilder.OAuthBuilder.builder()
+                                .authKey(aiToken)
+                                .scope(Scope.GIGACHAT_API_PERS)
+                                .build())
+                        .build())
+                .build();
+
         horoscopeService = new HoroscopeService();
+        quoteHandler = new QuoteHandler();
         //TODO: добавить отправку различных сообщений по CRON
     }
     @Override
@@ -120,6 +136,9 @@ public class TelegramBot extends TelegramLongPollingBot {
     }
     public static TelegramBot getInstance() {
         return instance;
+    }
+    public static GigaChatClient getAi() {
+        return aiClient;
     }
     private void botInfo(Message message) {
         Long chatID = message.getChatId();
@@ -232,6 +251,7 @@ public class TelegramBot extends TelegramLongPollingBot {
              */
 
             String command = parts[0];
+            quoteHandler.handleSaveQuote(message);
 
             switch (command) {
                 case "/bot_info", "/bot_info@ChatGamePidor_Bot", "/help", "/help@ChatGamePidor_Bot" -> botInfo(message);

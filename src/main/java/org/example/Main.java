@@ -20,7 +20,7 @@ public class Main {
         args[1] - IP БД
         args[2] - логин БД
         args[3] - пароль БД
-        args[4] - AI токен
+        args[4] - AI токен из личного кабинета GigaChat
         */
 
         try {

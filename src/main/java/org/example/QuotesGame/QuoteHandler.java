@@ -1,26 +1,29 @@
 package org.example.QuotesGame;
 
+import chat.giga.client.GigaChatClient;
 import chat.giga.model.completion.ChatMessage;
 import chat.giga.model.completion.ChatMessageRole;
+import chat.giga.model.completion.CompletionRequest;
+import chat.giga.model.completion.CompletionResponse;
 import org.example.TelegramBot;
 import org.telegram.telegrambots.meta.api.objects.Message;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-
 import java.util.List;
 
-import static org.example.TelegramBot.aiClient;
 
 
 public class QuoteHandler {
     private final QuoteRepository repo = new QuoteRepository();
     private static final Logger logger = LoggerFactory.getLogger(QuoteHandler.class);
     private final TelegramBot bot;
+    private final GigaChatClient aiClient;
 
     public QuoteHandler() {
         bot = TelegramBot.getInstance();
+        aiClient = TelegramBot.getAi();
     }
 
     private void analyzeAndSaveQuoteIfWorth(Message message) {
@@ -28,7 +31,6 @@ public class QuoteHandler {
         Long chatId = message.getChatId();
         Long userId = message.getFrom().getId();
 
-        // Лимит: 1 цитата в час от пользователя
         if (!repo.canSaveQuote(chatId, userId)) {
             return;
         }
@@ -41,7 +43,7 @@ public class QuoteHandler {
         """.formatted(text);
 
         try {
-            ChatCompletionRequest request = ChatCompletionRequest.builder()
+            CompletionRequest request = CompletionRequest.builder()
                     .model("gpt-4o-mini")
                     .messages(List.of(ChatMessage.builder()
                                     .role(ChatMessageRole.SYSTEM)
@@ -52,11 +54,16 @@ public class QuoteHandler {
                                     .content(prompt)
                                     .build()))
                     .maxTokens(5)
-                    .temperature(0.1)  // мало рандома
+                    .temperature(0.1F)  // мало рандома
                     .build();
 
-            ChatCompletionResult result = aiClient.chat().completions().create(request);
-            String aiAnswer = result.getChoices().get(0).getMessage().getContent().trim().toUpperCase();
+            CompletionResponse response  = aiClient.completions(request);
+            String aiAnswer = response.choices()
+                    .get(0)
+                    .message()
+                    .content()
+                    .trim()
+                    .toUpperCase();
 
             if ("ДА".equals(aiAnswer)) {
                 repo.saveQuote(text, chatId, userId);
@@ -68,7 +75,7 @@ public class QuoteHandler {
         }
     }
 
-    private void handleSaveQuote(Message message) {
+    public void handleSaveQuote(Message message) {
 
         if (message.hasText()) {
             String text = message.getText();
@@ -76,24 +83,31 @@ public class QuoteHandler {
                 analyzeAndSaveQuoteIfWorth(message);
             }
 
-        Message reply = message.getReplyToMessage();
-        if (reply == null) {
-            sendMessage(message.getChatId(), "Ответь этой командой на сообщение с цитатой 🙃");
-            return;
+            Message reply = message.getReplyToMessage();
+            if (reply == null) {
+                bot.sendMessage(message.getChatId(), "Ответь этой командой на сообщение с цитатой 🙃");
+                return;
+            }
+
+            String quoteText = reply.getText();
+
+            if (quoteText == null || quoteText.trim().isEmpty()) {
+                bot.sendMessage(message.getChatId(), "В этом сообщении нет текста, нечего сохранять 🤔");
+                return;
+            }
+
+            Long chatId = message.getChatId();
+            Long authorId = reply.getFrom().getId();
+
+            repo.saveQuote(text, chatId, authorId);
+
         }
-
-        String quoteText = reply.getText();
-        if (quoteText == null || quoteText.trim().isEmpty()) {
-            sendMessage(message.getChatId(), "В этом сообщении нет текста, нечего сохранять 🤔");
-            return;
-        }
-
-        Long chatId = message.getChatId();
-        Long authorId = reply.getFrom().getId();
-        Long saverId = message.getFrom().getId();
-
-        //тут вызов saveQoute()
     }
 
-
+    private boolean isBotCommand(String text) {
+        if (text == null || text.isBlank()) {
+            return false;
+        }
+        return text.trim().startsWith("/");
+    }
 }
