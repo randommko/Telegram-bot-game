@@ -64,7 +64,7 @@ public class AiChat {
 
             bot.sendMessage(chatId, fullAnswer);
         } catch (Exception e) {
-            logger.error("AI анализ не удался для '{}': {}", userQuestion, e.getMessage());
+            logger.error("AI не смог ответить '{}': {}", userQuestion, e.getMessage());
         }
     }
 }
