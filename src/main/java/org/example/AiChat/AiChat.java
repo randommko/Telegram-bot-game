@@ -7,7 +7,6 @@ import chat.giga.model.completion.ChatMessageRole;
 import chat.giga.model.completion.CompletionRequest;
 import chat.giga.model.completion.CompletionResponse;
 import org.example.QuotesGame.QuoteHandler;
-import org.example.Settings.Settings;
 import org.example.Settings.SettingsService;
 import org.example.TelegramBot;
 import org.slf4j.Logger;
