@@ -5,6 +5,7 @@ import chat.giga.client.auth.AuthClient;
 import chat.giga.client.auth.AuthClientBuilder;
 import chat.giga.model.Scope;
 import com.vdurmont.emoji.EmojiParser;
+import org.example.AiChat.AiChat;
 import org.example.Chats.ChatsService;
 import org.example.CockSize.CockSizeGame;
 import org.example.Horoscope.HoroscopeService;
@@ -48,6 +49,7 @@ public class TelegramBot extends TelegramLongPollingBot {
     private static final Map<Long, LocalDate> usersUpdateTime = new HashMap<>();
     private static final Map<Long, LocalDate> chatsUpdateTime = new HashMap<>();
     private static final Logger logger = LoggerFactory.getLogger(TelegramBot.class);
+    private static AiChat aiChat;
     private final ThreadPoolExecutor executor = (ThreadPoolExecutor) Executors.newCachedThreadPool();
     public TelegramBot(String botToken, String aiToken) {
         this.botToken = botToken;
@@ -68,6 +70,7 @@ public class TelegramBot extends TelegramLongPollingBot {
 
         horoscopeService = new HoroscopeService();
         quoteHandler = new QuoteHandler();
+        aiChat = new AiChat();
         //TODO: добавить отправку различных сообщений по CRON
     }
     @Override
@@ -261,6 +264,7 @@ public class TelegramBot extends TelegramLongPollingBot {
                 case "/pidor_start", "/pidor_start@ChatGamePidor_Bot" -> pidorGame.startPidorGame(message.getChatId(), message.getFrom().getId());
                 case "/horoscope_today", "/horoscope_today@ChatGamePidor_Bot" -> sendInlineHoroscopeKeyboard(message.getChatId());
                 case "/quote", "/quote@ChatGamePidor_Bot" -> quoteHandler.getRandomQuote(message.getChatId());
+                case "/ai", "ai@ChatGamePidor_Bot" -> aiChat.askAi(message);
                 default -> {
 
                 }
