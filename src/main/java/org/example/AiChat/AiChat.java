@@ -6,7 +6,6 @@ import chat.giga.model.completion.ChatMessage;
 import chat.giga.model.completion.ChatMessageRole;
 import chat.giga.model.completion.CompletionRequest;
 import chat.giga.model.completion.CompletionResponse;
-import org.example.QuotesGame.QuoteHandler;
 import org.example.Settings.SettingsService;
 import org.example.TelegramBot;
 import org.slf4j.Logger;
@@ -18,7 +17,7 @@ import java.util.List;
 import static org.example.Settings.Settings.*;
 
 public class AiChat {
-    private static final Logger logger = LoggerFactory.getLogger(QuoteHandler.class);
+    private static final Logger logger = LoggerFactory.getLogger(AiChat.class);
     private final TelegramBot bot;
     private final GigaChatClient aiClient;
     private final SettingsService settings = new SettingsService();
@@ -42,32 +41,9 @@ public class AiChat {
 
         String content = settings.getSettingValue(AI_CONTEXT);
 
-        try {
-            CompletionRequest request = CompletionRequest.builder()
-                    .model(ModelName.GIGA_CHAT)
-                    .message(ChatMessage.builder()
-                            .role(ChatMessageRole.SYSTEM)
-                            .content(content)
-                            .build())
-                    .message(ChatMessage.builder()
-                            .role(ChatMessageRole.USER)
-                            .content(userQuestion)    //запрос пользователя
-                            .build())
-                    .temperature(temperature)  // чуть больше креатива
-                    .maxTokens(maxTokens)      // длинна ответа
-                    .build();
+        String aiAnswer = sendRequestToAi(content, userQuestion);
+        bot.sendMessage(chatId, aiAnswer);
 
-            CompletionResponse response = aiClient.completions(request);
-            String fullAnswer = response.choices()
-                    .get(0)
-                    .message()
-                    .content()
-                    .trim();
-
-            bot.sendMessage(chatId, fullAnswer);
-        } catch (Exception e) {
-            logger.error("AI не смог ответить '{}': {}", userQuestion, e.getMessage());
-        }
     }
     public void summary(Message message) {
         Long chatId = message.getChatId();
@@ -96,6 +72,35 @@ public class AiChat {
             bot.sendMessage(chatId, fullAnswer);
         } catch (Exception e) {
             logger.error("AI не смог пересказать историю чата ={}", e.getMessage());
+        }
+    }
+
+    private String sendRequestToAi(String content, String userQuestion) {
+        try {
+            CompletionRequest request = CompletionRequest.builder()
+                    .model(ModelName.GIGA_CHAT)
+                    .message(ChatMessage.builder()
+                            .role(ChatMessageRole.SYSTEM)
+                            .content(content)
+                            .build())
+                    .message(ChatMessage.builder()
+                            .role(ChatMessageRole.USER)
+                            .content(userQuestion)    //запрос пользователя
+                            .build())
+                    .temperature(temperature)  // чуть больше креатива
+                    .maxTokens(maxTokens)      // длинна ответа
+                    .build();
+
+            CompletionResponse response = aiClient.completions(request);
+
+            return response.choices()
+                    .get(0)
+                    .message()
+                    .content()
+                    .trim();
+        } catch (Exception e) {
+            logger.error("AI не смог ответить '{}': {}", userQuestion, e.getMessage());
+            return null;
         }
     }
 }

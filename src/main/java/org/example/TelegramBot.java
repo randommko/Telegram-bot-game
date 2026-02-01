@@ -11,7 +11,6 @@ import org.example.Chats.ChatsService;
 import org.example.CockSize.CockSizeGame;
 import org.example.Horoscope.HoroscopeService;
 import org.example.PidorGame.PidorGame;
-import org.example.QuotesGame.QuoteHandler;
 import org.example.Users.UsersService;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.methods.GetMe;
@@ -45,7 +44,6 @@ public class TelegramBot extends TelegramLongPollingBot {
     private final PidorGame pidorGame;
 //    private final QuizGame quizGame;
     private static GigaChatClient aiClient = null;
-    private  final QuoteHandler quoteHandler;
     private final HoroscopeService horoscopeService;
     private final ContextService contextService;
     private static final Map<Long, LocalDate> usersUpdateTime = new HashMap<>();
@@ -58,7 +56,6 @@ public class TelegramBot extends TelegramLongPollingBot {
         instance = this;
         cockSizeGame = new CockSizeGame();
         pidorGame = new PidorGame();
-//        quizGame = new QuizGame();
 
         aiClient = GigaChatClient.builder()
                 .verifySslCerts(false)  //для тестов
@@ -71,7 +68,6 @@ public class TelegramBot extends TelegramLongPollingBot {
                 .build();
 
         horoscopeService = new HoroscopeService();
-        quoteHandler = new QuoteHandler();
         aiChat = new AiChat();
         contextService = new ContextService();
     }
@@ -255,7 +251,7 @@ public class TelegramBot extends TelegramLongPollingBot {
              */
 
             String command = parts[0];
-            quoteHandler.handleSaveQuote(message);
+
             if (!command.startsWith("/"))
                 contextService.saveContext(message);
 
@@ -266,7 +262,6 @@ public class TelegramBot extends TelegramLongPollingBot {
                 case "/pidor_stats", "/pidor_stats@ChatGamePidor_Bot" -> pidorGame.sendPidorStats(message.getChatId());
                 case "/pidor_start", "/pidor_start@ChatGamePidor_Bot" -> pidorGame.startPidorGame(message.getChatId(), message.getFrom().getId());
                 case "/horoscope_today", "/horoscope_today@ChatGamePidor_Bot" -> sendInlineHoroscopeKeyboard(message.getChatId());
-                case "/quote", "/quote@ChatGamePidor_Bot" -> quoteHandler.getRandomQuote(message.getChatId());
                 case "/ai", "ai@ChatGamePidor_Bot" -> aiChat.askAi(message);
                 case "/summary", "/summary@ChatGamePidor_Bot" -> aiChat.summary(message);
                 default -> {

@@ -1,7 +1,5 @@
 package org.example.AiChat;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.telegram.telegrambots.meta.api.objects.Message;
 
 
