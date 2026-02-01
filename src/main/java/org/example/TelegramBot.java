@@ -6,6 +6,7 @@ import chat.giga.client.auth.AuthClientBuilder;
 import chat.giga.model.Scope;
 import com.vdurmont.emoji.EmojiParser;
 import org.example.AiChat.AiChat;
+import org.example.AiChat.ContextService;
 import org.example.Chats.ChatsService;
 import org.example.CockSize.CockSizeGame;
 import org.example.Horoscope.HoroscopeService;
@@ -46,6 +47,7 @@ public class TelegramBot extends TelegramLongPollingBot {
     private static GigaChatClient aiClient = null;
     private  final QuoteHandler quoteHandler;
     private final HoroscopeService horoscopeService;
+    private final ContextService contextService;
     private static final Map<Long, LocalDate> usersUpdateTime = new HashMap<>();
     private static final Map<Long, LocalDate> chatsUpdateTime = new HashMap<>();
     private static final Logger logger = LoggerFactory.getLogger(TelegramBot.class);
@@ -71,7 +73,7 @@ public class TelegramBot extends TelegramLongPollingBot {
         horoscopeService = new HoroscopeService();
         quoteHandler = new QuoteHandler();
         aiChat = new AiChat();
-        //TODO: добавить отправку различных сообщений по CRON
+        contextService = new ContextService();
     }
     @Override
     public String getBotUsername() {
@@ -112,7 +114,6 @@ public class TelegramBot extends TelegramLongPollingBot {
 
         logger.info("Количество активных потоков обработки команд: " + executor.getActiveCount());
     }
-
     private void checkUser(User user) {
         if (!usersService.checkUser(user)) {
             usersService.addUser(user);
@@ -147,14 +148,14 @@ public class TelegramBot extends TelegramLongPollingBot {
         Long chatID = message.getChatId();
         sendMessage(chatID, """
                  Бот для развлечений! Команды:
-                 /cocksize - Измерить достоинство
-                 /horoscope_today - Гороскоп
-                 /quiz_start - Запустить викторину
-                 /quiz_stop - Остановить викторину
-                 /quiz_stats - Статистика викторина
-                 /pidor_start - Выбрать победителя
-                 /pidor_reg - Вступить в игру
-                 /pidor_stats - Статистика""");
+                /cocksize - Измерить достоинство
+                /pidor_start - Выбрать пидора дня
+                /horoscope_today - Гороскоп
+                /pidor_reg - Вступить в ряды пидоров
+                /pidor_stats - Статистика пидоров
+                /ai - Спроси GigaChat
+                /summary - Пересказ последних 100 сообщений
+                 """);
     }
     public Integer sendMessage(Long chatID, String text) {
         SendMessage message = new SendMessage();
@@ -255,6 +256,8 @@ public class TelegramBot extends TelegramLongPollingBot {
 
             String command = parts[0];
             quoteHandler.handleSaveQuote(message);
+            if (!command.startsWith("/"))
+                contextService.saveContext(message);
 
             switch (command) {
                 case "/bot_info", "/bot_info@ChatGamePidor_Bot", "/help", "/help@ChatGamePidor_Bot" -> botInfo(message);
@@ -265,6 +268,7 @@ public class TelegramBot extends TelegramLongPollingBot {
                 case "/horoscope_today", "/horoscope_today@ChatGamePidor_Bot" -> sendInlineHoroscopeKeyboard(message.getChatId());
                 case "/quote", "/quote@ChatGamePidor_Bot" -> quoteHandler.getRandomQuote(message.getChatId());
                 case "/ai", "ai@ChatGamePidor_Bot" -> aiChat.askAi(message);
+                case "/summary", "/summary@ChatGamePidor_Bot" -> aiChat.summary(message);
                 default -> {
 
                 }

@@ -13,6 +13,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.telegram.telegrambots.meta.api.objects.Message;
 
+import java.util.List;
+
 import static org.example.Settings.Settings.*;
 
 public class AiChat {
@@ -20,6 +22,9 @@ public class AiChat {
     private final TelegramBot bot;
     private final GigaChatClient aiClient;
     private final SettingsService settings = new SettingsService();
+    private final ContextRepo repo = new ContextRepo();
+    private final Float temperature = Float.valueOf(settings.getSettingValue(AI_CREATIVE_TEMPERATURE));
+    private final Integer maxTokens = Integer.valueOf(settings.getSettingValue(AI_MAX_TOKENS_ANSWER_QUESTION));
 
     public AiChat() {
         bot = TelegramBot.getInstance();
@@ -36,8 +41,6 @@ public class AiChat {
         }
 
         String content = settings.getSettingValue(AI_CONTEXT);
-        Float temperature = Float.valueOf(settings.getSettingValue(AI_CREATIVE_TEMPERATURE));
-        Integer maxTokens = Integer.valueOf(settings.getSettingValue(AI_MAX_TOKENS_ANSWER_QUESTION));
 
         try {
             CompletionRequest request = CompletionRequest.builder()
@@ -64,6 +67,35 @@ public class AiChat {
             bot.sendMessage(chatId, fullAnswer);
         } catch (Exception e) {
             logger.error("AI не смог ответить '{}': {}", userQuestion, e.getMessage());
+        }
+    }
+    public void summary(Message message) {
+        Long chatId = message.getChatId();
+        List<ChatMessage> context = repo.getChatContext(chatId, 100);
+//        String context = settings.getSettingValue(AI_SUMMARY_QUESTION);
+        context.add(ChatMessage.builder()
+                .role(ChatMessageRole.USER)
+                .content("Прочитай историю чата и перескажи в нашем стиле")
+                .build());
+
+        try {
+            CompletionRequest request = CompletionRequest.builder()
+                    .model(ModelName.GIGA_CHAT)
+                    .messages(context)
+                    .temperature(temperature)  // чуть больше креатива
+                    .maxTokens(maxTokens)      // длинна ответа
+                    .build();
+
+            CompletionResponse response = aiClient.completions(request);
+            String fullAnswer = response.choices()
+                    .get(0)
+                    .message()
+                    .content()
+                    .trim();
+
+            bot.sendMessage(chatId, fullAnswer);
+        } catch (Exception e) {
+            logger.error("AI не смог пересказать историю чата ={}", e.getMessage());
         }
     }
 }

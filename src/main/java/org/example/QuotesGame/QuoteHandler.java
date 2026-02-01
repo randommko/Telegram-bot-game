@@ -16,6 +16,7 @@ import org.slf4j.LoggerFactory;
 import java.time.format.DateTimeFormatter;
 
 public class QuoteHandler {
+    //TODO: удалить? не актуальная фича
     private final QuoteRepository repo = new QuoteRepository();
     private static final Logger logger = LoggerFactory.getLogger(QuoteHandler.class);
     private final TelegramBot bot;
@@ -86,51 +87,7 @@ public class QuoteHandler {
     }
 
 
-//    private String analyzeAndSaveQuoteIfWorth(Message message) {
-//
-//        Long chatId = message.getChatId();
-//        Long userId = message.getFrom().getId();
-//
-//        if (!repo.canSaveQuote(chatId, userId)) {
-//            return null;
-//        }
-//
-//        String text = message.getText();
-//        String prompt = """
-//        Это сообщение из чата друзей: "%s".
-//        Стоит ли его сохранить как смешную цитату на память?
-//        Ответь ТОЛЬКО 'ДА' или 'НЕТ'.
-//        """.formatted(text);
-//
-//        try {
-//            CompletionRequest request = CompletionRequest.builder()
-//                    .model(ModelName.GIGA_CHAT)          // или другой доступный
-//                    .message(ChatMessage.builder()
-//                            .role(ChatMessageRole.SYSTEM)
-//                            .content("Ты очень смешной комик. Выбирай и сохраняй смешные и классные цитаты дружеского чата.")
-//                            .build())
-//                    .message(ChatMessage.builder()
-//                            .role(ChatMessageRole.USER)
-//                            .content(prompt)
-//                            .build())
-//                    .temperature(0.1F)
-//                    .maxTokens(8)
-//                    .build();
-//
-//            CompletionResponse response = aiClient.completions(request);
-//            return response.choices()
-//                    .get(0)
-//                    .message()
-//                    .content()
-//                    .trim()
-//                    .toUpperCase();
-//
-//
-//        } catch (Exception e) {
-//            logger.error("AI анализ не удался: " + e.getMessage());
-//            return null;
-//        }
-//    }
+
 
     public void handleSaveQuote(Message message) {
 
@@ -163,7 +120,6 @@ public class QuoteHandler {
     }
     private boolean isBotCommand(Message message) {
         String text = message.getText();
-        Long userId = message.getFrom().getId();
         if (text == null || text.isBlank()) {
             return false;
         }

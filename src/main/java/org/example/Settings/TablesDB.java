@@ -13,4 +13,5 @@ public final class TablesDB {
     public static final String TG_CHATS_TABLE = "public.tg_chats";
     public  static final String SETTINGS_TABLE = "bot_settings";
     public  static final String QUOTE_TABLE = "telegram_quote";
+    public  static final String MESSAGE_HISTORY_TABLE = "telegram_chat_history";
 }

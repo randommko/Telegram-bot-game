@@ -25,8 +25,8 @@ public class QuoteRepository {
         // Лимит: 1 цитата в час от пользователя
         try (Connection connection = DataSourceConfig.getDataSource().getConnection()) {
             String sql = String.format("""
-            SELECT COUNT(*) 
-            FROM telegram_quote 
+            SELECT COUNT(*)
+            FROM %s 
             WHERE chat_id = ? AND author_user_id = ? 
             AND created_at > NOW() - INTERVAL '1 hour'
             """, QUOTE_TABLE);
@@ -62,7 +62,7 @@ public class QuoteRepository {
     public QuoteDTO handleRandomQuote(Long chatId) {
         try (Connection connection = DataSourceConfig.getDataSource().getConnection()) {
             String sql = String.format("""
-                SELECT author_user_id, text, created_at 
+                SELECT author_user_id, text, created_at
                 FROM %s 
                 WHERE chat_id = ? 
                 ORDER BY random() 
