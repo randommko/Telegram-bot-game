@@ -39,49 +39,28 @@ public class AiChat {
             return;
         }
 
-        String content = settings.getSettingValue(AI_CONTEXT);
-
-        String aiAnswer = sendRequestToAi(content, userQuestion);
+        String aiAnswer = sendRequestToAi(settings.getSettingValue(AI_CONTEXT), userQuestion);
         bot.sendMessage(chatId, aiAnswer);
-
     }
     public void summary(Message message) {
         Long chatId = message.getChatId();
         List<ChatMessage> context = repo.getChatContext(chatId, 100);
-//        String context = settings.getSettingValue(AI_SUMMARY_QUESTION);
+
         context.add(ChatMessage.builder()
-                .role(ChatMessageRole.USER)
-                .content("Прочитай историю чата и перескажи в нашем стиле")
+                .role(ChatMessageRole.SYSTEM)
+                .content(AI_SUMMARY_CONTEXT)
                 .build());
 
-        try {
-            CompletionRequest request = CompletionRequest.builder()
-                    .model(ModelName.GIGA_CHAT)
-                    .messages(context)
-                    .temperature(temperature)  // чуть больше креатива
-                    .maxTokens(maxTokens)      // длинна ответа
-                    .build();
-
-            CompletionResponse response = aiClient.completions(request);
-            String fullAnswer = response.choices()
-                    .get(0)
-                    .message()
-                    .content()
-                    .trim();
-
-            bot.sendMessage(chatId, fullAnswer);
-        } catch (Exception e) {
-            logger.error("AI не смог пересказать историю чата ={}", e.getMessage());
-        }
+        String fullAnswer = sendRequestToAi(context);
+        bot.sendMessage(chatId, fullAnswer);
     }
-
-    private String sendRequestToAi(String content, String userQuestion) {
+    private String sendRequestToAi(String context, String userQuestion) {
         try {
             CompletionRequest request = CompletionRequest.builder()
                     .model(ModelName.GIGA_CHAT)
                     .message(ChatMessage.builder()
                             .role(ChatMessageRole.SYSTEM)
-                            .content(content)
+                            .content(context)
                             .build())
                     .message(ChatMessage.builder()
                             .role(ChatMessageRole.USER)
@@ -100,6 +79,27 @@ public class AiChat {
                     .trim();
         } catch (Exception e) {
             logger.error("AI не смог ответить '{}': {}", userQuestion, e.getMessage());
+            return null;
+        }
+    }
+    private String sendRequestToAi(List<ChatMessage> context) {
+        try {
+            CompletionRequest request = CompletionRequest.builder()
+                    .model(ModelName.GIGA_CHAT)
+                    .messages(context)
+                    .temperature(temperature)  // чуть больше креатива
+                    .maxTokens(maxTokens)      // длинна ответа
+                    .build();
+
+            CompletionResponse response = aiClient.completions(request);
+
+            return response.choices()
+                    .get(0)
+                    .message()
+                    .content()
+                    .trim();
+        } catch (Exception e) {
+            logger.error("AI не смог ответить '{}': ", e.getMessage());
             return null;
         }
     }
