@@ -9,7 +9,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
-import static org.example.TablesDB.TG_USERS_TABLE;
+import static org.example.Settings.TablesDB.TG_USERS_TABLE;
 
 public class UsersRepository {
     private final Logger logger = LoggerFactory.getLogger(UsersRepository.class);

@@ -10,7 +10,7 @@ import java.sql.Date;
 import java.time.LocalDate;
 import java.util.*;
 
-import static org.example.TablesDB.*;
+import static org.example.Settings.TablesDB.*;
 
 public class PidorGameRepository {
     private static final Logger logger = LoggerFactory.getLogger(PidorGameRepository.class);

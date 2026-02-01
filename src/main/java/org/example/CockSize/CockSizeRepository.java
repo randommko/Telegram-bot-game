@@ -13,7 +13,7 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.example.TablesDB.*;
+import static org.example.Settings.TablesDB.*;
 
 public class CockSizeRepository {
     private final Logger logger = LoggerFactory.getLogger(CockSizeRepository.class);

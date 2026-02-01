@@ -1,4 +1,4 @@
-package org.example;
+package org.example.Settings;
 
 public final class TablesDB {
     public static final String TG_USERS_TABLE = "public.tg_users";
@@ -11,5 +11,6 @@ public final class TablesDB {
     public static final String COCKSIZE_STATS_TABLE = "public.cocksize_stats";
     public static final String COCKSIZE_IMAGES_TABLE = "public.cocksize_imgs";
     public static final String TG_CHATS_TABLE = "public.tg_chats";
-    public  static final String TELEGRAM_QUOTE_TABLE = "telegram_quote";
+    public  static final String SETTINGS_TABLE = "bot_settings";
+    public  static final String QUOTE_TABLE = "telegram_quote";
 }

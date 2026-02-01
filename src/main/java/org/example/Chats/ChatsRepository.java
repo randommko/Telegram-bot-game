@@ -9,7 +9,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
-import static org.example.TablesDB.TG_CHATS_TABLE;
+import static org.example.Settings.TablesDB.TG_CHATS_TABLE;
 
 
 

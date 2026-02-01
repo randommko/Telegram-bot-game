@@ -9,7 +9,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.*;
 
-import static org.example.TablesDB.*;
+import static org.example.Settings.TablesDB.*;
 
 public class QuizRepository {
     private static final Logger logger = LoggerFactory.getLogger(QuizRepository.class);

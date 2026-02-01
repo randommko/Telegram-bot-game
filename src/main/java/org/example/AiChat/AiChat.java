@@ -7,15 +7,20 @@ import chat.giga.model.completion.ChatMessageRole;
 import chat.giga.model.completion.CompletionRequest;
 import chat.giga.model.completion.CompletionResponse;
 import org.example.QuotesGame.QuoteHandler;
+import org.example.Settings.Settings;
+import org.example.Settings.SettingsService;
 import org.example.TelegramBot;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.telegram.telegrambots.meta.api.objects.Message;
 
+import static org.example.Settings.Settings.*;
+
 public class AiChat {
     private static final Logger logger = LoggerFactory.getLogger(QuoteHandler.class);
     private final TelegramBot bot;
     private final GigaChatClient aiClient;
+    private final SettingsService settings = new SettingsService();
 
     public AiChat() {
         bot = TelegramBot.getInstance();
@@ -24,33 +29,30 @@ public class AiChat {
 
     public void askAi(Message message) {
         String[] parts = message.getText().split(" ", 2);
-        String text = parts[1];
+        String userQuestion = parts[1];
         Long chatId = message.getChatId();
+        if (userQuestion.isEmpty() || userQuestion.isBlank()) {
+            bot.sendMessage(chatId, "Напиши свой вопрос после команды /ai");
+            return;
+        }
 
-//        String prompt = """
-//        Это сообщение из чата друзей: "%s".
-//        Стоит ли его сохранить как смешную цитату на память?
-//        Ответь в формате:
-//        ДА: [короткая причина, почему смешно/мудро]
-//        НЕТ: [короткая причина]
-//        """.formatted(text);
-
+        String content = settings.getSettingValue(AI_CONTEXT);
+        Float temperature = Float.valueOf(settings.getSettingValue(AI_CREATIVE_TEMPERATURE));
+        Integer maxTokens = Integer.valueOf(settings.getSettingValue(AI_MAX_TOKENS_ANSWER_QUESTION));
 
         try {
             CompletionRequest request = CompletionRequest.builder()
                     .model(ModelName.GIGA_CHAT)
                     .message(ChatMessage.builder()
                             .role(ChatMessageRole.SYSTEM)
-                            .content("""
-                    Ты очень смешной комик. Дай очень смешной ответ. Можно грубить и материться.
-                    """)
+                            .content(content)
                             .build())
                     .message(ChatMessage.builder()
                             .role(ChatMessageRole.USER)
-                            .content(text)
+                            .content(userQuestion)    //запрос пользователя
                             .build())
-                    .temperature(0.8F)  // чуть больше креатива
-                    .maxTokens(300)      // хватит на ответ + причину
+                    .temperature(temperature)  // чуть больше креатива
+                    .maxTokens(maxTokens)      // длинна ответа
                     .build();
 
             CompletionResponse response = aiClient.completions(request);
@@ -60,13 +62,9 @@ public class AiChat {
                     .content()
                     .trim();
 
-//            logger.info("GigaChat анализ цитаты '{}': {}", text, fullAnswer);
             bot.sendMessage(chatId, fullAnswer);
         } catch (Exception e) {
-            logger.error("AI анализ не удался для '{}': {}", text, e.getMessage());
+            logger.error("AI анализ не удался для '{}': {}", userQuestion, e.getMessage());
         }
-
-
-
     }
 }

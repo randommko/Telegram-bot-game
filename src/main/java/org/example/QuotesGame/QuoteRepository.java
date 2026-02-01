@@ -4,7 +4,6 @@ package org.example.QuotesGame;
 import org.example.Chats.ChatsService;
 import org.example.DTO.QuoteDTO;
 import org.example.DataSourceConfig;
-import org.example.QuizGame.QuizRepository;
 import org.example.Users.UsersService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -14,7 +13,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.Timestamp;
 
-import static org.example.TablesDB.TELEGRAM_QUOTE_TABLE;
+import static org.example.Settings.TablesDB.QUOTE_TABLE;
 
 public class QuoteRepository {
     private static final Logger logger = LoggerFactory.getLogger(QuoteRepository.class);
@@ -22,15 +21,15 @@ public class QuoteRepository {
     private final ChatsService chatsService = new ChatsService();
 
     public boolean canSaveQuote(Long chatId, Long userId) {
-        //Функция для защиты от частого сохранения цитат
+        // Функция для защиты от частого сохранения цитат
         // Лимит: 1 цитата в час от пользователя
         try (Connection connection = DataSourceConfig.getDataSource().getConnection()) {
-            String sql = """
+            String sql = String.format("""
             SELECT COUNT(*) 
             FROM telegram_quote 
             WHERE chat_id = ? AND author_user_id = ? 
             AND created_at > NOW() - INTERVAL '1 hour'
-            """;
+            """, QUOTE_TABLE);
             try (PreparedStatement stmt = connection.prepareStatement(sql)) {
                 stmt.setLong(1, chatId);
                 stmt.setLong(2, userId);
@@ -43,14 +42,12 @@ public class QuoteRepository {
             return false;
         }
     }
-
-    public boolean saveQuote(String quoteText, Long chatId, Long authorId) {
+    public void saveQuote(String quoteText, Long chatId, Long authorId) {
         try (Connection connection = DataSourceConfig.getDataSource().getConnection()) {
-            String sql = "INSERT INTO telegram_quote (chat_id, author_user_id, text) VALUES (?, ?, ?)";
+            String sql = "INSERT INTO " + QUOTE_TABLE + " (chat_id, author_user_id, text) VALUES (?, ?, ?)";
             try (PreparedStatement stmt = connection.prepareStatement(sql)) {
                 stmt.setLong(1, chatId);
                 stmt.setLong(2, authorId);
-//                stmt.setInt(3, 0); //0 - это AI
                 stmt.setString(3, quoteText);
                 logger.debug("SQL сохранения цитаты: " + sql);
                 stmt.executeUpdate();
@@ -60,20 +57,17 @@ public class QuoteRepository {
                     "текст: " + quoteText);
         } catch (Exception e) {
             logger.error("Произошла ошибка при сохранении цитаты в БД: ", e);
-            return false;
         }
-        return false;
     }
-
     public QuoteDTO handleRandomQuote(Long chatId) {
         try (Connection connection = DataSourceConfig.getDataSource().getConnection()) {
-            String sql = """
+            String sql = String.format("""
                 SELECT author_user_id, text, created_at 
-                FROM telegram_quote 
+                FROM %s 
                 WHERE chat_id = ? 
                 ORDER BY random() 
                 LIMIT 1
-                """;
+                """, QUOTE_TABLE);
 
             try (PreparedStatement stmt = connection.prepareStatement(sql)) {
                 stmt.setLong(1, chatId);
