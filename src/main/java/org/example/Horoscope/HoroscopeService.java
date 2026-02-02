@@ -41,7 +41,7 @@ public class HoroscopeService {
     private static final String URL = "https://ignio.com/r/export/utf/xml/daily/com.xml";
     private static final Logger logger = LoggerFactory.getLogger(HoroscopeService.class);
     public HoroscopeService() {
-        bot = TelegramBot.getInstance();
+        this.bot = TelegramBot.getInstance();
         horoscope = new Horoscope();
     }
     public void sendHoroscope(Update update, String zodiacCode, String day) {
