@@ -1,7 +1,5 @@
 package org.example.AiChat;
 
-import chat.giga.model.completion.ChatMessage;
-import chat.giga.model.completion.ChatMessageRole;
 import org.example.Chats.ChatsService;
 import org.example.DataSourceConfig;
 import org.example.Users.UsersService;
@@ -66,17 +64,13 @@ public class ContextRepo {
 
                 String content = "Сообщение от: " + userName + ", с текстом: " + text;
 
-                history.add(ChatMessage.builder()
-                        .role(ChatMessageRole.USER)
-                        .content(content)
-                        .build());
+                history.add(new ChatMessage(AiChatRole.USER, content));
+
             }
 
             if (history.isEmpty())
-                history.add(ChatMessage.builder()
-                        .role(ChatMessageRole.SYSTEM)
-                        .content("Нет истории сообщений")
-                        .build());
+                history.add(new ChatMessage(AiChatRole.SYSTEM, "Нет истории сообщений"));
+
 
             logger.debug("Загружен контекст чата {}: {} сообщений", chatId, history.size());
             return history;
