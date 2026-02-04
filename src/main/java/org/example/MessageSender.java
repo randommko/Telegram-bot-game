@@ -6,6 +6,7 @@ import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.methods.send.SendPhoto;
 import org.telegram.telegrambots.meta.api.objects.InputFile;
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageText;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 
@@ -17,6 +18,9 @@ public class MessageSender {
 
     public MessageSender(TelegramLongPollingBot bot) {
         this.bot = bot;
+    }
+    public TelegramLongPollingBot getBot() {
+        return bot;
     }
 
     public Integer sendMessage(Long chatId, String text) {
@@ -65,8 +69,4 @@ public class MessageSender {
         }
     }
 
-    public void sendMessageWithKeyboard(Long chatId, String text, InlineKeyboardMarkup keyboard) {
-        SendMessage msg = SendMessage.builder().chatId(chatId).text(text).replyMarkup(keyboard).build();
-        // execute...
-    }
 }

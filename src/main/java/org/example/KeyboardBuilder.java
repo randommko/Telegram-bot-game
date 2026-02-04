@@ -40,8 +40,8 @@ public class KeyboardBuilder {
             this.callbackData = callbackData;
         }
 
-        public static List<Zodiac> values() {
-            return List.of(values()); // Копируем enum values()
+        public String getId() {
+            return this.id;
         }
 
         public InlineKeyboardButton toButton() {
@@ -51,7 +51,9 @@ public class KeyboardBuilder {
             return button;
         }
 
-        public static Zodiac fromCallback(String callbackData) {
+        // ⭐ STATIC метод для поиска по callbackData
+        public static KeyboardBuilder.Zodiac fromCallback(String callbackData) {
+            if (callbackData == null) return null;
             for (Zodiac zodiac : values()) {
                 if (zodiac.callbackData.equals(callbackData)) {
                     return zodiac;
@@ -60,6 +62,7 @@ public class KeyboardBuilder {
             return null;
         }
     }
+
 
     /**
      * Строит клавиатуру зодиака (3 кнопки в ряд)
@@ -103,35 +106,5 @@ public class KeyboardBuilder {
         } catch (TelegramApiException e) {
             logger.error("Ошибка отправки клавиатуры зодиака: ", e);
         }
-    }
-
-    /**
-     * Универсальный билдер для любой группы кнопок
-     */
-    public InlineKeyboardMarkup buildButtons(List<InlineKeyboardButton> buttons, int buttonsPerRow) {
-        List<List<InlineKeyboardButton>> rows = new ArrayList<>();
-        List<InlineKeyboardButton> currentRow = new ArrayList<>();
-
-        for (InlineKeyboardButton button : buttons) {
-            currentRow.add(button);
-            if (currentRow.size() == buttonsPerRow) {
-                rows.add(new ArrayList<>(currentRow));
-                currentRow.clear();
-            }
-        }
-        if (!currentRow.isEmpty()) {
-            rows.add(currentRow);
-        }
-
-        InlineKeyboardMarkup markup = new InlineKeyboardMarkup();
-        markup.setKeyboard(rows);
-        return markup;
-    }
-
-    public static Zodiac fromCallback(String callbackData) {
-        return Zodiac.values().stream()
-                .filter(z -> z.callbackData.equals(callbackData))
-                .findFirst()
-                .orElse(null);
     }
 }

@@ -1,33 +1,49 @@
 package org.example.AiChat;
 
 import chat.giga.client.GigaChatClient;
+import chat.giga.client.auth.AuthClient;
+import chat.giga.client.auth.AuthClientBuilder;
 import chat.giga.model.ModelName;
+import chat.giga.model.Scope;
 import chat.giga.model.completion.ChatMessage;
 import chat.giga.model.completion.ChatMessageRole;
 import chat.giga.model.completion.CompletionRequest;
 import chat.giga.model.completion.CompletionResponse;
+import org.example.MessageSender;
 import org.example.Settings.SettingsService;
 import org.example.TelegramBot;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.telegram.telegrambots.meta.api.objects.Message;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import static org.example.Settings.Settings.*;
 
 public class AiChat {
-    private static final Logger logger = LoggerFactory.getLogger(AiChat.class);
+    private final Logger logger = LoggerFactory.getLogger(AiChat.class);
     private final TelegramBot bot;
     private final GigaChatClient aiClient;
+    private final MessageSender sender;
     private final SettingsService settings = new SettingsService();
     private final ContextRepo repo = new ContextRepo();
-    private final Float temperature = Float.valueOf(settings.getSettingValue(AI_CREATIVE_TEMPERATURE));
+    private final Float answerTemperature = Float.valueOf(settings.getSettingValue(AI_ANSWER_TEMPERATURE));
+    private final Float summaryTemperature = Float.valueOf(settings.getSettingValue(AI_SUMMARY_TEMPERATURE));
     private final Integer maxTokens = Integer.valueOf(settings.getSettingValue(AI_MAX_TOKENS_ANSWER_QUESTION));
 
-    public AiChat() {
+    public AiChat(String aiToken) {
         bot = TelegramBot.getInstance();
-        aiClient = TelegramBot.getAi();
+        sender = new MessageSender(bot);
+        aiClient = GigaChatClient.builder()
+                .verifySslCerts(false)
+                .authClient(AuthClient.builder()
+                        .withOAuth(AuthClientBuilder.OAuthBuilder.builder()
+                                .authKey(aiToken)
+                                .scope(Scope.GIGACHAT_API_PERS)
+                                .build())
+                        .build())
+                .build();
     }
 
     public void askAi(Message message) {
@@ -35,26 +51,28 @@ public class AiChat {
         String userQuestion = parts[1];
         Long chatId = message.getChatId();
         if (userQuestion.isEmpty() || userQuestion.isBlank()) {
-            bot.sendMessage(chatId, "Напиши свой вопрос после команды /ai");
+            sender.sendMessage(chatId, "Напиши свой вопрос после команды /ai");
             return;
         }
 
-        String aiAnswer = sendRequestToAi(settings.getSettingValue(AI_CONTEXT), userQuestion);
-        bot.sendMessage(chatId, aiAnswer);
+        String aiAnswer = sendRequestToAi(settings.getSettingValue(AI_CONTEXT), userQuestion, answerTemperature);
+        sender.sendMessage(chatId, aiAnswer);
     }
     public void summary(Message message) {
         Long chatId = message.getChatId();
-        List<ChatMessage> context = repo.getChatContext(chatId, 100);
+        List<ChatMessage> context = new ArrayList<>();
 
         context.add(ChatMessage.builder()
                 .role(ChatMessageRole.SYSTEM)
                 .content(AI_SUMMARY_CONTEXT)
                 .build());
 
-        String fullAnswer = sendRequestToAi(context);
-        bot.sendMessage(chatId, fullAnswer);
+        context = repo.getChatContext(chatId, 100);
+
+        String fullAnswer = sendRequestToAi(context, summaryTemperature);
+        sender.sendMessage(chatId, fullAnswer);
     }
-    private String sendRequestToAi(String context, String userQuestion) {
+    private String sendRequestToAi(String context, String userQuestion, Float temperature) {
         try {
             CompletionRequest request = CompletionRequest.builder()
                     .model(ModelName.GIGA_CHAT)
@@ -82,7 +100,7 @@ public class AiChat {
             return null;
         }
     }
-    private String sendRequestToAi(List<ChatMessage> context) {
+    private String sendRequestToAi(List<ChatMessage> context, Float temperature) {
         try {
             CompletionRequest request = CompletionRequest.builder()
                     .model(ModelName.GIGA_CHAT)

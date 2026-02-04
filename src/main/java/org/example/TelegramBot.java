@@ -1,9 +1,5 @@
 package org.example;
 
-import chat.giga.client.GigaChatClient;
-import chat.giga.client.auth.AuthClient;
-import chat.giga.client.auth.AuthClientBuilder;
-import chat.giga.model.Scope;
 import org.example.AiChat.AiChat;
 import org.example.AiChat.ContextService;
 import org.example.Chats.ChatsService;
@@ -17,8 +13,6 @@ import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 
-import java.time.LocalDate;
-import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -47,8 +41,8 @@ public class TelegramBot extends TelegramLongPollingBot {
         CockSizeGame cockSizeGame = new CockSizeGame();
         PidorGame pidorGame = new PidorGame();
         HoroscopeService horoscopeService = new HoroscopeService();
-        AiChat aiChat = new AiChat();
-        GigaChatClient aiClient = initAiClient(aiToken); //TODO: Вынесите в отдельный метод
+        AiChat aiChat = new AiChat(aiToken);
+
 
         // Фабрики диспетчеров
         this.messageSender = new MessageSender(this);
@@ -59,18 +53,6 @@ public class TelegramBot extends TelegramLongPollingBot {
         this.callbackDispatcher = new CallbackDispatcher(
                 messageSender, horoscopeService, cockSizeGame);
         this.executor = (ThreadPoolExecutor) Executors.newCachedThreadPool();
-    }
-
-    private GigaChatClient initAiClient(String aiToken) {
-        return GigaChatClient.builder()
-                .verifySslCerts(false)
-                .authClient(AuthClient.builder()
-                        .withOAuth(AuthClientBuilder.OAuthBuilder.builder()
-                                .authKey(aiToken)
-                                .scope(Scope.GIGACHAT_API_PERS)
-                                .build())
-                        .build())
-                .build();
     }
 
     @Override
@@ -115,8 +97,4 @@ public class TelegramBot extends TelegramLongPollingBot {
     public static TelegramBot getInstance() {
         return instance;
     }
-
-    // Геттеры для доступа из других классов (уберите singleton позже)
-    public MessageSender getMessageSender() { return messageSender; }
-    public UserChatManager getUserChatManager() { return userChatManager; }
 }

@@ -1,6 +1,7 @@
 package org.example.PidorGame;
 
 import com.vdurmont.emoji.EmojiParser;
+import org.example.MessageSender;
 import org.example.TelegramBot;
 import org.example.Users.UsersService;
 import org.slf4j.Logger;
@@ -15,18 +16,19 @@ public class PidorGame {
         private static final Logger logger = LoggerFactory.getLogger(PidorGame.class);
         private final PidorGameRepository repo = new PidorGameRepository();
         private final UsersService usersService = new UsersService();
-        public ExecutorService executor = Executors.newSingleThreadExecutor();
+        private final MessageSender sender;
 
         public PidorGame() {
                 bot = TelegramBot.getInstance();
+                sender = new MessageSender(bot);
         }
         public void registerPlayer(Long chatID, Long userID) {
                 String userName = usersService.getUserNameByID(userID);
                 Integer numOfChanges = repo.registerPlayer(chatID, userID);
                 if (numOfChanges != 0)
-                        bot.sendMessage(chatID, "Игрок " + userName + " зарегистрирован!");
+                        sender.sendMessage(chatID, "Игрок " + userName + " зарегистрирован!");
                 else
-                        bot.sendMessage(chatID, "Игрок " + userName + " был зарегистрирован ранее ");
+                        sender.sendMessage(chatID, "Игрок " + userName + " был зарегистрирован ранее ");
         }
         public void sendPidorStats(Long chatID) {
                 //String - имя пользователя, Integer - количество побед
@@ -46,7 +48,7 @@ public class PidorGame {
                                 statsMessage.append(userName.startsWith("@") ? EmojiParser.parseToUnicode(":rainbow_flag:") + userName.substring(1) : EmojiParser.parseToUnicode(":rainbow_flag:") + userName)
                                 .append(": ").append(score).append(" побед\n")
                 );
-                bot.sendMessage(chatID, statsMessage.toString());
+                sender.sendMessage(chatID, statsMessage.toString());
         }
         public void startPidorGame(Long chatID, Long userID) {
                 logger.info("Запущена игра пидорвикторина в чате: " + chatID);
@@ -54,7 +56,7 @@ public class PidorGame {
 
                 if (!repo.getPidorGamePlayers(chatID).contains(userID) && winnerID == null) {
                         logger.info("Игру пытается запустить не зарегистрированный игрок и пидор дня не найден");
-                        bot.sendMessage(chatID, """
+                        sender.sendMessage(chatID, """
                                 Сегодня пидора дня еще не выбирали.
                                 Игру может начать только зарегистрированный игрок.
                                 Зарегистрируйтесь командой /pidor_reg""");
@@ -63,7 +65,7 @@ public class PidorGame {
 
                 if (winnerID != null) {
                         logger.info("Найден пидор на текущую дату. Информируем пользователя");
-                        bot.sendMessage(chatID,
+                        sender.sendMessage(chatID,
                                 EmojiParser.parseToUnicode((":rainbow_flag: Сегодня пидора уже выбрали. Пидор дня: " + usersService.getUserNameByID(winnerID))));
                         return;
                 }
@@ -71,28 +73,28 @@ public class PidorGame {
                 Set<Long> chatPlayers = repo.getPidorGamePlayers(chatID);
                 if (chatPlayers.isEmpty()) {
                         logger.info("Количество игроков: " + chatPlayers.size() + " в чате " + chatID + " Игра не началась. Нет зарегистрированных игроков.");
-                        bot.sendMessage(chatID, "Нет зарегистрированных игроков.");
+                        sender.sendMessage(chatID, "Нет зарегистрированных игроков.");
                         return;
                 }
 
                 if (chatPlayers.size() < 2) {
                         logger.info("Количество игроков: " + chatPlayers.size() +  "в чате " + chatID + " Игра не началась, недостаточно игроков");
-                        bot.sendMessage(chatID, "Для игры необходимо хотя бы два игрока. Зарегистрируйтесь командой /pidor_reg");
+                        sender.sendMessage(chatID, "Для игры необходимо хотя бы два игрока. Зарегистрируйтесь командой /pidor_reg");
                         return;
                 }
 
                 List<String> responses = repo.getRandomResponses();
                 try {
                         for (String response : responses) {
-                                bot.sendMessage(chatID, response);
+                                sender.sendMessage(chatID, response);
                                 Thread.sleep(2000);
                         }
                 } catch (Exception e) {
-                        bot.sendMessage(chatID, "Ищем пидора запасным вариантом...");
+                        sender.sendMessage(chatID, "Ищем пидора запасным вариантом...");
                         logger.error("Произошла ошибка при получении из БД списка сообщений: ", e);
                 }
                 winnerID = new ArrayList<>(chatPlayers).get(new Random().nextInt(chatPlayers.size()));
                 repo.setPidorWinner(chatID, winnerID);
-                bot.sendMessage(chatID, EmojiParser.parseToUnicode(":rainbow_flag:") + " " + repo.getWinnerResponse() + usersService.getUserNameByID(winnerID) + "!");
+                sender.sendMessage(chatID, EmojiParser.parseToUnicode(":rainbow_flag:") + " " + repo.getWinnerResponse() + usersService.getUserNameByID(winnerID) + "!");
         }
 }

@@ -2,11 +2,9 @@ package org.example;
 
 import org.example.CockSize.CockSizeGame;
 import org.example.Horoscope.HoroscopeService;
-import org.example.KeyboardBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.telegram.telegrambots.meta.api.methods.AnswerCallbackQuery;
-import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageText;
 import org.telegram.telegrambots.meta.api.objects.CallbackQuery;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
@@ -14,30 +12,19 @@ import java.util.Map;
 
 public class CallbackDispatcher {
     private static final Logger logger = LoggerFactory.getLogger(CallbackDispatcher.class);
-
     private final MessageSender messageSender;
     private final HoroscopeService horoscopeService;
     private final CockSizeGame cockSizeGame;
 
     // Map для диспетчеризации callback (O(1) поиск)
     private final Map<String, CallbackHandler> handlers = Map.of(
-            "avg_cock_size_button_pressed", this::handleAvgCockSize,
-            // Зодиаки обрабатываются через enum в KeyboardBuilder.Zodiac
-            "aries_button_pressed", zodiac -> horoscopeService.sendHoroscope(zodiac, "today"),
-            "taurus_button_pressed", zodiac -> horoscopeService.sendHoroscope(zodiac, "today"),
-            // ... остальные зодиаки аналогично
-            // Или лучше: используйте KeyboardBuilder.Zodiac.fromCallback()
+            "avg_cock_size_button_pressed", this::handleAvgCockSize
     );
 
     // Функциональный интерфейс для хендлеров
     @FunctionalInterface
     public interface CallbackHandler {
         void handle(CallbackQuery callback, MessageSender sender);
-    }
-
-    @FunctionalInterface
-    public interface ZodiacHandler {
-        void handle(KeyboardBuilder.Zodiac zodiac, CallbackQuery callback);
     }
 
     public CallbackDispatcher(MessageSender messageSender,
@@ -52,6 +39,7 @@ public class CallbackDispatcher {
         String callbackData = callback.getData();
         logger.debug("Callback: {}", callbackData);
 
+        // 1. Сначала проверяем ЗОДИАКИ через enum (12 кнопок → 3 строки!)
         KeyboardBuilder.Zodiac zodiac = KeyboardBuilder.Zodiac.fromCallback(callbackData);
         if (zodiac != null) {
             handleZodiac(callback, zodiac);
@@ -59,6 +47,7 @@ public class CallbackDispatcher {
             return;
         }
 
+        // 2. Потом остальные callbacks
         CallbackHandler handler = handlers.get(callbackData);
         if (handler != null) {
             handler.handle(callback, messageSender);
@@ -68,6 +57,7 @@ public class CallbackDispatcher {
             answerCallbackQuery(callback, "Неизвестная кнопка");
         }
     }
+
 
     // Универсальный answer callback (убирает "часики")
     private void answerCallbackQuery(CallbackQuery callback) {
@@ -88,7 +78,7 @@ public class CallbackDispatcher {
 
     // Хендлеры
     private void handleZodiac(CallbackQuery callback, KeyboardBuilder.Zodiac zodiac) {
-        horoscopeService.sendHoroscope(callback.getMessage(), zodiac.id, "today");
+        horoscopeService.sendHoroscope(callback, zodiac.getId(), "today");
     }
 
     private void handleAvgCockSize(CallbackQuery callback, MessageSender sender) {

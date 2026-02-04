@@ -49,7 +49,7 @@ public class ContextRepo {
                 SELECT user_id, message_text, message_date
                 FROM %s
                 WHERE chat_id = ?
-                ORDER BY message_date DESC
+                ORDER BY message_date asc
                 LIMIT ?;
                 """, MESSAGE_HISTORY_TABLE);
 
@@ -64,13 +64,20 @@ public class ContextRepo {
                 String text = resultSet.getString("message_text");
                 String userName = usersService.getUserNameByID(userId);
 
-                String content = userName + ": " + text;
+                String content = "Сообщение от: " + userName + ", с текстом: " + text;
 
                 history.add(ChatMessage.builder()
                         .role(ChatMessageRole.USER)
                         .content(content)
                         .build());
             }
+
+            if (history.isEmpty())
+                history.add(ChatMessage.builder()
+                        .role(ChatMessageRole.SYSTEM)
+                        .content("Нет истории сообщений")
+                        .build());
+
             logger.debug("Загружен контекст чата {}: {} сообщений", chatId, history.size());
             return history;
 
