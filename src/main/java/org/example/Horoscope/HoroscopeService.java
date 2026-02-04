@@ -1,11 +1,12 @@
 package org.example.Horoscope;
 
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
+import org.example.MessageSender;
 import org.example.TelegramBot;
 import org.example.Users.UsersService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.telegram.telegrambots.meta.api.objects.Update;
+import org.telegram.telegrambots.meta.api.objects.CallbackQuery;
 
 import java.io.IOException;
 import java.net.URI;
@@ -38,15 +39,17 @@ public class HoroscopeService {
     private final TelegramBot bot;
     LocalDate lastSend;
     private Horoscope horoscope;
+    MessageSender sender;
     private static final String URL = "https://ignio.com/r/export/utf/xml/daily/com.xml";
     private static final Logger logger = LoggerFactory.getLogger(HoroscopeService.class);
     public HoroscopeService() {
-        bot = TelegramBot.getInstance();
+        this.bot = TelegramBot.getInstance();
+        sender = new MessageSender(bot);
         horoscope = new Horoscope();
     }
-    public void sendHoroscope(Update update, String zodiacCode, String day) {
-        Long chatID = update.getCallbackQuery().getMessage().getChatId();
-        String userName = usersService.getUserNameByID(update.getCallbackQuery().getFrom().getId());
+    public void sendHoroscope(CallbackQuery callback, String zodiacCode, String day) {
+        Long chatID = callback.getMessage().getChatId();
+        String userName = usersService.getUserNameByID(callback.getFrom().getId());
         updateHoroscope();
 
         String horoscopeText = null;
@@ -61,10 +64,10 @@ public class HoroscopeService {
                 horoscopeDate = horoscope.getDateInfo().getTomorrow();
             }
         }
-        String msg = "Гороскоп на " + horoscopeDate + " для знака зодиака " + zodiacMap.get(zodiacCode) + " по просьбе " + userName + "\n" +
+        String msg = "Гороскоп на " + horoscopeDate + " для знака зодиака \"" + zodiacMap.get(zodiacCode).toUpperCase() + "\" по просьбе " + userName + "\n" +
                 horoscopeText;
 
-        bot.sendMessage(chatID, msg);
+        sender.sendMessage(chatID, msg);
         lastSend = LocalDate.now();
     }
     public void updateHoroscope () {

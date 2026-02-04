@@ -3,14 +3,15 @@ package org.example.CockSize;
 
 import com.vdurmont.emoji.EmojiParser;
 import org.example.DTO.AVGCockSizeDTO;
+import org.example.MessageSender;
 import org.example.TelegramBot;
 import org.example.Users.UsersService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.telegram.telegrambots.meta.api.methods.send.SendPhoto;
+import org.telegram.telegrambots.meta.api.objects.CallbackQuery;
 import org.telegram.telegrambots.meta.api.objects.InputFile;
 import org.telegram.telegrambots.meta.api.objects.Message;
-import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
 
@@ -26,11 +27,13 @@ public class CockSizeGame {
     CockSizeService service = new CockSizeService();
     private static final Logger logger = LoggerFactory.getLogger(CockSizeGame.class);
     private final UsersService usersService = new UsersService();
+    private final MessageSender sender;
     private final TelegramBot bot;
     private static final String RESOURCES_PATH = "/bin/tg_bot/resources";
 
     public CockSizeGame() {
         bot = TelegramBot.getInstance();
+        sender = new MessageSender(bot);
     }
     public void sendTodayCockSize(Message message) {
         Integer userSize = null;
@@ -60,7 +63,7 @@ public class CockSizeGame {
             bot.execute(sendPhoto);
         } catch (Exception e) {
             logger.error("Ошибка отправки длинны члена с картинкой" + e);
-            bot.sendMessage(chatID, messageForFoundSize);
+            sender.sendMessage(chatID, messageForFoundSize);
         }
     }
     private Map<Integer, String> getCockSize(Long userID) {
@@ -85,14 +88,14 @@ public class CockSizeGame {
     private String getCockSizeImageName(Integer size) {
         return service.getCockSizeImageName(size);
     }
-    public void sendAVGCockSize(Update update) {
-        Long userID= update.getCallbackQuery().getFrom().getId();
-        Long chatID = update.getCallbackQuery().getMessage().getChatId();
+    public void sendAVGCockSize(CallbackQuery callbackQuery) {
+        Long userID= callbackQuery.getFrom().getId();
+        Long chatID = callbackQuery.getMessage().getChatId();
         String userName = usersService.getUserNameByID(userID);
         AVGCockSizeDTO result = service.getAVGCockSize(userID);
 
         if (result == null) {
-            bot.sendMessage(chatID, userName + " ни разу не измерял свой член!");
+            sender.sendMessage(chatID, userName + " ни разу не измерял свой член!");
             return;
         }
         float avgSize = result.AVGSize;
@@ -103,7 +106,7 @@ public class CockSizeGame {
         String formattedFirstMeasurementDate = result.firstMeasurementDate.format(formatter);
         String formattedLastMeasurementDate = result.lastMeasurementDate.format(formatter);
 
-        bot.sendMessage(chatID, EmojiParser.parseToUnicode("C " + formattedFirstMeasurementDate + " по " +
+        sender.sendMessage(chatID, EmojiParser.parseToUnicode("C " + formattedFirstMeasurementDate + " по " +
                 formattedLastMeasurementDate + " " + userName + " сделал " +
                 result.measurementCount + " замеров.\nВ среднем твой болт\uD83C\uDF46: " + avgSizeFormatted + "cm"));
     }
