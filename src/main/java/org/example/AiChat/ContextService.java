@@ -15,7 +15,8 @@ public class ContextService {
         String text = message.getText();
         Long userId = message.getFrom().getId();
         //не сохраняем сообщения от ботов (ПРОД и ТЕСТ)
-        if (text == null || text.isBlank() || userId == 7332966399L || userId == 7712595730L) {
+        //userId == 7332966399L || userId == 7712595730L
+        if (text == null || text.isBlank()) {
             return false;
         }
         return text.trim().startsWith("/");
