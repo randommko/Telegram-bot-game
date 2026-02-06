@@ -62,7 +62,7 @@ public class ContextRepo {
                 String text = resultSet.getString("message_text");
                 String userName = usersService.getUserNameByID(userId);
 
-                String content = "Сообщение от: " + userName + ", с текстом: " + text;
+                String content = "Сообщение от: \"" + userName + "\", с текстом: " + text;
 
                 history.add(new ChatMessage(AiChatRole.USER, content));
 

@@ -1,5 +1,7 @@
 package org.example.AiChat;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -28,6 +30,7 @@ public class AiChat {
     private final ContextRepo repo = new ContextRepo();
     private final Float answerTemperature = Float.valueOf(settings.getSettingValue(AI_ANSWER_TEMPERATURE));
     private final Float summaryTemperature = Float.valueOf(settings.getSettingValue(AI_SUMMARY_TEMPERATURE));
+    private final Float supportDialogueTemperature = 0.5F;
     private final Integer maxTokens = Integer.valueOf(settings.getSettingValue(AI_MAX_TOKENS_ANSWER_QUESTION));
     private final HttpClient httpClient = HttpClient.newHttpClient();
     private final ObjectMapper objectMapper = new ObjectMapper();
@@ -67,6 +70,86 @@ public class AiChat {
         if (fullAnswer != null) {
             sender.sendMessage(chatId, fullAnswer);
         }
+    }
+    public void supportDialogue(Message message) {
+        /*
+        Алгоритм:
+        1. Получить текущее сообщение
+        2. Определить нужно ли поддержать диалог в этом месте
+        3. Если нужно, сформировать и отправить ответ
+         */
+        Long chatId = message.getChatId();
+        String jsonResponse = defineSupportDialogueNecessity(
+                repo.getChatContext(chatId, 100),
+                """
+                        Ты универсальный всезнайка со своим мнением. Прочитай историю переписки и 
+                        реши можешь ли ты вступить в диалог и сказать что-то интересное.
+                        Дай ответ в формате JSON:
+                        {
+                        	"needSendToChat": true,
+                        	"reason": "String",
+                        	"answerMsg": "String"
+                        }
+                        """
+        );
+
+        try {
+            // Парсим JSON-ответ
+            ObjectMapper objectMapper = new ObjectMapper();
+            JsonNode responseNode = objectMapper.readTree(jsonResponse);
+
+            boolean needSendToChat = responseNode.get("needSendToChat").asBoolean();
+            String reason = responseNode.get("reason").asText();
+            String answerMsg = responseNode.get("answerMsg").asText();
+
+            if (needSendToChat) {
+                // Отправляем сообщение в чат
+                sender.sendMessage(chatId, answerMsg);
+            } else {
+                // Логируем причину
+                logger.info("ИИ решил не отвечать. Причина: {}", reason);
+            }
+
+        } catch (JsonProcessingException e) {
+            logger.error("Ошибка парсинга JSON ответа: {}", e.getMessage());
+        } catch (Exception e) {
+            logger.error("Ошибка обработки ответа: {}", e.getMessage());
+        }
+    }
+
+    private String defineSupportDialogueNecessity(List<ChatMessage> context, String systemPromt) {
+        try {
+            ObjectNode request = objectMapper.createObjectNode();
+            request.put("model", "deepseek-chat");
+            ArrayNode messages = objectMapper.createArrayNode();
+            messages.addObject().put("role", AiChatRole.SYSTEM.value).put("content", systemPromt);
+
+            // Преобразуем контекст в строку
+            String contextAsString = convertContextToString(context);
+            messages.addObject().put("role", AiChatRole.SYSTEM.value).put("content", contextAsString);
+
+            request.set("messages", messages);
+            request.put("temperature", supportDialogueTemperature);
+            request.put("max_tokens", maxTokens);
+
+            return sendHttpRequest(request);
+        } catch (Exception e) {
+            logger.error("AI не смог ответить: {}", e.getMessage());
+            return null;
+        }
+    }
+
+    private String convertContextToString(List<ChatMessage> context) {
+        if (context == null || context.isEmpty()) {
+            return "История переписки отсутствует";
+        }
+
+        StringBuilder sb = new StringBuilder("История переписки:\n");
+        for (ChatMessage msg : context) {
+            // Предполагаем, что ChatMessage имеет методы getRole() и getContent()
+            sb.append(msg.getContent()).append("\n");
+        }
+        return sb.toString();
     }
 
     private String sendRequestToAi(String context, String userQuestion, Float temperature) {

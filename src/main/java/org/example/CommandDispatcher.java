@@ -92,6 +92,7 @@ public class CommandDispatcher {
         // Сохраняем контекст для не-команд
         if (!text.startsWith("/")) {
             contextService.saveContext(message);
+            handleSupportDialog(message);
             logger.debug("Сохранен контекст: {}", text);
             return;
         }
@@ -106,7 +107,10 @@ public class CommandDispatcher {
         }
 
         logger.debug("Выполняем команду: {}", command);
-        handlers.get(command).accept(message);
+
+        if (handlers.containsKey(command)) {
+            handlers.get(command).accept(message);
+        }
     }
 
     // Хендлеры команд (каждый - 1 ответственность)
@@ -150,5 +154,9 @@ public class CommandDispatcher {
 
     private void handleSummary(Message message) {
         aiChat.summary(message);
+    }
+
+    private void handleSupportDialog(Message message) {
+        aiChat.supportDialogue(message);
     }
 }
