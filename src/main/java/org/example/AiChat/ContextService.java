@@ -14,7 +14,9 @@ public class ContextService {
     private Boolean needToSaveMessage(Message message) {
         String text = message.getText();
         Long userId = message.getFrom().getId();
-        if (text == null || text.isBlank() || userId == 7332966399L || userId == 7712595730L) {
+        //не сохраняем сообщения от ботов (ПРОД и ТЕСТ)
+        //userId == 7332966399L || userId == 7712595730L
+        if (text == null || text.isBlank()) {
             return false;
         }
         return text.trim().startsWith("/");
