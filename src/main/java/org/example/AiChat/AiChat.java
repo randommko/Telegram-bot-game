@@ -19,6 +19,8 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import static org.example.Settings.Settings.*;
 
@@ -91,13 +93,27 @@ public class AiChat {
                         	"reason": "String",
                         	"answerMsg": "String"
                         }
+                        Если сказать нечего (needSendToChat = false), то заполни только причину (reason)
+                        Если есть что сказать (needSendToChat = true), то причину (reason) не заполняй
                         """
         );
 
         try {
             // Парсим JSON-ответ
             ObjectMapper objectMapper = new ObjectMapper();
-            JsonNode responseNode = objectMapper.readTree(jsonResponse);
+            // Извлекаем JSON из ```json ... ```
+
+            Pattern pattern = Pattern.compile("```(?:json)?\\s*\\n?(.*?)\\n?```", Pattern.DOTALL | Pattern.CASE_INSENSITIVE);
+            Matcher matcher = pattern.matcher(jsonResponse.trim());
+            String cleanJson;
+            if (matcher.find()) {
+                cleanJson = matcher.group(1).trim();
+            } else {
+                // Fallback: если нет блока, пробуем как есть
+                cleanJson = jsonResponse.trim();
+            }
+
+            JsonNode responseNode = objectMapper.readTree(cleanJson);
 
             boolean needSendToChat = responseNode.get("needSendToChat").asBoolean();
             String reason = responseNode.get("reason").asText();
@@ -127,7 +143,7 @@ public class AiChat {
 
             // Преобразуем контекст в строку
             String contextAsString = convertContextToString(context);
-            messages.addObject().put("role", AiChatRole.SYSTEM.value).put("content", contextAsString);
+            messages.addObject().put("role", AiChatRole.USER.value).put("content", contextAsString);
 
             request.set("messages", messages);
             request.put("temperature", supportDialogueTemperature);
