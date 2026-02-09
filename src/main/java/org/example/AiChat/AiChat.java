@@ -19,6 +19,7 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -53,8 +54,13 @@ public class AiChat {
             sender.sendMessage(chatId, "Напиши свой вопрос после команды /ai");
             return;
         }
+        String contex;
+        if (Objects.equals(chatId, MY_CHAT_ID))
+            contex = AI_CONTEXT_FOR_MY_CHAT;
+        else
+            contex = AI_CONTEXT;
 
-        String aiAnswer = sendRequestToAi(settings.getSettingValue(AI_CONTEXT), userQuestion, answerTemperature);
+        String aiAnswer = sendRequestToAi(settings.getSettingValue(contex), userQuestion, answerTemperature);
         if (aiAnswer != null) {
             sender.sendMessage(chatId, aiAnswer);
         }
