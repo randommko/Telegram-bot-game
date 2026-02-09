@@ -37,7 +37,7 @@ public class CommandDispatcher {
         PIDOR_STATS("/pidor_stats"),
         PIDOR_START("/pidor_start"),
         HOROSCOPE("/horoscope_today"),
-        AI("/ai"),
+        AI("/ai", "/ии", "/аи"),
         SUMMARY("/summary");
 
         private final List<String> aliases;
