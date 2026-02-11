@@ -1,7 +1,5 @@
 package org.example.AiChat;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -17,10 +15,9 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.time.Duration;
 import java.time.LocalTime;
 import java.util.*;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import static org.example.Settings.Settings.*;
 
@@ -40,6 +37,7 @@ public class AiChat {
     private final String deepseekBaseUrl = "https://api.deepseek.com/v1/chat/completions";
     private final static Map<Long, LocalTime> timeOfLastAiQuestionInChat = new HashMap<>();
     private final static Map<Long, ArrayNode> chatHistory = new HashMap<>();
+//    private final ArrayNode chatHistoryMessages = objectMapper.createArrayNode();
 
     public AiChat(String aiToken) {
         this.deepseekApiKey = aiToken;
@@ -47,37 +45,87 @@ public class AiChat {
         sender = new MessageSender(bot);
     }
 
+    public void addMessageToHistoryAi(Message message) {
+        Long chatId = message.getChatId();
+        String text = message.getText();
+        String userName = message.getFrom().getUserName();
+        checkContextChatAi(message);
+
+        chatHistory.get(chatId).addObject()
+                .put("role", "user")
+                .put("content", "Сообщение от: " + userName + " : " + text);
+
+        logger.info("Сохранено сообщение в контекст ИИ для чата " + message.getChat().getTitle());
+
+        timeOfLastAiQuestionInChat.replace(chatId, LocalTime.now());
+    }
+
+    private void checkContextChatAi(Message message) {
+        Long chatId = message.getChatId();
+        if (!timeOfLastAiQuestionInChat.containsKey(chatId))
+            timeOfLastAiQuestionInChat.put(chatId, LocalTime.now());
+
+        Duration duration = Duration.between(timeOfLastAiQuestionInChat.get(chatId), LocalTime.now());
+
+        if (!chatHistory.containsKey(chatId)) {
+            ArrayNode historyArray = objectMapper.createArrayNode();
+
+            try {
+                historyArray.addObject()
+                        .put("role", "system")
+                        .put("content", getSystemPromtForChat(chatId));
+                chatHistory.put(chatId, historyArray);
+            }
+            catch (Exception e) {
+                logger.error("Ошибка инициализации чата: " + e);
+            }
+
+        }
+
+        if (duration.toHours() > 1) {
+            chatHistory.get(chatId).removeAll();
+            logger.info("Контекст ИИ обнулен для чата: " + message.getChat().getTitle());
+            chatHistory.get(chatId).addObject()
+                    .put("role", "system")
+                    .put("content", getSystemPromtForChat(chatId));
+        }
+    }
+
     public void askAi(Message message) {
         String[] parts = message.getText().split(" ", 2);
         String userQuestion = parts.length > 1 ? parts[1] : "";
         Long chatId = message.getChatId();
+
         if (userQuestion.isEmpty() || userQuestion.isBlank()) {
             sender.sendMessage(chatId, "Напиши свой вопрос после команды /ai");
             return;
         }
-        if (!timeOfLastAiQuestionInChat.containsKey(chatId))
-            timeOfLastAiQuestionInChat.put(chatId, LocalTime.now());
 
-        ArrayNode chatHistoryMessages = objectMapper.createArrayNode();
-
-
-        if (!chatHistory.containsKey(chatId) & Objects.equals(chatId, MY_CHAT_ID)) {
-            chatHistoryMessages.addObject().put("role", "system").put("content", AI_CONTEXT_FOR_MY_CHAT);
-            chatHistory.put(chatId, chatHistoryMessages);
-        }
-
-        if (!chatHistory.containsKey(chatId) & !Objects.equals(chatId, MY_CHAT_ID)) {
-            chatHistoryMessages.addObject().put("role", "system").put("content", AI_CONTEXT);
-            chatHistory.put(chatId, chatHistoryMessages);
-        }
+        checkContextChatAi(message);
 
         String userName = message.getFrom().getUserName();
-        chatHistoryMessages.addObject().put("role", "user").put("content", userName + " спрашивает: " + userQuestion;);
+
+        chatHistory.get(chatId).addObject()
+                .put("role", "user")
+                .put("content", userName + " спрашивает: " + userQuestion);
+
 
         String aiAnswer = sendRequestToAi(chatHistory.get(chatId), answerTemperature);
+        logger.info("Задан вопрос ИИ в чате: " + message.getChat().getTitle());
         if (aiAnswer != null) {
+            chatHistory.get(chatId).addObject()
+                    .put("role", "system")
+                    .put("content", aiAnswer);
+//            chatHistory.put(chatId, chatHistoryMessages);
+            timeOfLastAiQuestionInChat.replace(chatId, LocalTime.now());
             sender.sendMessage(chatId, aiAnswer);
         }
+    }
+
+    private String getSystemPromtForChat(Long chatId) {
+        if (Objects.equals(chatId, MY_CHAT_ID))
+            return AI_CONTEXT_FOR_MY_CHAT;
+        return AI_CONTEXT;
     }
 
     private String sendRequestToAi(ArrayNode question, Float temperature) {

@@ -67,8 +67,7 @@ public class CommandDispatcher {
             Command.PIDOR_STATS, this::handlePidorStats,
             Command.PIDOR_START, this::handlePidorStart,
             Command.HOROSCOPE, this::handleHoroscope,
-            Command.AI, this::handleAi,
-            Command.SUMMARY, this::handleSummary
+            Command.AI, this::handleAi
     );
 
     public CommandDispatcher(MessageSender messageSender,
@@ -91,10 +90,8 @@ public class CommandDispatcher {
 
         // Сохраняем контекст для не-команд
         if (!text.startsWith("/")) {
-            //Сохранение сообщений в БД
-            contextService.saveContext(message);
-//            handleSupportDialog(message);
-            logger.debug("Сохранен контекст: {}", text);
+            aiChat.addMessageToHistoryAi(message);
+            logger.info("Сохранен контекст: {}", text);
             return;
         }
 
@@ -153,11 +150,4 @@ public class CommandDispatcher {
         aiChat.askAi(message);
     }
 
-    private void handleSummary(Message message) {
-        aiChat.summary(message);
-    }
-
-    private void handleSupportDialog(Message message) {
-        aiChat.supportDialogue(message);
-    }
 }
