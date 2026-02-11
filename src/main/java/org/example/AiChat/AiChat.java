@@ -17,9 +17,9 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
+import java.time.Duration;
+import java.time.LocalTime;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -39,6 +39,7 @@ public class AiChat {
     private final ObjectMapper objectMapper = new ObjectMapper();
     private final String deepseekApiKey;
     private final String deepseekBaseUrl = "https://api.deepseek.com/v1/chat/completions";
+    private final static Map<Long, LocalTime> lastAiQuestion = new HashMap<>();
 
     public AiChat(String aiToken) {
         this.deepseekApiKey = aiToken;
@@ -54,13 +55,26 @@ public class AiChat {
             sender.sendMessage(chatId, "Напиши свой вопрос после команды /ai");
             return;
         }
-        String contex;
-        if (Objects.equals(chatId, MY_CHAT_ID))
-            contex = AI_CONTEXT_FOR_MY_CHAT;
-        else
-            contex = AI_CONTEXT;
+        if (!lastAiQuestion.containsKey(chatId))
+            lastAiQuestion.put(chatId, LocalTime.now());
 
-        String aiAnswer = sendRequestToAi(settings.getSettingValue(contex), userQuestion, answerTemperature);
+        String userName = message.getFrom().getUserName();
+        userQuestion = userName + " спрашивает: " + userQuestion;
+        String systemPromtForChat;
+
+//        String contextInChat;
+//        Duration duration = Duration.between(lastAiQuestion.get(chatId), LocalTime.now());
+
+//        if (duration.toHours() < 1)
+//        Заполнить контекст последними сообщениями в чате
+//            contextInChat
+
+        if (Objects.equals(chatId, MY_CHAT_ID))
+            systemPromtForChat = AI_CONTEXT_FOR_MY_CHAT;
+        else
+            systemPromtForChat = AI_CONTEXT;
+
+        String aiAnswer = sendRequestToAi(settings.getSettingValue(systemPromtForChat), userQuestion, answerTemperature);
         if (aiAnswer != null) {
             sender.sendMessage(chatId, aiAnswer);
         }
@@ -181,6 +195,9 @@ public class AiChat {
             request.put("model", "deepseek-chat");
             ArrayNode messages = objectMapper.createArrayNode();
             messages.addObject().put("role", "system").put("content", context);
+            //Надо добавлять сообщения последовательно из истории чата что бы хранить историю переписки
+            //Нужно отдельная функция наполнения ArrayNode messages = objectMapper.createArrayNode() сообщениями
+            //или наполнять историю на "горячую" сразу после полчения сообщений и хранить в памяти в Map<chatId, Map<user, message>>
             messages.addObject().put("role", "user").put("content", userQuestion);
             request.set("messages", messages);
             request.put("temperature", temperature);

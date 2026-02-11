@@ -91,6 +91,7 @@ public class CommandDispatcher {
 
         // Сохраняем контекст для не-команд
         if (!text.startsWith("/")) {
+            //Сохранение сообщений в БД
             contextService.saveContext(message);
 //            handleSupportDialog(message);
             logger.debug("Сохранен контекст: {}", text);
