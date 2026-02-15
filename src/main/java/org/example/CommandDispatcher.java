@@ -60,8 +60,7 @@ public class CommandDispatcher {
             Command.PIDOR_STATS, this::handlePidorStats,
             Command.PIDOR_START, this::handlePidorStart,
             Command.HOROSCOPE, this::handleHoroscope,
-            Command.AI, this::handleAi,
-            Command.SUMMARY, this::handleSummary
+            Command.AI, this::handleAi
     );
 
     public CommandDispatcher(MessageSender messageSender,
@@ -138,10 +137,6 @@ public class CommandDispatcher {
 
     private void handleAi(Message message) {
         aiChat.askAi(message);
-    }
-
-    private void handleSummary(Message message) {
-        aiChat.summary(message);
     }
 
 }

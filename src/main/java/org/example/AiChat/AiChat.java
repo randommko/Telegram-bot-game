@@ -25,9 +25,7 @@ public class AiChat {
     private final Logger logger = LoggerFactory.getLogger(AiChat.class);
     private final MessageSender sender;
     private final SettingsService settings = new SettingsService();
-    private final ContextRepo repo = new ContextRepo();
     private final Float answerTemperature = Float.valueOf(settings.getSettingValue(AI_ANSWER_TEMPERATURE));
-    private final Float summaryTemperature = Float.valueOf(settings.getSettingValue(AI_SUMMARY_TEMPERATURE));
     private final Integer maxTokens = Integer.valueOf(settings.getSettingValue(AI_MAX_TOKENS_ANSWER_QUESTION));
     private final HttpClient httpClient = HttpClient.newHttpClient();
     private final ObjectMapper objectMapper = new ObjectMapper();
@@ -57,20 +55,6 @@ public class AiChat {
         String aiAnswer = sendRequestToAi(settings.getSettingValue(contex), userQuestion, answerTemperature);
         if (aiAnswer != null) {
             sender.sendMessage(chatId, aiAnswer);
-        }
-    }
-
-    public void summary(Message message) {
-        Long chatId = message.getChatId();
-        List<ChatMessage> context = new ArrayList<>();
-
-        context.add(new ChatMessage(AiChatRole.SYSTEM, AI_SUMMARY_CONTEXT));
-
-        context.addAll(repo.getChatContext(chatId, 100));
-
-        String fullAnswer = sendRequestToAi(context, summaryTemperature);
-        if (fullAnswer != null) {
-            sender.sendMessage(chatId, fullAnswer);
         }
     }
 
