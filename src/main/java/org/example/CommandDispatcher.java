@@ -1,22 +1,18 @@
 package org.example;
 
-import com.vdurmont.emoji.EmojiParser;
 import org.example.AiChat.AiChat;
 import org.example.AiChat.ContextService;
 import org.example.CockSize.CockSizeGame;
 
-import org.example.Horoscope.HoroscopeService;
 import org.example.PidorGame.PidorGame;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.Message;
 
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
-import java.util.regex.Pattern;
 
 public class CommandDispatcher {
     private static final Logger logger = LoggerFactory.getLogger(CommandDispatcher.class);
@@ -24,7 +20,6 @@ public class CommandDispatcher {
     private final MessageSender messageSender;
     private final CockSizeGame cockSizeGame;
     private final PidorGame pidorGame;
-    private final HoroscopeService horoscopeService;
     private final AiChat aiChat;
     private final ContextService contextService;
     private final KeyboardBuilder keyboardBuilder = new KeyboardBuilder();
@@ -74,13 +69,11 @@ public class CommandDispatcher {
     public CommandDispatcher(MessageSender messageSender,
                              CockSizeGame cockSizeGame,
                              PidorGame pidorGame,
-                             HoroscopeService horoscopeService,
                              AiChat aiChat,
                              ContextService contextService) {
         this.messageSender = messageSender;
         this.cockSizeGame = cockSizeGame;
         this.pidorGame = pidorGame;
-        this.horoscopeService = horoscopeService;
         this.aiChat = aiChat;
         this.contextService = contextService;
     }
@@ -92,7 +85,6 @@ public class CommandDispatcher {
         // Сохраняем контекст для не-команд
         if (!text.startsWith("/")) {
             contextService.saveContext(message);
-//            handleSupportDialog(message);
             logger.debug("Сохранен контекст: {}", text);
             return;
         }
@@ -156,7 +148,4 @@ public class CommandDispatcher {
         aiChat.summary(message);
     }
 
-    private void handleSupportDialog(Message message) {
-        aiChat.supportDialogue(message);
-    }
 }

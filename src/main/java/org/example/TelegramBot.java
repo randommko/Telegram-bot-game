@@ -49,7 +49,7 @@ public class TelegramBot extends TelegramLongPollingBot {
         this.userChatManager = new UserChatManager(usersService, chatsService);
         this.contextService = new ContextService();
         this.commandDispatcher = new CommandDispatcher(messageSender, cockSizeGame,
-                pidorGame, horoscopeService, aiChat, contextService);
+                pidorGame, aiChat, contextService);
         this.callbackDispatcher = new CallbackDispatcher(
                 messageSender, horoscopeService, cockSizeGame);
         this.executor = (ThreadPoolExecutor) Executors.newCachedThreadPool();
