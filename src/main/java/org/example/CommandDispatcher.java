@@ -1,7 +1,6 @@
 package org.example;
 
 import org.example.AiChat.AiChat;
-import org.example.AiChat.ContextService;
 import org.example.CockSize.CockSizeGame;
 
 import org.example.PidorGame.PidorGame;
@@ -21,7 +20,6 @@ public class CommandDispatcher {
     private final CockSizeGame cockSizeGame;
     private final PidorGame pidorGame;
     private final AiChat aiChat;
-    private final ContextService contextService;
     private final KeyboardBuilder keyboardBuilder = new KeyboardBuilder();
 
     // Enum для команд (расширяемо)
@@ -69,13 +67,11 @@ public class CommandDispatcher {
     public CommandDispatcher(MessageSender messageSender,
                              CockSizeGame cockSizeGame,
                              PidorGame pidorGame,
-                             AiChat aiChat,
-                             ContextService contextService) {
+                             AiChat aiChat) {
         this.messageSender = messageSender;
         this.cockSizeGame = cockSizeGame;
         this.pidorGame = pidorGame;
         this.aiChat = aiChat;
-        this.contextService = contextService;
     }
 
     public void dispatch(Update update) {
@@ -84,8 +80,8 @@ public class CommandDispatcher {
 
         // Сохраняем контекст для не-команд
         if (!text.startsWith("/")) {
-            contextService.saveContext(message);
-            logger.debug("Сохранен контекст: {}", text);
+//            contextService.saveContext(message);
+            logger.debug("Сохранение контекста отключено: {}", text);
             return;
         }
 
