@@ -76,27 +76,6 @@ public class AiChat {
         }
     }
 
-    private String sendRequestToAi(List<ChatMessage> context, Float temperature) {
-        try {
-            ObjectNode request = objectMapper.createObjectNode();
-            request.put("model", "deepseek-chat");
-            ArrayNode messages = objectMapper.createArrayNode();
-            for (ChatMessage msg : context) {
-                ObjectNode msgNode = messages.addObject();
-                msgNode.put("role", msg.getRole().value);
-                msgNode.put("content", msg.getContent());
-            }
-            request.set("messages", messages);
-            request.put("temperature", temperature);
-            request.put("max_tokens", maxTokens);
-
-            return sendHttpRequest(request);
-        } catch (Exception e) {
-            logger.error("AI не смог ответить: {}", e.getMessage());
-            return null;
-        }
-    }
-
     private String sendHttpRequest(ObjectNode requestBody) throws IOException, InterruptedException {
         String jsonBody = objectMapper.writeValueAsString(requestBody);
 
