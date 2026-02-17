@@ -15,9 +15,8 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
+
 
 import static org.example.Settings.Settings.*;
 
@@ -31,13 +30,15 @@ public class AiChat {
     private final ObjectMapper objectMapper = new ObjectMapper();
     private final String deepseekApiKey;
     private final String deepseekBaseUrl = "https://api.deepseek.com/v1/chat/completions";
+    private final ConversationHistoryService conversationHistoryService;
 
-    public AiChat(String aiToken) {
+
+    public AiChat(String aiToken, ConversationHistoryService conversationHistoryService) {
         this.deepseekApiKey = aiToken;
         TelegramBot bot = TelegramBot.getInstance();
         sender = new MessageSender(bot);
+        this.conversationHistoryService = conversationHistoryService;
     }
-
     public void askAi(Message message) {
         String[] parts = message.getText().split(" ", 2);
         String userQuestion = parts.length > 1 ? parts[1] : "";
@@ -46,29 +47,57 @@ public class AiChat {
             sender.sendMessage(chatId, "Напиши свой вопрос после команды /ai");
             return;
         }
-        String context;
-        if (Objects.equals(chatId, MY_CHAT_ID))
-            context = AI_CONTEXT_FOR_MY_CHAT;
-        else
-            context = AI_CONTEXT;
+//        String context;
+//        if (Objects.equals(chatId, MY_CHAT_ID))
+//            context = AI_CONTEXT_FOR_MY_CHAT;
+//        else
+//            context = AI_CONTEXT;
 
-        String aiAnswer = sendRequestToAi(settings.getSettingValue(context), userQuestion, answerTemperature);
+        String aiAnswer = sendRequestToAi(userQuestion, chatId, answerTemperature);
         if (aiAnswer != null) {
             sender.sendMessage(chatId, aiAnswer);
+            conversationHistoryService.addMessage(chatId, 0L, "assistant", aiAnswer);
         }
     }
 
-    public void addMessageToHistory(Message message) {
+    public ArrayNode getHistoryInChat(Long chatId) {
+        ArrayNode messages = objectMapper.createArrayNode();
 
+        // Получаем всех пользователей в чате и их сообщения
+        var allUsersInChat = conversationHistoryService.getAllUsersInChat(chatId);
+
+        // Собираем все сообщения от всех пользователей
+        List<ConversationHistoryService.Message> allMessages = allUsersInChat.values()
+                .stream()
+                .flatMap(List::stream)
+                .sorted(Comparator.comparing(ConversationHistoryService.Message::timestamp))
+                .toList();
+
+        // Преобразуем в JSON формат
+        for (ConversationHistoryService.Message msg : allMessages) {
+            ObjectNode messageNode = objectMapper.createObjectNode();
+            messageNode.put("role", msg.role());
+            messageNode.put("content", msg.content());
+            messages.add(messageNode);
+        }
+
+        return messages;
     }
 
-    private String sendRequestToAi(String context, String userQuestion, Float temperature) {
+
+    private String sendRequestToAi(String userQuestion, Long chatId, Float temperature) {
         try {
             ObjectNode request = objectMapper.createObjectNode();
             request.put("model", "deepseek-chat");
-            ArrayNode messages = objectMapper.createArrayNode();
-            messages.addObject().put("role", "system").put("content", context);
+//            ArrayNode messages = objectMapper.createArrayNode();
+//            messages.addObject().put("role", "system").put("content", context);
+//            messages.addObject().put("role", "user").put("content", userQuestion);
+//            request.set("messages", messages);
+
+
+            ArrayNode messages = getHistoryInChat(chatId);
             messages.addObject().put("role", "user").put("content", userQuestion);
+
             request.set("messages", messages);
             request.put("temperature", temperature);
             request.put("max_tokens", maxTokens);
@@ -79,7 +108,6 @@ public class AiChat {
             return null;
         }
     }
-
     private String sendHttpRequest(ObjectNode requestBody) throws IOException, InterruptedException {
         String jsonBody = objectMapper.writeValueAsString(requestBody);
 
@@ -100,5 +128,12 @@ public class AiChat {
         ObjectNode respNode = objectMapper.readValue(response.body(), ObjectNode.class);
         return respNode.get("choices").get(0).get("message").get("content").asText().trim();
     }
+
+
+
+
+
+
+
 }
 

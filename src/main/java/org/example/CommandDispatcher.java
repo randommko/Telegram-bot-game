@@ -1,6 +1,7 @@
 package org.example;
 
 import org.example.AiChat.AiChat;
+import org.example.AiChat.ConversationHistoryService;
 import org.example.CockSize.CockSizeGame;
 
 import org.example.PidorGame.PidorGame;
@@ -20,6 +21,7 @@ public class CommandDispatcher {
     private final CockSizeGame cockSizeGame;
     private final PidorGame pidorGame;
     private final AiChat aiChat;
+    private final ConversationHistoryService conversationHistoryService;
     private final KeyboardBuilder keyboardBuilder = new KeyboardBuilder();
 
     // Enum для команд (расширяемо)
@@ -66,23 +68,41 @@ public class CommandDispatcher {
     public CommandDispatcher(MessageSender messageSender,
                              CockSizeGame cockSizeGame,
                              PidorGame pidorGame,
-                             AiChat aiChat) {
+                             AiChat aiChat,
+                             ConversationHistoryService conversationHistoryService) {
         this.messageSender = messageSender;
         this.cockSizeGame = cockSizeGame;
         this.pidorGame = pidorGame;
         this.aiChat = aiChat;
+        this.conversationHistoryService = conversationHistoryService;
     }
 
     public void dispatch(Update update) {
         Message message = update.getMessage();
         String text = message.getText();
+        Long chatId = message.getChatId();
+        String chatName = message.getChat().getTitle();
+        Long userId = message.getFrom().getId();
+        String userName;
 
-        // Сохраняем контекст для не-команд
-        if (!text.startsWith("/")) {
-//            contextService.saveContext(message);
-            logger.debug("Сохранение контекста отключено: {}", text);
+        if (message.getFrom().getUserName().isEmpty() || message.getFrom().getUserName().isEmpty())
+            userName = message.getFrom().getFirstName();
+        else
+            userName = message.getFrom().getUserName();
+
+        String messageToSave = "Сообщение от: " + userName + " : " + text;
+        try {
+            conversationHistoryService.addMessage(chatId, userId, "user", messageToSave);
+        }
+        catch (Exception e) {
+            logger.error("Ошибка сохранения сообщения в историю: " + e);
             return;
         }
+
+        logger.info("Сохранена история переписки: {}: {}: {}", chatName, userName, text);
+
+        if (!text.startsWith("/"))
+            return;
 
         String[] parts = text.split(" ", 2);
         String commandStr = parts[0];
