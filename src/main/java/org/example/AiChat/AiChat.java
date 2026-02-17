@@ -26,6 +26,8 @@ public class AiChat {
     private final SettingsService settings = new SettingsService();
     private final Float answerTemperature = Float.valueOf(settings.getSettingValue(AI_ANSWER_TEMPERATURE));
     private final Integer maxTokens = Integer.valueOf(settings.getSettingValue(AI_MAX_TOKENS_ANSWER_QUESTION));
+    private static final long MAX_IDLE_TIME_MINUTES = 30; // Максимальное время простоя в минутах
+    private static final long MAX_IDLE_TIME_MILLIS = MAX_IDLE_TIME_MINUTES * 60 * 1000; // Конвертируем в миллисекунды
     private final HttpClient httpClient = HttpClient.newHttpClient();
     private final ObjectMapper objectMapper = new ObjectMapper();
     private final String deepseekApiKey;
@@ -47,11 +49,6 @@ public class AiChat {
             sender.sendMessage(chatId, "Напиши свой вопрос после команды /ai");
             return;
         }
-//        String context;
-//        if (Objects.equals(chatId, MY_CHAT_ID))
-//            context = AI_CONTEXT_FOR_MY_CHAT;
-//        else
-//            context = AI_CONTEXT;
 
         String aiAnswer = sendRequestToAi(userQuestion, chatId, answerTemperature);
         if (aiAnswer != null) {
@@ -73,6 +70,27 @@ public class AiChat {
                 .sorted(Comparator.comparing(ConversationHistoryService.Message::timestamp))
                 .toList();
 
+        if (!allMessages.isEmpty()) {
+            long currentTime = System.currentTimeMillis();
+            ConversationHistoryService.Message lastMessage = allMessages.get(allMessages.size() - 1);
+            long lastMessageTime = lastMessage.timestamp();
+            long timeDifference = currentTime - lastMessageTime;
+
+            logger.debug("Последнее сообщение было {} минут назад", timeDifference / (60 * 1000));
+
+            // Если прошло больше MAX_IDLE_TIME_MINUTES минут
+            if (timeDifference > MAX_IDLE_TIME_MILLIS) {
+                logger.info("Обнаружен длительный перерыв ({} минут). Очищаем историю чата {}",
+                        timeDifference / (60 * 1000), chatId);
+
+                // Очищаем историю для ВСЕХ пользователей в чате
+                conversationHistoryService.clearAllHistory(chatId);
+
+                // Инициируем список сообщений системным промтом
+                allMessages = conversationHistoryService.initHistory(chatId);
+            }
+        }
+
         // Преобразуем в JSON формат
         for (ConversationHistoryService.Message msg : allMessages) {
             ObjectNode messageNode = objectMapper.createObjectNode();
@@ -89,11 +107,6 @@ public class AiChat {
         try {
             ObjectNode request = objectMapper.createObjectNode();
             request.put("model", "deepseek-chat");
-//            ArrayNode messages = objectMapper.createArrayNode();
-//            messages.addObject().put("role", "system").put("content", context);
-//            messages.addObject().put("role", "user").put("content", userQuestion);
-//            request.set("messages", messages);
-
 
             ArrayNode messages = getHistoryInChat(chatId);
             messages.addObject().put("role", "user").put("content", userQuestion);

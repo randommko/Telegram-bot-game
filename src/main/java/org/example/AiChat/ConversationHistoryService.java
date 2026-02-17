@@ -1,7 +1,6 @@
 package org.example.AiChat;
 
 import org.example.Settings.SettingsService;
-import org.example.TelegramBot;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -11,7 +10,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import static org.example.Settings.Settings.*;
 
 public class ConversationHistoryService {
-    private static ConversationHistoryService instance;
     private static final Logger logger = LoggerFactory.getLogger(ConversationHistoryService.class);
     // Ключ: chatId, значение: Map, где ключ - userId, значение - история пользователя
     private final Map<Long, Map<Long, List<Message>>> userHistory = new ConcurrentHashMap<>();
@@ -27,14 +25,29 @@ public class ConversationHistoryService {
         logger.debug("Добавление сообщения: chatId={}, userId={}, role={}, content={}",
                 chatId, userId, role, content);
 
+        List<Message> userMessages = initHistory(chatId);
+
+        // Добавляем новое сообщение пользователя
+        userMessages.add(new Message(role, content));
+
+        // Проверяем, что сообщение добавилось
+        logger.debug("Теперь в истории пользователя {} сообщений", userMessages.size());
+
+        // Для дополнительной проверки выведем последнее сообщение
+        Message lastMessage = userMessages.get(userMessages.size() - 1);
+        logger.debug("Последнее сообщение: role={}, content={}", lastMessage.role(), lastMessage.content());
+    }
+
+    public List<Message> initHistory(Long chatId) {
+        Long systemPromtUserId = 0L;
         // Получаем или создаем историю для чата и пользователя
         Map<Long, List<Message>> chatHistory = userHistory.computeIfAbsent(chatId, k -> {
             logger.info("Создана новая история для чата: {}", chatId);
             return new ConcurrentHashMap<>();
         });
 
-        List<Message> userMessages = chatHistory.computeIfAbsent(userId, k -> {
-            logger.info("Создана новая история для пользователя {} в чате {}", userId, chatId);
+        return chatHistory.computeIfAbsent(systemPromtUserId, k -> {
+            logger.info("Создана новая история для пользователя {} в чате {}", systemPromtUserId, chatId);
             List<Message> messages = new ArrayList<>();
             String systemPrompt;
             if (Objects.equals(chatId, MY_CHAT_ID)) {
@@ -47,16 +60,6 @@ public class ConversationHistoryService {
             messages.add(new Message("system", systemPrompt));
             return messages;
         });
-
-        // Добавляем новое сообщение пользователя
-        userMessages.add(new Message(role, content));
-
-        // Проверяем, что сообщение добавилось
-        logger.debug("Теперь в истории пользователя {} сообщений", userMessages.size());
-
-        // Для дополнительной проверки выведем последнее сообщение
-        Message lastMessage = userMessages.get(userMessages.size() - 1);
-        logger.debug("Последнее сообщение: role={}, content={}", lastMessage.role(), lastMessage.content());
     }
 
     public List<Message> getHistory(Long chatId, Long userId) {
@@ -81,9 +84,6 @@ public class ConversationHistoryService {
 
     public void clearAllHistory(Long chatId) {
         userHistory.remove(chatId);
-    }
-    public static ConversationHistoryService getInstance() {
-        return instance;
     }
 
 }
