@@ -85,10 +85,4 @@ public class CallbackDispatcher {
         cockSizeGame.sendAVGCockSize(callback);
     }
 
-    // Расширение: добавьте новые callbacks
-    /*
-    private void handleNewGame(CallbackQuery callback, MessageSender sender) {
-        // Логика новой игры
-    }
-    */
 }
