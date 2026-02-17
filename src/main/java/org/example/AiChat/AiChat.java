@@ -46,13 +46,13 @@ public class AiChat {
             sender.sendMessage(chatId, "Напиши свой вопрос после команды /ai");
             return;
         }
-        String contex;
+        String context;
         if (Objects.equals(chatId, MY_CHAT_ID))
-            contex = AI_CONTEXT_FOR_MY_CHAT;
+            context = AI_CONTEXT_FOR_MY_CHAT;
         else
-            contex = AI_CONTEXT;
+            context = AI_CONTEXT;
 
-        String aiAnswer = sendRequestToAi(settings.getSettingValue(contex), userQuestion, answerTemperature);
+        String aiAnswer = sendRequestToAi(settings.getSettingValue(context), userQuestion, answerTemperature);
         if (aiAnswer != null) {
             sender.sendMessage(chatId, aiAnswer);
         }
