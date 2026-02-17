@@ -58,6 +58,10 @@ public class AiChat {
         }
     }
 
+    public void addMessageToHistory(Message message) {
+
+    }
+
     private String sendRequestToAi(String context, String userQuestion, Float temperature) {
         try {
             ObjectNode request = objectMapper.createObjectNode();
