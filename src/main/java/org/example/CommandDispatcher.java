@@ -85,7 +85,7 @@ public class CommandDispatcher {
         Long userId = message.getFrom().getId();
         String userName;
 
-        if (message.getFrom().getUserName().isEmpty() || message.getFrom().getUserName().isEmpty())
+        if (message.getFrom().getUserName().isEmpty())
             userName = message.getFrom().getFirstName();
         else
             userName = message.getFrom().getUserName();
@@ -95,7 +95,7 @@ public class CommandDispatcher {
             conversationHistoryService.addMessage(chatId, userId, "user", messageToSave);
         }
         catch (Exception e) {
-            logger.error("Ошибка сохранения сообщения в историю: " + e);
+            logger.error("Ошибка сохранения сообщения в историю: {}", String.valueOf(e));
             return;
         }
 

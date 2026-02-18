@@ -9,8 +9,6 @@ import org.slf4j.LoggerFactory;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class PidorGame {
@@ -56,14 +54,14 @@ public class PidorGame {
                 sender.sendMessage(chatID, statsMessage.toString());
         }
         public void startPidorGame(Long chatID, Long userID) {
-                logger.info("Запущена игра пидорвикторина в чате: " + chatID);
+            logger.info("Запущена игра пидорвикторина в чате: {}", chatID);
 
                 // Получаем или создаем AtomicBoolean для этого чата
                 AtomicBoolean processing = processingFlags.computeIfAbsent(chatID, k -> new AtomicBoolean(false));
 
                 // Пытаемся атомарно захватить "lock" - если уже true, то процесс идет
                 if (!processing.compareAndSet(false, true)) {
-                        logger.info("Поиск пидора дня уже запущен в чате " + chatID);
+                    logger.info("Поиск пидора дня уже запущен в чате {}", chatID);
                         sender.sendMessage(chatID, EmojiParser.parseToUnicode(":rainbow_flag: Поиск пидора дня уже запущен! Подождите завершения."));
                         return;
                 }
@@ -89,15 +87,13 @@ public class PidorGame {
 
                         Set<Long> chatPlayers = repo.getPidorGamePlayers(chatID);
                         if (chatPlayers.isEmpty()) {
-                                logger.info("Количество игроков: " + chatPlayers.size() + " в чате " + chatID
-                                        + " Игра не началась. Нет зарегистрированных игроков.");
+                            logger.info("Количество игроков: {} в чате {} Игра не началась. Нет зарегистрированных игроков.", 0, chatID);
                                 sender.sendMessage(chatID, "Нет зарегистрированных игроков.");
                                 return;
                         }
 
                         if (chatPlayers.size() < 2) {
-                                logger.info("Количество игроков: " + chatPlayers.size() +  " в чате " + chatID
-                                        + " Игра не началась, недостаточно игроков");
+                            logger.info("Количество игроков: {} в чате {} Игра не началась, недостаточно игроков", chatPlayers.size(), chatID);
                                 sender.sendMessage(chatID, "Для игры необходимо хотя бы два игрока. Зарегистрируйтесь командой /pidor_reg");
                                 return;
                         }

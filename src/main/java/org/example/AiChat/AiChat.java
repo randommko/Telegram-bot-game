@@ -45,7 +45,7 @@ public class AiChat {
         String[] parts = message.getText().split(" ", 2);
         String userQuestion = parts.length > 1 ? parts[1] : "";
         Long chatId = message.getChatId();
-        if (userQuestion.isEmpty() || userQuestion.isBlank()) {
+        if (userQuestion.isBlank()) {
             sender.sendMessage(chatId, "Напиши свой вопрос после команды /ai");
             return;
         }

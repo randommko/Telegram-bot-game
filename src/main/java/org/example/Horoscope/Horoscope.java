@@ -10,7 +10,7 @@ import java.util.Map;
 
 @JacksonXmlRootElement(localName = "horo")
 public class Horoscope {
-    private Map<String, HoroscopeTextDTO> horoscopeTextMap = new HashMap<>();
+    private final Map<String, HoroscopeTextDTO> horoscopeTextMap = new HashMap<>();
     //key - код знака зодиака
     //value - текст для всех дней
     @JacksonXmlProperty(localName = "date")
@@ -24,9 +24,7 @@ public class Horoscope {
     public HoroscopeDateInfoDTO getDateInfo() {
         return horoscopeDateInfoDTO;
     }
-    public void setDateInfo(HoroscopeDateInfoDTO horoscopeDateInfoDTO) {
-        this.horoscopeDateInfoDTO = horoscopeDateInfoDTO;
-    }
+
     public Map<String, HoroscopeTextDTO> getHoroscopeTextMap() {
         return horoscopeTextMap;
     }

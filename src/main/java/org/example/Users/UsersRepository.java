@@ -34,7 +34,7 @@ public class UsersRepository {
 
             try (PreparedStatement updateUser = connection.prepareStatement(updateUserQuery)) {
                 updateUser.setString(1, user.getFirstName());
-                updateUser.setBoolean(2, Boolean.TRUE.equals(user.getIsBot())); // Предотвращаем NullPointerException
+                updateUser.setBoolean(2, user.getIsBot()); // Предотвращаем NullPointerException
                 updateUser.setString(3, user.getLastName());
                 updateUser.setString(4, userName);
                 updateUser.setString(5, user.getLanguageCode());
@@ -75,7 +75,7 @@ public class UsersRepository {
             try (PreparedStatement insertUser = connection.prepareStatement(insertUserQuery)) {
                 insertUser.setLong(1, user.getId());
                 insertUser.setString(2, user.getFirstName());
-                insertUser.setBoolean(3, Boolean.TRUE.equals(user.getIsBot())); // Предотвращаем NullPointerException
+                insertUser.setBoolean(3, user.getIsBot()); // Предотвращаем NullPointerException
                 insertUser.setString(4, user.getLastName());
                 insertUser.setString(5, "@" + user.getUserName());
                 insertUser.setString(6, user.getLanguageCode());
@@ -124,7 +124,7 @@ public class UsersRepository {
                             resultSet.getBoolean("added_to_attachment_menu")
                     );
                 } else {
-                    logger.warn("Запись не найдена для user_id: " + userID);
+                    logger.warn("Запись не найдена для user_id: {}", userID);
                     return null; // Возвращаем значение по умолчанию, если запись не найдена
                 }
 
