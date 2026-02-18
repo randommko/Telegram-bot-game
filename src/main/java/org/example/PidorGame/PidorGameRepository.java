@@ -56,7 +56,7 @@ public class PidorGameRepository {
             preparedStatement.setLong(2, userID);
             return preparedStatement.executeUpdate();
         } catch (SQLException e) {
-            logger.error("Ошибка при регистрации игрока в БД: " + e);
+            logger.error("Ошибка при регистрации игрока в БД: {}", String.valueOf(e));
             return 0;
         }
     }
@@ -81,7 +81,7 @@ public class PidorGameRepository {
                         resultSet.getInt("count")
                 );
         } catch (Exception e) {
-            logger.error("Ошибка получения статистики пидоров: " + e);
+            logger.error("Ошибка получения статистики пидоров: {}", String.valueOf(e));
         }
         return winnersList;
     }

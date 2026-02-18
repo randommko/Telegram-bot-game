@@ -26,7 +26,7 @@ public class SettingsService {
             if (resultSet.next())
                 return resultSet.getString("value");
         } catch (Exception e) {
-            logger.error("Ошибка получения настройки: " + e);
+            logger.error("Ошибка получения настройки: {}", String.valueOf(e));
             return null;
         }
         return null;

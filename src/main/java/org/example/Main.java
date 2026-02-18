@@ -41,13 +41,13 @@ public class Main {
                 // Регистрируем бота
                 botsApi.registerBot(new TelegramBot(args[0], args[4]));
 
-                logger.info("Бот успешно запущен на попытке №" + attempt);
+                logger.info("Бот успешно запущен на попытке №{}", attempt);
                 break; // Выход из цикла при успешном запуске
             } catch (TelegramApiException e) {
-                logger.error("Ошибка при запуске бота на попытке №" + attempt, e);
+                logger.error("Ошибка при запуске бота на попытке №{}", attempt, e);
 
                 if (attempt >= maxRetries) {
-                    logger.error("Бот не запустился после " + maxRetries + " попыток.");
+                    logger.error("Бот не запустился после {} попыток.", maxRetries);
                 } else {
                     logger.info("Повторная попытка запуска...");
                 }

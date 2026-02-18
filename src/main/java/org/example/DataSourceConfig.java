@@ -13,13 +13,6 @@ public class DataSourceConfig {
     }
 
     public static void initialize(String dbServerUrl, String dbUser, String dbPass) {
-//        HikariConfig config = new HikariConfig();
-//        config.setJdbcUrl(dbServerUrl);
-//        config.setUsername(dbUser);
-//        config.setPassword(dbPass);
-//        config.setDriverClassName("org.postgresql.Driver");
-//        config.setMaximumPoolSize(10); // Максимальное количество соединений в пуле
-//        dataSource = new HikariDataSource(config);
         HikariConfig config = new HikariConfig();
         config.setJdbcUrl(dbServerUrl);
         config.setUsername(dbUser);

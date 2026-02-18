@@ -77,12 +77,12 @@ public class CockSizeService {
             cockSizeList.add(49);
 
         List<Integer> lastSizes = repo.getPlayerCockSizeByDays(userID, 3);
-        logger.debug("Прошлые замеры игрока: " + lastSizes);
+        logger.debug("Прошлые замеры игрока: {}", lastSizes);
         for (int size : lastSizes) {
             cockSizeList.removeIf(n -> Objects.equals(n, size));
             cockSizeList.add(size);
         }
-        logger.debug("Длинны членов в розыгрыше" + cockSizeList);
+        logger.debug("Длинны членов в розыгрыше {}", cockSizeList);
 
         // Генерируем случайный элемент
         Random random = new Random();

@@ -59,7 +59,7 @@ public class CockSizeRepository {
                 if (resultSet.next()) {
                     return resultSet.getInt("size");
                 } else {
-                    logger.info("Для user_id: " + userID + " не найден замер члена на текущую дату, date: " + currentDate);
+                    logger.info("Для user_id: {} не найден замер члена на текущую дату, date: {}", userID, currentDate);
                     return -1; // Возвращаем значение по умолчанию, если запись не найдена
                 }
             }
@@ -84,7 +84,7 @@ public class CockSizeRepository {
                 return lastSizes;
             }
         } catch (Exception e) {
-            logger.error("Ошибка при поиске в БД длинны члена за последние " + days + " дней: ", e);
+            logger.error("Ошибка при поиске в БД длинны члена за последние {} дней: ", days, e);
             return null;
         }
     }
@@ -109,7 +109,7 @@ public class CockSizeRepository {
                             resultSet.getInt("measurement_count")
                     );
                 } else {
-                    logger.info("Для user_id: " + userID + " не найдено ни одного замер члена");
+                    logger.info("Для user_id: {} не найдено ни одного замер члена", userID);
                     return null; // Возвращаем значение по умолчанию, если запись не найдена
                 }
             }

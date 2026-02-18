@@ -24,7 +24,7 @@ import java.util.Map;
 
 
 public class CockSizeGame {
-    CockSizeService service = new CockSizeService();
+    final CockSizeService service = new CockSizeService();
     private static final Logger logger = LoggerFactory.getLogger(CockSizeGame.class);
     private final UsersService usersService = new UsersService();
     private final MessageSender sender;
@@ -62,7 +62,7 @@ public class CockSizeGame {
         try {
             bot.execute(sendPhoto);
         } catch (Exception e) {
-            logger.error("Ошибка отправки длинны члена с картинкой" + e);
+            logger.error("Ошибка отправки длинны члена с картинкой {}", String.valueOf(e));
             sender.sendMessage(chatID, messageForFoundSize);
         }
     }
@@ -98,17 +98,17 @@ public class CockSizeGame {
             sender.sendMessage(chatID, userName + " ни разу не измерял свой член!");
             return;
         }
-        float avgSize = result.AVGSize;
+        float avgSize = result.AVGSize();
         String avgSizeFormatted = String.format("%.2f", avgSize); // Ограничиваем до 2 знаков после запятой
 
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd.MM.yyyy");
 
-        String formattedFirstMeasurementDate = result.firstMeasurementDate.format(formatter);
-        String formattedLastMeasurementDate = result.lastMeasurementDate.format(formatter);
+        String formattedFirstMeasurementDate = result.firstMeasurementDate().format(formatter);
+        String formattedLastMeasurementDate = result.lastMeasurementDate().format(formatter);
 
         sender.sendMessage(chatID, EmojiParser.parseToUnicode("C " + formattedFirstMeasurementDate + " по " +
                 formattedLastMeasurementDate + " " + userName + " сделал " +
-                result.measurementCount + " замеров.\nВ среднем твой болт\uD83C\uDF46: " + avgSizeFormatted + "cm"));
+                result.measurementCount() + " замеров.\nВ среднем твой болт\uD83C\uDF46: " + avgSizeFormatted + "cm"));
     }
     private InlineKeyboardMarkup createInlineKeyboard() {
         InlineKeyboardButton AVGCockSize = new InlineKeyboardButton();

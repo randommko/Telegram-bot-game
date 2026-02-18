@@ -15,9 +15,8 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
+
 
 import static org.example.Settings.Settings.*;
 
@@ -27,44 +26,91 @@ public class AiChat {
     private final SettingsService settings = new SettingsService();
     private final Float answerTemperature = Float.valueOf(settings.getSettingValue(AI_ANSWER_TEMPERATURE));
     private final Integer maxTokens = Integer.valueOf(settings.getSettingValue(AI_MAX_TOKENS_ANSWER_QUESTION));
+    private static final long MAX_IDLE_TIME_MINUTES = 30; // Максимальное время простоя в минутах
+    private static final long MAX_IDLE_TIME_MILLIS = MAX_IDLE_TIME_MINUTES * 60 * 1000; // Конвертируем в миллисекунды
     private final HttpClient httpClient = HttpClient.newHttpClient();
     private final ObjectMapper objectMapper = new ObjectMapper();
     private final String deepseekApiKey;
     private final String deepseekBaseUrl = "https://api.deepseek.com/v1/chat/completions";
+    private final ConversationHistoryService conversationHistoryService;
 
-    public AiChat(String aiToken) {
+
+    public AiChat(String aiToken, ConversationHistoryService conversationHistoryService) {
         this.deepseekApiKey = aiToken;
         TelegramBot bot = TelegramBot.getInstance();
         sender = new MessageSender(bot);
+        this.conversationHistoryService = conversationHistoryService;
     }
-
     public void askAi(Message message) {
         String[] parts = message.getText().split(" ", 2);
         String userQuestion = parts.length > 1 ? parts[1] : "";
         Long chatId = message.getChatId();
-        if (userQuestion.isEmpty() || userQuestion.isBlank()) {
+        if (userQuestion.isBlank()) {
             sender.sendMessage(chatId, "Напиши свой вопрос после команды /ai");
             return;
         }
-        String context;
-        if (Objects.equals(chatId, MY_CHAT_ID))
-            context = AI_CONTEXT_FOR_MY_CHAT;
-        else
-            context = AI_CONTEXT;
 
-        String aiAnswer = sendRequestToAi(settings.getSettingValue(context), userQuestion, answerTemperature);
+        String aiAnswer = sendRequestToAi(userQuestion, chatId, answerTemperature);
         if (aiAnswer != null) {
             sender.sendMessage(chatId, aiAnswer);
+            conversationHistoryService.addMessage(chatId, 0L, "assistant", aiAnswer);
         }
     }
 
-    private String sendRequestToAi(String context, String userQuestion, Float temperature) {
+    public ArrayNode getHistoryInChat(Long chatId) {
+        ArrayNode messages = objectMapper.createArrayNode();
+
+        // Получаем всех пользователей в чате и их сообщения
+        var allUsersInChat = conversationHistoryService.getAllUsersInChat(chatId);
+
+        // Собираем все сообщения от всех пользователей
+        List<ConversationHistoryService.Message> allMessages = allUsersInChat.values()
+                .stream()
+                .flatMap(List::stream)
+                .sorted(Comparator.comparing(ConversationHistoryService.Message::timestamp))
+                .toList();
+
+        if (!allMessages.isEmpty()) {
+            long currentTime = System.currentTimeMillis();
+            ConversationHistoryService.Message lastMessage = allMessages.get(allMessages.size() - 1);
+            long lastMessageTime = lastMessage.timestamp();
+            long timeDifference = currentTime - lastMessageTime;
+
+            logger.debug("Последнее сообщение было {} минут назад", timeDifference / (60 * 1000));
+
+            // Если прошло больше MAX_IDLE_TIME_MINUTES минут
+            if (timeDifference > MAX_IDLE_TIME_MILLIS) {
+                logger.info("Обнаружен длительный перерыв ({} минут). Очищаем историю чата {}",
+                        timeDifference / (60 * 1000), chatId);
+
+                // Очищаем историю для ВСЕХ пользователей в чате
+                conversationHistoryService.clearAllHistory(chatId);
+
+                // Инициируем список сообщений системным промтом
+                allMessages = conversationHistoryService.initHistory(chatId);
+            }
+        }
+
+        // Преобразуем в JSON формат
+        for (ConversationHistoryService.Message msg : allMessages) {
+            ObjectNode messageNode = objectMapper.createObjectNode();
+            messageNode.put("role", msg.role());
+            messageNode.put("content", msg.content());
+            messages.add(messageNode);
+        }
+
+        return messages;
+    }
+
+
+    private String sendRequestToAi(String userQuestion, Long chatId, Float temperature) {
         try {
             ObjectNode request = objectMapper.createObjectNode();
             request.put("model", "deepseek-chat");
-            ArrayNode messages = objectMapper.createArrayNode();
-            messages.addObject().put("role", "system").put("content", context);
+
+            ArrayNode messages = getHistoryInChat(chatId);
             messages.addObject().put("role", "user").put("content", userQuestion);
+
             request.set("messages", messages);
             request.put("temperature", temperature);
             request.put("max_tokens", maxTokens);
@@ -75,7 +121,6 @@ public class AiChat {
             return null;
         }
     }
-
     private String sendHttpRequest(ObjectNode requestBody) throws IOException, InterruptedException {
         String jsonBody = objectMapper.writeValueAsString(requestBody);
 
@@ -96,5 +141,12 @@ public class AiChat {
         ObjectNode respNode = objectMapper.readValue(response.body(), ObjectNode.class);
         return respNode.get("choices").get(0).get("message").get("content").asText().trim();
     }
+
+
+
+
+
+
+
 }
 
