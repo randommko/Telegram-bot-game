@@ -45,6 +45,7 @@ public class AiChat {
         String[] parts = message.getText().split(" ", 2);
         String userQuestion = parts.length > 1 ? parts[1] : "";
         Long chatId = message.getChatId();
+        String chatTitle = message.getChat().getTitle();
         if (userQuestion.isBlank()) {
             sender.sendMessage(chatId, "Напиши свой вопрос после команды /ai");
             return;
@@ -54,6 +55,7 @@ public class AiChat {
         if (aiAnswer != null) {
             sender.sendMessage(chatId, aiAnswer);
             conversationHistoryService.addMessage(chatId, 0L, "assistant", aiAnswer);
+            logger.info("Сохранена история переписки: {}: {}: {}", chatTitle, "AI", aiAnswer);
         }
     }
 

@@ -81,25 +81,28 @@ public class CommandDispatcher {
         Message message = update.getMessage();
         String text = message.getText();
         Long chatId = message.getChatId();
-        String chatName = message.getChat().getTitle();
-        Long userId = message.getFrom().getId();
-        String userName;
-
-        if (message.getFrom().getUserName().isEmpty())
-            userName = message.getFrom().getFirstName();
-        else
-            userName = message.getFrom().getUserName();
-
-        String messageToSave = "Сообщение от: " + userName + " : " + text;
         try {
+
+            String chatName = message.getChat().getTitle();
+            Long userId = message.getFrom().getId();
+            String userName;
+
+            if (message.getFrom().getUserName().isEmpty())
+                userName = message.getFrom().getFirstName();
+            else
+                userName = message.getFrom().getUserName();
+
+            String messageToSave = "Сообщение от: " + userName + " : " + text;
+
             conversationHistoryService.addMessage(chatId, userId, "user", messageToSave);
+            logger.info("Сохранена история переписки: {}: {}: {}", chatName, userName, text);
         }
         catch (Exception e) {
             logger.error("Ошибка сохранения сообщения в историю: {}", String.valueOf(e));
             return;
         }
 
-        logger.info("Сохранена история переписки: {}: {}: {}", chatName, userName, text);
+
 
         if (!text.startsWith("/"))
             return;

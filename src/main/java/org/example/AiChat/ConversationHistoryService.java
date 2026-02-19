@@ -1,6 +1,8 @@
 package org.example.AiChat;
 
+import org.example.Chats.ChatsService;
 import org.example.Settings.SettingsService;
+import org.example.Users.UsersService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -41,13 +43,15 @@ public class ConversationHistoryService {
     public List<Message> initHistory(Long chatId) {
         Long systemPromtUserId = 0L;
         // Получаем или создаем историю для чата и пользователя
+        ChatsService chatsService = new ChatsService();
         Map<Long, List<Message>> chatHistory = userHistory.computeIfAbsent(chatId, k -> {
-            logger.info("Создана новая история для чата: {}", chatId);
+            logger.info("Создана новая история для чата: {}", chatsService.getChatTitle(chatId));
             return new ConcurrentHashMap<>();
         });
 
+        UsersService usersService = new UsersService();
         return chatHistory.computeIfAbsent(systemPromtUserId, k -> {
-            logger.info("Создана новая история для пользователя {} в чате {}", systemPromtUserId, chatId);
+            logger.info("Создана новая история для пользователя {} в чате {}", "AI", chatsService.getChatTitle(chatId));
             List<Message> messages = new ArrayList<>();
             String systemPrompt;
             if (Objects.equals(chatId, MY_CHAT_ID)) {

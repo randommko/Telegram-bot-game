@@ -15,4 +15,8 @@ public class ChatsService {
     public void updateChat(Chat chat) {
         repo.updateChatInDB(chat);
     }
+
+    public String getChatTitle(Long chatId) {
+        return repo.getChatByID(chatId).getTitle();
+    }
 }

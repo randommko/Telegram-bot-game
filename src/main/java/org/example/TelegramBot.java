@@ -69,7 +69,7 @@ public class TelegramBot extends TelegramLongPollingBot {
     @Override
     public void onUpdateReceived(Update update) {
         CompletableFuture.runAsync(() -> processUpdate(update), executor);
-        logger.info("Активных потоков: {}", executor.getActiveCount());
+        logger.debug("Активных потоков: {}", executor.getActiveCount());
     }
 
     private void processUpdate(Update update) {
