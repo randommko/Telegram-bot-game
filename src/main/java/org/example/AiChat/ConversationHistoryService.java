@@ -24,20 +24,17 @@ public class ConversationHistoryService {
     }
 
     public void addMessage(Long chatId, Long userId, String role, String content) {
-        logger.debug("Добавление сообщения: chatId={}, userId={}, role={}, content={}",
-                chatId, userId, role, content);
+        UsersService usersService = new UsersService();
+        ChatsService chatsService = new ChatsService();
+        logger.info("Добавление сообщения: chatId={}, userName={}, role={}, content={}",
+                chatsService.getChatTitle(chatId), usersService.getUserNameByID(userId), role, content);
 
         List<Message> userMessages = initHistory(chatId);
 
-        // Добавляем новое сообщение пользователя
         userMessages.add(new Message(role, content));
 
-        // Проверяем, что сообщение добавилось
-        logger.debug("Теперь в истории пользователя {} сообщений", userMessages.size());
+        logger.info("Теперь в истории пользователя {} сообщений", userMessages.size());
 
-        // Для дополнительной проверки выведем последнее сообщение
-        Message lastMessage = userMessages.get(userMessages.size() - 1);
-        logger.debug("Последнее сообщение: role={}, content={}", lastMessage.role(), lastMessage.content());
     }
 
     public List<Message> initHistory(Long chatId) {
@@ -49,7 +46,6 @@ public class ConversationHistoryService {
             return new ConcurrentHashMap<>();
         });
 
-        UsersService usersService = new UsersService();
         return chatHistory.computeIfAbsent(systemPromtUserId, k -> {
             logger.info("Создана новая история для пользователя {} в чате {}", "AI", chatsService.getChatTitle(chatId));
             List<Message> messages = new ArrayList<>();

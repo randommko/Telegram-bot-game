@@ -95,14 +95,11 @@ public class CommandDispatcher {
             String messageToSave = "Сообщение от: " + userName + " : " + text;
 
             conversationHistoryService.addMessage(chatId, userId, "user", messageToSave);
-            logger.info("Сохранена история переписки: {}: {}: {}", chatName, userName, text);
         }
         catch (Exception e) {
             logger.error("Ошибка сохранения сообщения в историю: {}", String.valueOf(e));
             return;
         }
-
-
 
         if (!text.startsWith("/"))
             return;
