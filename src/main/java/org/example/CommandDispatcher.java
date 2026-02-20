@@ -33,7 +33,8 @@ public class CommandDispatcher {
         PIDOR_START("/pidor_start"),
         HOROSCOPE("/horoscope_today"),
         AI("/ai", "/ии", "/аи", "/юра", "/юрий", "/юрец"),
-        SUMMARY("/summary");
+        SUMMARY("/summary"),
+        AI_CLEAR_HISTORY("/clear");
 
         private final List<String> aliases;
 
@@ -62,7 +63,8 @@ public class CommandDispatcher {
             Command.PIDOR_STATS, this::handlePidorStats,
             Command.PIDOR_START, this::handlePidorStart,
             Command.HOROSCOPE, this::handleHoroscope,
-            Command.AI, this::handleAi
+            Command.AI, this::handleAi,
+            Command.AI_CLEAR_HISTORY, this::handleAiChatHistory
     );
 
     public CommandDispatcher(MessageSender messageSender,
@@ -82,12 +84,10 @@ public class CommandDispatcher {
         String text = message.getText();
         Long chatId = message.getChatId();
         try {
-
-            String chatName = message.getChat().getTitle();
             Long userId = message.getFrom().getId();
             String userName;
 
-            if (message.getFrom().getUserName().isEmpty())
+            if (message.getFrom().getUserName() == null)
                 userName = message.getFrom().getFirstName();
             else
                 userName = message.getFrom().getUserName();
@@ -157,6 +157,10 @@ public class CommandDispatcher {
 
     private void handleAi(Message message) {
         aiChat.askAi(message);
+    }
+    private void handleAiChatHistory(Message message) {
+        logger.info("Принудительная отчистка истории AI в чате: {}", message.getChat().getTitle());
+        conversationHistoryService.clearAllHistory(message.getChatId());
     }
 
 }

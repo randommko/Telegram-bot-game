@@ -17,8 +17,6 @@ public class ChatsService {
     }
 
     public String getChatTitle(Long chatId) {
-        if (chatId == 0L)
-            return "AI";
         return repo.getChatByID(chatId).getTitle();
     }
 }
