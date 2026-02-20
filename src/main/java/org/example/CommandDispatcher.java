@@ -161,6 +161,7 @@ public class CommandDispatcher {
     private void handleAiChatHistory(Message message) {
         logger.info("Принудительная отчистка истории AI в чате: {}", message.getChat().getTitle());
         conversationHistoryService.clearAllHistory(message.getChatId());
+        messageSender.sendMessage(message.getChatId(), "Принудительная отчистка истории AI в чате выполнена");
     }
 
 }
