@@ -77,7 +77,7 @@ public class AiChat {
             long lastMessageTime = lastMessage.timestamp();
             long timeDifference = currentTime - lastMessageTime;
 
-            logger.debug("Последнее сообщение было {} минут назад", timeDifference / (60 * 1000));
+            logger.info("Последнее сообщение было {} минут назад", timeDifference / (60 * 1000));
 
             // Если прошло больше MAX_IDLE_TIME_MINUTES минут
             if (timeDifference > MAX_IDLE_TIME_MILLIS) {
@@ -100,6 +100,7 @@ public class AiChat {
             messages.add(messageNode);
         }
 
+        logger.info("Найдена история в чате {} для запроса в ИИ, всего {} сообщений", chatId, messages.size());
         return messages;
     }
     private String sendRequestToAi(String userQuestion, Long chatId, Float temperature) {

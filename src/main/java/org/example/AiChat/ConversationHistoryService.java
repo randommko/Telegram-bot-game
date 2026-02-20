@@ -24,17 +24,18 @@ public class ConversationHistoryService {
     }
 
     public void addMessage(Long chatId, Long userId, String role, String content) {
-        UsersService usersService = new UsersService();
-        ChatsService chatsService = new ChatsService();
-        logger.info("Добавление сообщения: chatId={}, userName={}, role={}, content={}",
-                chatsService.getChatTitle(chatId), usersService.getUserNameByID(userId), role, content);
-
-        List<Message> userMessages = initHistory(chatId);
-
-        userMessages.add(new Message(role, content));
-
-        logger.info("Теперь в истории пользователя {} сообщений", userMessages.size());
-
+        try {
+            UsersService usersService = new UsersService();
+            ChatsService chatsService = new ChatsService();
+            logger.info("Добавление сообщения: chatId={}, userName={}, role={}, content={}",
+                    chatsService.getChatTitle(chatId), usersService.getUserNameByID(userId), role, content);
+            List<Message> userMessages = initHistory(chatId);
+            userMessages.add(new Message(role, content));
+            logger.info("В истории пользователя {} сообщений", userMessages.size());
+        }
+        catch (Exception e) {
+            logger.error("Ошибка сохранения сообщения в историю AI: {}", e.toString());
+        }
     }
 
     public List<Message> initHistory(Long chatId) {
@@ -62,24 +63,8 @@ public class ConversationHistoryService {
         });
     }
 
-    public List<Message> getHistory(Long chatId, Long userId) {
-        return userHistory.getOrDefault(chatId, new ConcurrentHashMap<>())
-                .getOrDefault(userId, new ArrayList<>());
-    }
-
     public Map<Long, List<Message>> getAllUsersInChat(Long chatId) {
         return userHistory.getOrDefault(chatId, new ConcurrentHashMap<>());
-    }
-
-    public void clearHistory(Long chatId, Long userId) {
-        Map<Long, List<Message>> chatUsers = userHistory.get(chatId);
-        if (chatUsers != null) {
-            chatUsers.remove(userId);
-            // Если в чате больше нет пользователей с историей, удаляем и чат
-            if (chatUsers.isEmpty()) {
-                userHistory.remove(chatId);
-            }
-        }
     }
 
     public void clearAllHistory(Long chatId) {
