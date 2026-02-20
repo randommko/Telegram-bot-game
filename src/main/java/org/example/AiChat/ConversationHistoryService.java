@@ -31,7 +31,7 @@ public class ConversationHistoryService {
                     chatsService.getChatTitle(chatId), usersService.getUserNameByID(userId), role, content);
             List<Message> userMessages = initHistory(chatId);
             userMessages.add(new Message(role, content));
-            logger.info("В истории пользователя {} сообщений", userMessages.size());
+            logger.info("В истории для AI чата {} сохранено {} сообщений", chatsService.getChatTitle(chatId), userMessages.size());
         }
         catch (Exception e) {
             logger.error("Ошибка сохранения сообщения в историю AI: {}", e.toString());
