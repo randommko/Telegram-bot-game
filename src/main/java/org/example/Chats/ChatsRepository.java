@@ -45,7 +45,7 @@ public class ChatsRepository {
                             resultSet.getString("chat_title")
                     );
                 else {
-                    logger.warn("ID чата не найден в БД");
+                    logger.error("ID чата не найден в БД");
                     return null;
                 }
             }

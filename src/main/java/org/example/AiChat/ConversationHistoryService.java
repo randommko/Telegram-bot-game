@@ -29,7 +29,7 @@ public class ConversationHistoryService {
 
         try {
             logger.debug("Добавление сообщения: chatName={}, userName={}, role={}, content={}",
-                    getChatTitle(chatId, userId), getUserName(userId), role, content);
+                    chatId, getUserName(userId), role, content);
 
             // Проверяем и инициализируем для chatId если нужно
             if (!allChatsAllUsersMessages.containsKey(chatId)) {
@@ -46,7 +46,7 @@ public class ConversationHistoryService {
             allChatsAllUsersMessages.get(chatId).get(userId).add(new messageInChat(role, content));
 
             logger.info("В истории AI для чата {} сохранено {} сообщений",
-                    getChatTitle(chatId, userId),
+                    chatId,
                     allChatsAllUsersMessages.get(chatId).get(userId).size());
         }
         catch (Exception e) {
@@ -61,14 +61,6 @@ public class ConversationHistoryService {
         else
             userName = usersService.getUserNameByID(userId);
         return userName;
-    }
-    private String getChatTitle(Long chatId, Long userId) {
-        if (Objects.equals(chatId, userId))
-            return "Личный чат с: " + getUserName(userId);
-
-        ChatsService chatsService = new ChatsService();
-
-        return chatsService.getChatTitle(chatId);
     }
     public Map<Long, List<messageInChat>> getAllMessagesInChat(Long chatId) {
         return allChatsAllUsersMessages.getOrDefault(chatId, new ConcurrentHashMap<>());
