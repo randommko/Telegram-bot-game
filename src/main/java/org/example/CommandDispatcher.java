@@ -159,9 +159,22 @@ public class CommandDispatcher {
         aiChat.askAi(message);
     }
     private void handleAiChatHistory(Message message) {
-        logger.info("Принудительная отчистка истории AI в чате: {}", message.getChat().getTitle());
-        conversationHistoryService.clearAllHistory(message.getChatId());
-        messageSender.sendMessage(message.getChatId(), "Принудительная отчистка истории AI в чате выполнена");
+        Long chatId = message.getChatId();
+        try {
+            String clearMsg = "Запуск принудительной отчистки истории AI, будет удалено воспоминаний: " + conversationHistoryService.getHistorySize(chatId);
+            messageSender.sendMessage(chatId, clearMsg);
+
+            conversationHistoryService.clearAllHistory(chatId);
+
+            String successClearMsg = "Принудительная отчистка истории AI в чате выполнена. Воспоминаний в памяти: 0 (ноль, ZERO)";
+            messageSender.sendMessage(chatId, successClearMsg);
+
+            logger.info("Выполнена принудительная отчистка истории AI в чате: {}", message.getChat().getTitle());
+        }
+        catch (Exception e) {
+            logger.error("Ошибка отчистки памяти AI: {}", e.toString());
+        }
+
     }
 
 }

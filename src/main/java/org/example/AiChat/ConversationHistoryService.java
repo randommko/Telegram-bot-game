@@ -83,4 +83,8 @@ public class ConversationHistoryService {
         userHistory.remove(chatId);
     }
 
+    public Integer getHistorySize(Long chatId) {
+        return  userHistory.get(chatId).size();
+    }
+
 }
