@@ -54,7 +54,7 @@ public class AiChat {
         String aiAnswer = sendRequestToAi(userQuestion, chatId, answerTemperature);
         if (aiAnswer != null) {
             sender.sendMessage(chatId, aiAnswer);
-            conversationHistoryService.addMessage(chatId, 0L, "assistant", aiAnswer);
+            conversationHistoryService.addMessage(message, "assistant", aiAnswer);
         }
     }
 
@@ -79,7 +79,7 @@ public class AiChat {
             messages.add(messageNode);
         }
 
-        logger.info("Найдена история в чате {} для запроса в ИИ, всего {} сообщений", chatId, messages.size());
+        logger.debug("Найдена история в чате {} для запроса в ИИ, всего {} сообщений", chatId, messages.size());
         return messages;
     }
     private String sendRequestToAi(String userQuestion, Long chatId, Float temperature) {

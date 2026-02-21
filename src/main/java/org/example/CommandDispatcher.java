@@ -82,9 +82,7 @@ public class CommandDispatcher {
     public void dispatch(Update update) {
         Message message = update.getMessage();
         String text = message.getText();
-        Long chatId = message.getChatId();
         try {
-            Long userId = message.getFrom().getId();
             String userName;
 
             if (message.getFrom().getUserName() == null)
@@ -94,7 +92,7 @@ public class CommandDispatcher {
 
             String messageToSave = "Сообщение от: " + userName + " : " + text;
 
-            conversationHistoryService.addMessage(chatId, userId, "user", messageToSave);
+            conversationHistoryService.addMessage(message, "user", messageToSave);
         }
         catch (Exception e) {
             logger.error("Ошибка сохранения сообщения в историю: {}", String.valueOf(e));

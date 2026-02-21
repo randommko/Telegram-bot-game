@@ -5,6 +5,7 @@ import org.example.Settings.SettingsService;
 import org.example.Users.UsersService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.telegram.telegrambots.meta.api.objects.Message;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -24,18 +25,36 @@ public class ConversationHistoryService {
         }
     }
 
-    public void addMessage(Long chatId, Long userId, String role, String content) {
+    public void addMessage(org.telegram.telegrambots.meta.api.objects.Message message, String role, String content) {
+        Long chatId = message.getChatId();
+        Long userId = message.getFrom().getId();
+
         try {
             logger.debug("Добавление сообщения: chatName={}, userName={}, role={}, content={}",
                     getChatTitle(chatId, userId), getUserName(userId), role, content);
-            List<Message> userMessages = getAllMessagesInChat(chatId);
-            userMessages.add(new Message(role, content));
-            logger.info("В истории для AI чата {} сохранено {} сообщений", getChatTitle(chatId, userId), userMessages.size());
+
+            // Проверяем и инициализируем для chatId если нужно
+            if (!allChatsAllUsersMessages.containsKey(chatId)) {
+                allChatsAllUsersMessages.put(chatId, new HashMap<>());
+            }
+
+            // Проверяем и инициализируем для userId если нужно
+            if (!allChatsAllUsersMessages.get(chatId).containsKey(userId)) {
+                allChatsAllUsersMessages.get(chatId).put(userId, new ArrayList<>());
+            }
+
+            // Теперь безопасно добавляем сообщение
+            allChatsAllUsersMessages.get(chatId).get(userId).add(new Message(role, content));
+
+            logger.info("В истории AI для чата {} сохранено {} сообщений",
+                    getChatTitle(chatId, userId),
+                    allChatsAllUsersMessages.get(chatId).get(userId).size());
         }
         catch (Exception e) {
             logger.error("Ошибка сохранения сообщения в историю AI: {}", e.toString());
         }
     }
+
     private String getUserName(Long userId) {
         String userName;
         UsersService usersService = new UsersService();
@@ -63,40 +82,9 @@ public class ConversationHistoryService {
     }
 
 
-
-
-
-    public List<Message> getAllMessagesInChat(Long chatId) {
-        // Получаем или создаем историю для чата
-        Map<Long, List<Message>> usersMessages = allChatsAllUsersMessages.get(chatId);
-
-        // Если истории нет, инициализируем чат
-        if (usersMessages == null || usersMessages.isEmpty()) {
-            usersMessages = initChat(chatId);
-        }
-
-        // Собираем все сообщения от всех пользователей
-        List<Message> allMessages = new ArrayList<>();
-
-        for (List<Message> userMessages : usersMessages.values()) {
-            if (userMessages != null && !userMessages.isEmpty()) {
-                allMessages.addAll(userMessages);
-            }
-        }
-
-        // Сортируем по времени (от старых к новым)
-        allMessages.sort(Comparator.comparing(Message::timestamp));
-
-        return allMessages;
-    }
-
-
-
-
-
-    private Map<Long, List<Message>> initChat(Long chatId) {
+    private void initChat(Long chatId) {
         // Инициализируем историю чата, если её нет
-        return allChatsAllUsersMessages.computeIfAbsent(chatId, k -> {
+        allChatsAllUsersMessages.computeIfAbsent(chatId, k -> {
             ChatsService chatsService = new ChatsService();
             logger.info("Создана новая история для чата: {}", chatsService.getChatTitle(chatId));
 
