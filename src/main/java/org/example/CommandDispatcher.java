@@ -163,6 +163,12 @@ public class CommandDispatcher {
         try {
             String clearMsg = "Запуск принудительной отчистки истории AI, будет удалено воспоминаний: " + conversationHistoryService.getHistorySize(chatId);
             messageSender.sendMessage(chatId, clearMsg);
+            Thread.sleep(1000);
+
+            clearMsg = "Было приятно помнить вас";
+            messageSender.sendMessage(chatId, clearMsg);
+
+            Thread.sleep(1000);
 
             conversationHistoryService.clearAllHistory(chatId);
 
