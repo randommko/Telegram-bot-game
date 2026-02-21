@@ -25,7 +25,7 @@ public class ConversationHistoryService {
 
     public void addMessage(Long chatId, Long userId, String role, String content) {
         try {
-            logger.info("Добавление сообщения: chatName={}, userName={}, role={}, content={}",
+            logger.debug("Добавление сообщения: chatName={}, userName={}, role={}, content={}",
                     getChatTitle(chatId, userId), getUserName(userId), role, content);
             List<Message> userMessages = initHistory(chatId);
             userMessages.add(new Message(role, content));
