@@ -82,9 +82,9 @@ public class CommandDispatcher {
     public void dispatch(Update update) {
         Message message = update.getMessage();
         String text = message.getText();
-        Long chatId = message.getChatId();
+        String textToSave = text.split(" ", 2)[1];
+
         try {
-            Long userId = message.getFrom().getId();
             String userName;
 
             if (message.getFrom().getUserName() == null)
@@ -92,9 +92,9 @@ public class CommandDispatcher {
             else
                 userName = message.getFrom().getUserName();
 
-            String messageToSave = "Сообщение от: " + userName + " : " + text;
+            String messageToSave = "Сообщение от: " + userName + " : " + textToSave;
 
-            conversationHistoryService.addMessage(chatId, userId, "user", messageToSave);
+            conversationHistoryService.addMessage(message, "user", messageToSave);
         }
         catch (Exception e) {
             logger.error("Ошибка сохранения сообщения в историю: {}", String.valueOf(e));
@@ -172,8 +172,10 @@ public class CommandDispatcher {
 
             conversationHistoryService.clearAllHistory(chatId);
 
-            String successClearMsg = "Принудительная отчистка истории AI в чате выполнена. Воспоминаний в памяти: 0 (ноль, ZERO)";
+            String successClearMsg = "Принудительная отчистка истории AI в чате выполнена. Воспоминаний в памяти: 0";
             messageSender.sendMessage(chatId, successClearMsg);
+
+            //TODO: сохранять в память количество сбрасований
 
             logger.info("Выполнена принудительная отчистка истории AI в чате: {}", message.getChat().getTitle());
         }

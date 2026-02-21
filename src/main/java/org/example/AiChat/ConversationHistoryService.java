@@ -14,8 +14,9 @@ import static org.example.Settings.Settings.*;
 public class ConversationHistoryService {
     private static final Logger logger = LoggerFactory.getLogger(ConversationHistoryService.class);
     // Ключ: chatId, значение: Map, где ключ - userId, значение - история пользователя
-    private final Map<Long, Map<Long, List<Message>>> userHistory = new ConcurrentHashMap<>();
+    private final Map<Long, Map<Long, List<Message>>> allChatsAllUsersMessages = new ConcurrentHashMap<>();
     private final SettingsService settings = new SettingsService();
+    private static final Long systemPromtUserId = 0L;
 
     public record Message(String role, String content, Long timestamp) {
         public Message(String role, String content) {
@@ -23,68 +24,75 @@ public class ConversationHistoryService {
         }
     }
 
-    public void addMessage(Long chatId, Long userId, String role, String content) {
+    public void addMessage(org.telegram.telegrambots.meta.api.objects.Message message, String role, String content) {
+        Long chatId = message.getChatId();
+        Long userId = message.getFrom().getId();
+
         try {
-            UsersService usersService = new UsersService();
-            ChatsService chatsService = new ChatsService();
+            logger.debug("Добавление сообщения: chatName={}, userName={}, role={}, content={}",
+                    getChatTitle(chatId, userId), getUserName(userId), role, content);
 
-            String userName;
-            if (userId == 0L)
-                userName = "AI Bot";
-            else
-                userName = usersService.getUserNameByID(userId);
+            // Проверяем и инициализируем для chatId если нужно
+            if (!allChatsAllUsersMessages.containsKey(chatId)) {
+                allChatsAllUsersMessages.put(chatId, new HashMap<>());
+            }
 
-            String chatTitle = chatsService.getChatTitle(chatId);
-            if (chatTitle == null)
-                chatTitle = "Личный чат с: " + userName;
+            // Проверяем и инициализируем для userId если нужно
+            if (!allChatsAllUsersMessages.get(chatId).containsKey(userId)) {
+                allChatsAllUsersMessages.get(chatId).put(userId, new ArrayList<>());
+                allChatsAllUsersMessages.get(chatId).get(userId).add(new Message("system", getSystemPromt(chatId)));
+            }
 
-            logger.info("Добавление сообщения: chatName={}, userName={}, role={}, content={}",
-                    chatTitle, userName, role, content);
-            List<Message> userMessages = initHistory(chatId);
-            userMessages.add(new Message(role, content));
-            logger.info("В истории для AI чата {} сохранено {} сообщений", chatTitle, userMessages.size());
+            // Теперь безопасно добавляем сообщение
+            allChatsAllUsersMessages.get(chatId).get(userId).add(new Message(role, content));
+
+            logger.info("В истории AI для чата {} сохранено {} сообщений",
+                    getChatTitle(chatId, userId),
+                    allChatsAllUsersMessages.get(chatId).get(userId).size());
         }
         catch (Exception e) {
             logger.error("Ошибка сохранения сообщения в историю AI: {}", e.toString());
         }
     }
 
-    public List<Message> initHistory(Long chatId) {
-        Long systemPromtUserId = 0L;
-        // Получаем или создаем историю для чата и пользователя
+    private String getUserName(Long userId) {
+        String userName;
+        UsersService usersService = new UsersService();
+        if (userId == 0L)
+            userName = "AI Bot";
+        else
+            userName = usersService.getUserNameByID(userId);
+        return userName;
+    }
+    private String getChatTitle(Long chatId, Long userId) {
         ChatsService chatsService = new ChatsService();
-        Map<Long, List<Message>> chatHistory = userHistory.computeIfAbsent(chatId, k -> {
-            logger.info("Создана новая история для чата: {}", chatsService.getChatTitle(chatId));
-            return new ConcurrentHashMap<>();
-        });
-
-        return chatHistory.computeIfAbsent(systemPromtUserId, k -> {
-            logger.info("Создана новая история для пользователя {} в чате {}", "AI", chatsService.getChatTitle(chatId));
-            List<Message> messages = new ArrayList<>();
-            String systemPrompt;
-
-            if (Objects.equals(chatId, MY_CHAT_ID)) {
-                systemPrompt = settings.getSettingValue(AI_CONTEXT_FOR_MY_CHAT);
-                logger.info("Использован специальный промпт для MY_CHAT");
-            } else {
-                systemPrompt = settings.getSettingValue(AI_CONTEXT);
-                logger.info("Использован стандартный промпт");
-            }
-            messages.add(new Message("system", systemPrompt));
-            return messages;
-        });
+        String chatTitle = chatsService.getChatTitle(chatId);
+        if (chatTitle == null)
+            chatTitle = "Личный чат с: " + getUserName(userId);
+        return chatTitle;
     }
-
-    public Map<Long, List<Message>> getAllUsersInChat(Long chatId) {
-        return userHistory.getOrDefault(chatId, new ConcurrentHashMap<>());
+    public Map<Long, List<Message>> getAllMessagesInChat(Long chatId) {
+        return allChatsAllUsersMessages.getOrDefault(chatId, new ConcurrentHashMap<>());
     }
-
     public void clearAllHistory(Long chatId) {
-        userHistory.remove(chatId);
+        allChatsAllUsersMessages.remove(chatId);
+    }
+    public Integer getHistorySize(Long chatId) {
+        return  allChatsAllUsersMessages.get(chatId).size();
     }
 
-    public Integer getHistorySize(Long chatId) {
-        return  userHistory.get(chatId).size();
+    private String getSystemPromt (Long chatId) {
+        String systemPrompt;
+
+        if (Objects.equals(chatId, MY_CHAT_ID)) {
+            systemPrompt = settings.getSettingValue(AI_CONTEXT_FOR_MY_CHAT);
+            logger.info("Использован специальный промпт для Синий чат");
+        } else {
+            systemPrompt = settings.getSettingValue(AI_CONTEXT);
+            logger.info("Использован промпт по умолчанию");
+        }
+
+        return systemPrompt;
     }
 
 }
