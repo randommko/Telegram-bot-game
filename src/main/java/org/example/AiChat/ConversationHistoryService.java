@@ -14,8 +14,9 @@ import static org.example.Settings.Settings.*;
 public class ConversationHistoryService {
     private static final Logger logger = LoggerFactory.getLogger(ConversationHistoryService.class);
     // Ключ: chatId, значение: Map, где ключ - userId, значение - история пользователя
-    private final Map<Long, Map<Long, List<Message>>> userHistory = new ConcurrentHashMap<>();
+    private final Map<Long, Map<Long, List<Message>>> allChatsAllUsersMessages = new ConcurrentHashMap<>();
     private final SettingsService settings = new SettingsService();
+    private static final Long systemPromtUserId = 0L;
 
     public record Message(String role, String content, Long timestamp) {
         public Message(String role, String content) {
@@ -27,7 +28,7 @@ public class ConversationHistoryService {
         try {
             logger.debug("Добавление сообщения: chatName={}, userName={}, role={}, content={}",
                     getChatTitle(chatId, userId), getUserName(userId), role, content);
-            List<Message> userMessages = initHistory(chatId);
+            List<Message> userMessages = getAllMessagesInChat(chatId);
             userMessages.add(new Message(role, content));
             logger.info("В истории для AI чата {} сохранено {} сообщений", getChatTitle(chatId, userId), userMessages.size());
         }
@@ -51,40 +52,81 @@ public class ConversationHistoryService {
             chatTitle = "Личный чат с: " + getUserName(userId);
         return chatTitle;
     }
-
-    public List<Message> initHistory(Long chatId) {
-        Long systemPromtUserId = 0L;
-        // Получаем или создаем историю для чата и пользователя
-        ChatsService chatsService = new ChatsService();
-        Map<Long, List<Message>> chatHistory = userHistory.computeIfAbsent(chatId, k -> {
-            logger.info("Создана новая история для чата: {}", chatsService.getChatTitle(chatId));
-            return new ConcurrentHashMap<>();
-        });
-
-        return chatHistory.computeIfAbsent(systemPromtUserId, k -> {
-            logger.info("Создана новая история для пользователя {} в чате {}", "AI", chatsService.getChatTitle(chatId));
-            List<Message> messages = new ArrayList<>();
-            String systemPrompt;
-
-            if (Objects.equals(chatId, MY_CHAT_ID)) {
-                systemPrompt = settings.getSettingValue(AI_CONTEXT_FOR_MY_CHAT);
-                logger.info("Использован специальный промпт для MY_CHAT");
-            } else {
-                systemPrompt = settings.getSettingValue(AI_CONTEXT);
-                logger.info("Использован стандартный промпт");
-            }
-            messages.add(new Message("system", systemPrompt));
-            return messages;
-        });
-    }
     public Map<Long, List<Message>> getAllUsersInChat(Long chatId) {
-        return userHistory.getOrDefault(chatId, new ConcurrentHashMap<>());
+        return allChatsAllUsersMessages.getOrDefault(chatId, new ConcurrentHashMap<>());
     }
     public void clearAllHistory(Long chatId) {
-        userHistory.remove(chatId);
+        allChatsAllUsersMessages.remove(chatId);
     }
     public Integer getHistorySize(Long chatId) {
-        return  userHistory.get(chatId).size();
+        return  allChatsAllUsersMessages.get(chatId).size();
+    }
+
+
+
+
+
+    public List<Message> getAllMessagesInChat(Long chatId) {
+        // Получаем или создаем историю для чата
+        Map<Long, List<Message>> usersMessages = allChatsAllUsersMessages.get(chatId);
+
+        // Если истории нет, инициализируем чат
+        if (usersMessages == null || usersMessages.isEmpty()) {
+            usersMessages = initChat(chatId);
+        }
+
+        // Собираем все сообщения от всех пользователей
+        List<Message> allMessages = new ArrayList<>();
+
+        for (List<Message> userMessages : usersMessages.values()) {
+            if (userMessages != null && !userMessages.isEmpty()) {
+                allMessages.addAll(userMessages);
+            }
+        }
+
+        // Сортируем по времени (от старых к новым)
+        allMessages.sort(Comparator.comparing(Message::timestamp));
+
+        return allMessages;
+    }
+
+
+
+
+
+    private Map<Long, List<Message>> initChat(Long chatId) {
+        // Инициализируем историю чата, если её нет
+        return allChatsAllUsersMessages.computeIfAbsent(chatId, k -> {
+            ChatsService chatsService = new ChatsService();
+            logger.info("Создана новая история для чата: {}", chatsService.getChatTitle(chatId));
+
+            // Создаем новую мапу для пользователей и сразу инициализируем системное сообщение
+            Map<Long, List<Message>> usersMessages = new ConcurrentHashMap<>();
+
+            // Добавляем системное сообщение для пользователя 0L
+            List<Message> systemMessages = new ArrayList<>();
+            systemMessages.add(new Message("system", getSystemPromt(chatId)));
+            usersMessages.put(0L, systemMessages);
+
+            logger.info("Создана новая история для пользователя AI в чате {}",
+                    chatsService.getChatTitle(chatId));
+
+            return usersMessages;
+        });
+    }
+
+    private String getSystemPromt (Long chatId) {
+        String systemPrompt;
+
+        if (Objects.equals(chatId, MY_CHAT_ID)) {
+            systemPrompt = settings.getSettingValue(AI_CONTEXT_FOR_MY_CHAT);
+            logger.info("Использован специальный промпт для Синий чат");
+        } else {
+            systemPrompt = settings.getSettingValue(AI_CONTEXT);
+            logger.info("Использован промпт по умолчанию");
+        }
+
+        return systemPrompt;
     }
 
 }

@@ -71,27 +71,6 @@ public class AiChat {
                 .sorted(Comparator.comparing(ConversationHistoryService.Message::timestamp))
                 .toList();
 
-        if (!allMessages.isEmpty()) {
-            long currentTime = System.currentTimeMillis();
-            ConversationHistoryService.Message lastMessage = allMessages.get(allMessages.size() - 1);
-            long lastMessageTime = lastMessage.timestamp();
-            long timeDifference = currentTime - lastMessageTime;
-
-            logger.info("Последнее сообщение было {} минут назад", timeDifference / (60 * 1000));
-
-            // Если прошло больше MAX_IDLE_TIME_MINUTES минут
-            if (timeDifference > MAX_IDLE_TIME_MILLIS) {
-                logger.info("Обнаружен длительный перерыв ({} минут). Очищаем историю чата {}",
-                        timeDifference / (60 * 1000), chatId);
-
-                // Очищаем историю для ВСЕХ пользователей в чате
-                conversationHistoryService.clearAllHistory(chatId);
-
-                // Инициируем список сообщений системным промтом
-                allMessages = conversationHistoryService.initHistory(chatId);
-            }
-        }
-
         // Преобразуем в JSON формат
         for (ConversationHistoryService.Message msg : allMessages) {
             ObjectNode messageNode = objectMapper.createObjectNode();
