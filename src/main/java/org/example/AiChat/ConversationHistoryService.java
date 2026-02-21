@@ -40,6 +40,7 @@ public class ConversationHistoryService {
             // Проверяем и инициализируем для userId если нужно
             if (!allChatsAllUsersMessages.get(chatId).containsKey(userId)) {
                 allChatsAllUsersMessages.get(chatId).put(userId, new ArrayList<>());
+                allChatsAllUsersMessages.get(chatId).get(userId).add(new Message("system", getSystemPromt(chatId)));
             }
 
             // Теперь безопасно добавляем сообщение
@@ -78,28 +79,6 @@ public class ConversationHistoryService {
     }
     public Integer getHistorySize(Long chatId) {
         return  allChatsAllUsersMessages.get(chatId).size();
-    }
-
-
-    private void initChat(Long chatId) {
-        // Инициализируем историю чата, если её нет
-        allChatsAllUsersMessages.computeIfAbsent(chatId, k -> {
-            ChatsService chatsService = new ChatsService();
-            logger.info("Создана новая история для чата: {}", chatsService.getChatTitle(chatId));
-
-            // Создаем новую мапу для пользователей и сразу инициализируем системное сообщение
-            Map<Long, List<Message>> usersMessages = new ConcurrentHashMap<>();
-
-            // Добавляем системное сообщение для пользователя 0L
-            List<Message> systemMessages = new ArrayList<>();
-            systemMessages.add(new Message("system", getSystemPromt(chatId)));
-            usersMessages.put(0L, systemMessages);
-
-            logger.info("Создана новая история для пользователя AI в чате {}",
-                    chatsService.getChatTitle(chatId));
-
-            return usersMessages;
-        });
     }
 
     private String getSystemPromt (Long chatId) {
