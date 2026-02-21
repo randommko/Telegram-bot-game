@@ -62,17 +62,17 @@ public class AiChat {
         ArrayNode messages = objectMapper.createArrayNode();
 
         // Получаем всех пользователей в чате и их сообщения
-        var allUsersInChat = conversationHistoryService.getAllUsersInChat(chatId);
+        var allMessagesInChat = conversationHistoryService.getAllMessagesInChat(chatId);
 
         // Собираем все сообщения от всех пользователей
-        List<ConversationHistoryService.Message> allMessages = allUsersInChat.values()
+        List<ConversationHistoryService.Message> allMessagesInchatList = allMessagesInChat.values()
                 .stream()
                 .flatMap(List::stream)
                 .sorted(Comparator.comparing(ConversationHistoryService.Message::timestamp))
                 .toList();
 
         // Преобразуем в JSON формат
-        for (ConversationHistoryService.Message msg : allMessages) {
+        for (ConversationHistoryService.Message msg : allMessagesInchatList) {
             ObjectNode messageNode = objectMapper.createObjectNode();
             messageNode.put("role", msg.role());
             messageNode.put("content", msg.content());

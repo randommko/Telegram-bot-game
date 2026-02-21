@@ -5,7 +5,6 @@ import org.example.Settings.SettingsService;
 import org.example.Users.UsersService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.telegram.telegrambots.meta.api.objects.Message;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -71,7 +70,7 @@ public class ConversationHistoryService {
             chatTitle = "Личный чат с: " + getUserName(userId);
         return chatTitle;
     }
-    public Map<Long, List<Message>> getAllUsersInChat(Long chatId) {
+    public Map<Long, List<Message>> getAllMessagesInChat(Long chatId) {
         return allChatsAllUsersMessages.getOrDefault(chatId, new ConcurrentHashMap<>());
     }
     public void clearAllHistory(Long chatId) {
