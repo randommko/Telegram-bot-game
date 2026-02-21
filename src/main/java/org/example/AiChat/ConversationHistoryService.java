@@ -25,28 +25,31 @@ public class ConversationHistoryService {
 
     public void addMessage(Long chatId, Long userId, String role, String content) {
         try {
-            UsersService usersService = new UsersService();
-            ChatsService chatsService = new ChatsService();
-
-            String userName;
-            if (userId == 0L)
-                userName = "AI Bot";
-            else
-                userName = usersService.getUserNameByID(userId);
-
-            String chatTitle = chatsService.getChatTitle(chatId);
-            if (chatTitle == null)
-                chatTitle = "Личный чат с: " + userName;
-
             logger.info("Добавление сообщения: chatName={}, userName={}, role={}, content={}",
-                    chatTitle, userName, role, content);
+                    getChatTitle(chatId, userId), getUserName(userId), role, content);
             List<Message> userMessages = initHistory(chatId);
             userMessages.add(new Message(role, content));
-            logger.info("В истории для AI чата {} сохранено {} сообщений", chatTitle, userMessages.size());
+            logger.info("В истории для AI чата {} сохранено {} сообщений", getChatTitle(chatId, userId), userMessages.size());
         }
         catch (Exception e) {
             logger.error("Ошибка сохранения сообщения в историю AI: {}", e.toString());
         }
+    }
+    private String getUserName(Long userId) {
+        String userName;
+        UsersService usersService = new UsersService();
+        if (userId == 0L)
+            userName = "AI Bot";
+        else
+            userName = usersService.getUserNameByID(userId);
+        return userName;
+    }
+    private String getChatTitle(Long chatId, Long userId) {
+        ChatsService chatsService = new ChatsService();
+        String chatTitle = chatsService.getChatTitle(chatId);
+        if (chatTitle == null)
+            chatTitle = "Личный чат с: " + getUserName(userId);
+        return chatTitle;
     }
 
     public List<Message> initHistory(Long chatId) {
@@ -74,15 +77,12 @@ public class ConversationHistoryService {
             return messages;
         });
     }
-
     public Map<Long, List<Message>> getAllUsersInChat(Long chatId) {
         return userHistory.getOrDefault(chatId, new ConcurrentHashMap<>());
     }
-
     public void clearAllHistory(Long chatId) {
         userHistory.remove(chatId);
     }
-
     public Integer getHistorySize(Long chatId) {
         return  userHistory.get(chatId).size();
     }
