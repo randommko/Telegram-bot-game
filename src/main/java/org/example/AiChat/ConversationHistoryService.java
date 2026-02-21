@@ -63,12 +63,12 @@ public class ConversationHistoryService {
         return userName;
     }
     private String getChatTitle(Long chatId, Long userId) {
-        ChatsService chatsService = new ChatsService();
-        String chatTitle = chatsService.getChatTitle(chatId);
-
         if (Objects.equals(chatId, userId))
-            chatTitle = "Личный чат с: " + getUserName(userId);
-        return chatTitle;
+            return "Личный чат с: " + getUserName(userId);
+
+        ChatsService chatsService = new ChatsService();
+
+        return chatsService.getChatTitle(chatId);
     }
     public Map<Long, List<messageInChat>> getAllMessagesInChat(Long chatId) {
         return allChatsAllUsersMessages.getOrDefault(chatId, new ConcurrentHashMap<>());
