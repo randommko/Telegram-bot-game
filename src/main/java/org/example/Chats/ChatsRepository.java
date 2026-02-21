@@ -40,7 +40,10 @@ public class ChatsRepository {
                 checkStmt.setLong(1, chatID);
                 ResultSet resultSet = checkStmt.executeQuery();
                 if (resultSet.next())
-                    return new Chat(resultSet.getLong("chat_id"), resultSet.getString("chat_title"));
+                    return new Chat(
+                            resultSet.getLong("chat_id"),
+                            resultSet.getString("chat_title")
+                    );
                 else {
                     logger.warn("ID чата не найден в БД");
                     return null;
