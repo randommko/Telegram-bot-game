@@ -64,14 +64,14 @@ public class AiChat {
         var allMessagesInChat = conversationHistoryService.getAllMessagesInChat(chatId);
 
         // Собираем все сообщения от всех пользователей
-        List<ConversationHistoryService.Message> allMessagesInchatList = allMessagesInChat.values()
+        List<ConversationHistoryService.messageInChat> allMessagesInchatList = allMessagesInChat.values()
                 .stream()
                 .flatMap(List::stream)
-                .sorted(Comparator.comparing(ConversationHistoryService.Message::timestamp))
+                .sorted(Comparator.comparing(ConversationHistoryService.messageInChat::timestamp))
                 .toList();
 
         // Преобразуем в JSON формат
-        for (ConversationHistoryService.Message msg : allMessagesInchatList) {
+        for (ConversationHistoryService.messageInChat msg : allMessagesInchatList) {
             ObjectNode messageNode = objectMapper.createObjectNode();
             messageNode.put("role", msg.role());
             messageNode.put("content", msg.content());

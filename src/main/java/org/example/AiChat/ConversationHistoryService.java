@@ -5,6 +5,7 @@ import org.example.Settings.SettingsService;
 import org.example.Users.UsersService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.telegram.telegrambots.meta.api.objects.Message;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -14,17 +15,15 @@ import static org.example.Settings.Settings.*;
 public class ConversationHistoryService {
     private static final Logger logger = LoggerFactory.getLogger(ConversationHistoryService.class);
     // Ключ: chatId, значение: Map, где ключ - userId, значение - история пользователя
-    private final Map<Long, Map<Long, List<Message>>> allChatsAllUsersMessages = new ConcurrentHashMap<>();
+    private final Map<Long, Map<Long, List<messageInChat>>> allChatsAllUsersMessages = new ConcurrentHashMap<>();
     private final SettingsService settings = new SettingsService();
-    private static final Long systemPromtUserId = 0L;
 
-    public record Message(String role, String content, Long timestamp) {
-        public Message(String role, String content) {
+    public record messageInChat(String role, String content, Long timestamp) {
+        public messageInChat(String role, String content) {
             this(role, content, System.currentTimeMillis());
         }
     }
-
-    public void addMessage(org.telegram.telegrambots.meta.api.objects.Message message, String role, String content) {
+    public void addMessage (Message message, String role, String content) {
         Long chatId = message.getChatId();
         Long userId = message.getFrom().getId();
 
@@ -40,11 +39,11 @@ public class ConversationHistoryService {
             // Проверяем и инициализируем для userId если нужно
             if (!allChatsAllUsersMessages.get(chatId).containsKey(userId)) {
                 allChatsAllUsersMessages.get(chatId).put(userId, new ArrayList<>());
-                allChatsAllUsersMessages.get(chatId).get(userId).add(new Message("system", getSystemPromt(chatId)));
+                allChatsAllUsersMessages.get(chatId).get(userId).add(new messageInChat("system", getSystemPromt(chatId)));
             }
 
             // Теперь безопасно добавляем сообщение
-            allChatsAllUsersMessages.get(chatId).get(userId).add(new Message(role, content));
+            allChatsAllUsersMessages.get(chatId).get(userId).add(new messageInChat(role, content));
 
             logger.info("В истории AI для чата {} сохранено {} сообщений",
                     getChatTitle(chatId, userId),
@@ -54,7 +53,6 @@ public class ConversationHistoryService {
             logger.error("Ошибка сохранения сообщения в историю AI: {}", e.toString());
         }
     }
-
     private String getUserName(Long userId) {
         String userName;
         UsersService usersService = new UsersService();
@@ -67,11 +65,12 @@ public class ConversationHistoryService {
     private String getChatTitle(Long chatId, Long userId) {
         ChatsService chatsService = new ChatsService();
         String chatTitle = chatsService.getChatTitle(chatId);
-        if (chatTitle == null)
+
+        if (Objects.equals(chatId, userId))
             chatTitle = "Личный чат с: " + getUserName(userId);
         return chatTitle;
     }
-    public Map<Long, List<Message>> getAllMessagesInChat(Long chatId) {
+    public Map<Long, List<messageInChat>> getAllMessagesInChat(Long chatId) {
         return allChatsAllUsersMessages.getOrDefault(chatId, new ConcurrentHashMap<>());
     }
     public void clearAllHistory(Long chatId) {
@@ -80,7 +79,6 @@ public class ConversationHistoryService {
     public Integer getHistorySize(Long chatId) {
         return  allChatsAllUsersMessages.get(chatId).size();
     }
-
     private String getSystemPromt (Long chatId) {
         String systemPrompt;
 
