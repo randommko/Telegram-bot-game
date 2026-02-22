@@ -82,10 +82,11 @@ public class CommandDispatcher {
     public void dispatch(Update update) {
         Message message = update.getMessage();
         String text = message.getText();
-        String textToSave = text.split(" ", 2)[1];
+
 
         try {
             String userName;
+            String textToSave = text.split(" ", 2)[1];
 
             if (message.getFrom().getUserName() == null)
                 userName = message.getFrom().getFirstName();
@@ -98,7 +99,6 @@ public class CommandDispatcher {
         }
         catch (Exception e) {
             logger.error("Ошибка сохранения сообщения в историю: {}", String.valueOf(e));
-            return;
         }
 
         if (!text.startsWith("/"))
