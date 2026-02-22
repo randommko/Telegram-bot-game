@@ -26,8 +26,6 @@ public class AiChat {
     private final SettingsService settings = new SettingsService();
     private final Float answerTemperature = Float.valueOf(settings.getSettingValue(AI_ANSWER_TEMPERATURE));
     private final Integer maxTokens = Integer.valueOf(settings.getSettingValue(AI_MAX_TOKENS_ANSWER_QUESTION));
-    private static final long MAX_IDLE_TIME_MINUTES = 30; // Максимальное время простоя в минутах
-    private static final long MAX_IDLE_TIME_MILLIS = MAX_IDLE_TIME_MINUTES * 60 * 1000; // Конвертируем в миллисекунды
     private final HttpClient httpClient = HttpClient.newHttpClient();
     private final ObjectMapper objectMapper = new ObjectMapper();
     private final String deepseekApiKey;

@@ -1,6 +1,5 @@
 package org.example.AiChat;
 
-import org.example.Chats.ChatsService;
 import org.example.Settings.SettingsService;
 import org.example.Users.UsersService;
 import org.slf4j.Logger;
@@ -38,12 +37,15 @@ public class ConversationHistoryService {
 
             // Проверяем и инициализируем для userId если нужно
             if (!allChatsAllUsersMessages.get(chatId).containsKey(userId)) {
+                logger.info("Не найдена история сообщений в чате {} для пользователя {}", chatId, userId);
                 allChatsAllUsersMessages.get(chatId).put(userId, new ArrayList<>());
-                allChatsAllUsersMessages.get(chatId).get(userId).add(new messageInChat("system", getSystemPromt(chatId)));
             }
 
             // Теперь безопасно добавляем сообщение
-            allChatsAllUsersMessages.get(chatId).get(userId).add(new messageInChat(role, content));
+            if (userId.equals(0L))
+                allChatsAllUsersMessages.get(chatId).get(userId).add(new messageInChat("system", getSystemPromt(chatId)));
+            else
+                allChatsAllUsersMessages.get(chatId).get(userId).add(new messageInChat(role, content));
 
             logger.info("В истории AI для чата {} сохранено {} сообщений",
                     chatId,
