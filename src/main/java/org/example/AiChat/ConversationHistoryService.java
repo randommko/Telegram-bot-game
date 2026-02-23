@@ -47,8 +47,9 @@ public class ConversationHistoryService {
             else
                 allChatsAllUsersMessages.get(chatId).get(userId).add(new messageInChat(role, content));
 
-            logger.info("В истории AI для чата {} сохранено {} сообщений",
+            logger.info("В истории AI для чата {} для пользователя {} сохранено {} сообщений",
                     chatId,
+                    userId,
                     allChatsAllUsersMessages.get(chatId).get(userId).size());
         }
         catch (Exception e) {
