@@ -86,14 +86,14 @@ public class CommandDispatcher {
 
         try {
             String userName;
-            String textToSave = text.split(" ", 2)[1];
+//            String textToSave = text.split(" ", 2)[1];
 
             if (message.getFrom().getUserName() == null)
                 userName = message.getFrom().getFirstName();
             else
                 userName = message.getFrom().getUserName();
 
-            String messageToSave = "Сообщение от: " + userName + " : " + textToSave;
+            String messageToSave = "Сообщение от: " + userName + " : " + text;
 
             conversationHistoryService.addMessage(message, "user", messageToSave);
         }
