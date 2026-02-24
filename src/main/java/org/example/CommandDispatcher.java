@@ -1,7 +1,7 @@
 package org.example;
 
-import org.example.AiChat.AiChat;
-import org.example.AiChat.ConversationHistoryService;
+
+import org.example.AiChat.AiService;
 import org.example.CockSize.CockSizeGame;
 
 import org.example.PidorGame.PidorGame;
@@ -20,7 +20,7 @@ public class CommandDispatcher {
     private final MessageSender messageSender;
     private final CockSizeGame cockSizeGame;
     private final PidorGame pidorGame;
-    private final AiChat aiChat;
+    private final AiService aiService;
     private final ConversationHistoryService conversationHistoryService;
     private final KeyboardBuilder keyboardBuilder = new KeyboardBuilder();
 
@@ -70,12 +70,12 @@ public class CommandDispatcher {
     public CommandDispatcher(MessageSender messageSender,
                              CockSizeGame cockSizeGame,
                              PidorGame pidorGame,
-                             AiChat aiChat,
+                             AiService aiService,
                              ConversationHistoryService conversationHistoryService) {
         this.messageSender = messageSender;
         this.cockSizeGame = cockSizeGame;
         this.pidorGame = pidorGame;
-        this.aiChat = aiChat;
+        this.aiService = aiService;
         this.conversationHistoryService = conversationHistoryService;
     }
 
@@ -83,23 +83,7 @@ public class CommandDispatcher {
         Message message = update.getMessage();
         String text = message.getText();
 
-
-        try {
-            String userName;
-//            String textToSave = text.split(" ", 2)[1];
-
-            if (message.getFrom().getUserName() == null)
-                userName = message.getFrom().getFirstName();
-            else
-                userName = message.getFrom().getUserName();
-
-            String messageToSave = "Сообщение от: " + userName + " : " + text;
-
-            conversationHistoryService.addMessage(message, "user", messageToSave);
-        }
-        catch (Exception e) {
-            logger.error("Ошибка сохранения сообщения в историю: {}", String.valueOf(e));
-        }
+        saveMessage(message);
 
         if (!text.startsWith("/"))
             return;
@@ -120,6 +104,30 @@ public class CommandDispatcher {
         }
     }
 
+    private void saveMessage(Message message) {
+        String text = message.getText();
+        try {
+            String userName;
+            String textToSave = text.split(" ", 2)[1];
+
+            if (message.getFrom().getUserName() == null)
+                userName = message.getFrom().getFirstName();
+            else
+                userName = message.getFrom().getUserName();
+
+            String messageToSave = "Сообщение от: " + userName + " : " + textToSave;
+            String role = "user";
+
+            aiService.saveMessage(message.getChatId(),
+                    message.getFrom().getId(),
+                    role,
+                    messageToSave);
+        }
+        catch (Exception e) {
+            logger.error("Ошибка сохранения сообщения в историю: {}", String.valueOf(e));
+        }
+    }
+
     // Хендлеры команд (каждый - 1 ответственность)
     private void handleBotInfo(Message message) {
         String info = """
@@ -134,29 +142,23 @@ public class CommandDispatcher {
             """;
         messageSender.sendMessage(message.getChatId(), info);
     }
-
     private void handleCockSize(Message message) {
         cockSizeGame.sendTodayCockSize(message);
     }
-
     private void handlePidorReg(Message message) {
         pidorGame.registerPlayer(message.getChatId(), message.getFrom().getId());
     }
-
     private void handlePidorStats(Message message) {
         pidorGame.sendPidorStats(message.getChatId());
     }
-
     private void handlePidorStart(Message message) {
         pidorGame.startPidorGame(message.getChatId(), message.getFrom().getId());
     }
-
     private void handleHoroscope(Message message) {
         keyboardBuilder.sendHoroscopeKeyboard(messageSender, message.getChatId());
     }
-
     private void handleAi(Message message) {
-        aiChat.askAi(message);
+        aiService.askAi(message);
     }
     private void handleAiChatHistory(Message message) {
         Long chatId = message.getChatId();

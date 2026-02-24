@@ -1,7 +1,6 @@
 package org.example;
 
-import org.example.AiChat.AiChat;
-import org.example.AiChat.ConversationHistoryService;
+import org.example.AiChat.AiService;
 import org.example.Chats.ChatsService;
 import org.example.CockSize.CockSizeGame;
 import org.example.Horoscope.HoroscopeService;
@@ -42,7 +41,7 @@ public class TelegramBot extends TelegramLongPollingBot {
         PidorGame pidorGame = new PidorGame();
         HoroscopeService horoscopeService = new HoroscopeService();
         ConversationHistoryService conversationHistoryService = new ConversationHistoryService();
-        AiChat aiChat = new AiChat(aiToken, conversationHistoryService);
+        AiService aiService = new AiService(aiToken);
 
 
 
@@ -50,7 +49,7 @@ public class TelegramBot extends TelegramLongPollingBot {
         this.messageSender = new MessageSender(this);
         this.userChatManager = new UserChatManager(usersService, chatsService);
         this.commandDispatcher = new CommandDispatcher(messageSender, cockSizeGame,
-                pidorGame, aiChat, conversationHistoryService);
+                pidorGame, aiService, conversationHistoryService);
         this.callbackDispatcher = new CallbackDispatcher(
                 messageSender, horoscopeService, cockSizeGame);
         this.executor = (ThreadPoolExecutor) Executors.newCachedThreadPool();
