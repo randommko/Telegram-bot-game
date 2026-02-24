@@ -72,7 +72,18 @@ public class ConversationHistoryService {
         allChatsAllUsersMessages.remove(chatId);
     }
     public Integer getHistorySize(Long chatId) {
-        return  allChatsAllUsersMessages.get(chatId).size();
+        int totalMessagesInChat = 0;
+        Map<Long, List<messageInChat>> usersMessages = allChatsAllUsersMessages.get(chatId);
+
+        // Проверяем, существует ли такой чат
+        if (usersMessages != null) {
+            // Проходим по каждому пользователю в чате
+            for (List<messageInChat> messages : usersMessages.values()) {
+                totalMessagesInChat += messages.size();
+            }
+        }
+
+        return totalMessagesInChat;
     }
     private String getSystemPromt (Long chatId) {
         String systemPrompt;

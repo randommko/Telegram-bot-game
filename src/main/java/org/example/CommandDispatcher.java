@@ -165,7 +165,7 @@ public class CommandDispatcher {
             messageSender.sendMessage(chatId, clearMsg);
             Thread.sleep(1000);
 
-            clearMsg = "Было приятно помнить вас";
+            clearMsg = "Было приятно помнить вас \uD83D\uDE22 \uD83D\uDE22 \uD83D\uDE22";
             messageSender.sendMessage(chatId, clearMsg);
 
             Thread.sleep(1000);
