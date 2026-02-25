@@ -54,6 +54,7 @@ public class AiChat {
             sender.sendMessage(chatId, aiAnswer);
             conversationHistoryService.addMessage(message, "assistant", aiAnswer);
         }
+
     }
     public ArrayNode getHistoryInChat(Long chatId) {
         ArrayNode messages = objectMapper.createArrayNode();
