@@ -120,11 +120,5 @@ public class AiChat {
         return respNode.get("choices").get(0).get("message").get("content").asText().trim();
     }
 
-
-
-
-
-
-
 }
 
