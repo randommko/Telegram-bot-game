@@ -12,17 +12,15 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.util.Comparator;
-import java.util.List;
 
 import static org.example.Settings.Settings.AI_MAX_TOKENS_ANSWER_QUESTION;
+import static org.example.Settings.Settings.DEEP_SEEK_BASE_URL;
 
 public class DeepSeekClient {
     private final SettingsService settings = new SettingsService();
     private final Logger logger = LoggerFactory.getLogger(DeepSeekClient.class);
 
     private final String deepSeekApiKey;
-    private final String deepSeekBaseUrl = "https://api.deepseek.com/v1/chat/completions";
     private final Integer maxTokens = Integer.valueOf(settings.getSettingValue(AI_MAX_TOKENS_ANSWER_QUESTION));
     private final HttpClient httpClient = HttpClient.newHttpClient();
     private final ObjectMapper objectMapper = new ObjectMapper();
@@ -50,7 +48,7 @@ public class DeepSeekClient {
         String jsonBody = objectMapper.writeValueAsString(requestBody);
 
         HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(deepSeekBaseUrl))
+                .uri(URI.create(DEEP_SEEK_BASE_URL))
                 .header("Content-Type", "application/json")
                 .header("Authorization", "Bearer " + deepSeekApiKey)
                 .POST(HttpRequest.BodyPublishers.ofString(jsonBody))

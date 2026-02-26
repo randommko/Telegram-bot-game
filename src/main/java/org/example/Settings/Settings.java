@@ -14,4 +14,5 @@ public class Settings {
     public final static String AI_SYSTEM_ROLE = "system";
     public final static String AI_ASSISTANT_ROLE = "assistant";
     public final static String USER_ROLE = "user";
+    public final static String DEEP_SEEK_BASE_URL = "https://api.deepseek.com/v1/chat/completions";
 }
