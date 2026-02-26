@@ -20,12 +20,12 @@ public class ChatMessages {
 
     public ChatMessages(Long chatId) {
         this.chatId = chatId;
-        userMessages.put(AI_ID, new UserMessages(AI_SYSTEM_ROLE, getSystemPromt()));
+//        userMessages.put(AI_ID, new UserMessages(AI_SYSTEM_ROLE, getSystemPromt()));
         initAiInChat();
     }
 
     public void addMessage(Long userId, String role, String text) {
-        logger.info("Добавление сообщения: chatName={}, userName={}, role={}, content={}",
+        logger.info("Наполнение истории сообщений: chatName={}, userName={}, role={}, content={}",
                 chatId, getUserName(userId), role, text);
 
         if (!userMessages.containsKey(userId))
@@ -35,7 +35,7 @@ public class ChatMessages {
 
         int userMessagesSize = userMessages.get(userId).getSize();
 
-        logger.info("В истории AI для чата {} для пользователя {} сохранено {} сообщений",
+        logger.debug("В истории AI для чата {} для пользователя {} сохранено {} сообщений",
                 chatId,
                 getUserName(userId),
                 userMessagesSize);
@@ -70,10 +70,10 @@ public class ChatMessages {
         try {
             if (Objects.equals(chatId, MY_CHAT_ID)) {
                 systemPrompt = settings.getSettingValue(AI_CONTEXT_FOR_MY_CHAT);
-                logger.info("Использован специальный промпт для Синий чат");
+                logger.info("В синем чате (ID: {}) использован специальный промпт", chatId);
             } else {
                 systemPrompt = settings.getSettingValue(AI_CONTEXT);
-                logger.info("Использован промпт по умолчанию");
+                logger.info("В чате {} использован промпт по умолчанию", chatId);
             }
         } catch (Exception e) {
             logger.error("Ошибка применения стартового ПРОМТа: {}", String.valueOf(e));

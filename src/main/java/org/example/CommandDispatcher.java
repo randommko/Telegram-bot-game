@@ -7,12 +7,16 @@ import org.example.CockSize.CockSizeGame;
 import org.example.PidorGame.PidorGame;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.telegram.telegrambots.meta.api.objects.Chat;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.Message;
+import org.telegram.telegrambots.meta.api.objects.User;
 
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
+
+import static org.example.Settings.Settings.USER_ROLE;
 
 public class CommandDispatcher {
     private static final Logger logger = LoggerFactory.getLogger(CommandDispatcher.class);
@@ -80,17 +84,20 @@ public class CommandDispatcher {
         Message message = update.getMessage();
         String text = message.getText();
 
-        saveMessage(message);
-
-        if (!text.startsWith("/"))
+        if (!text.startsWith("/")) {
+            //Сохраняем оригинальное сообщение
+            saveMessageText(message.getFrom(), message.getChat(), text);
             return;
+        }
 
         String[] parts = text.split(" ", 2);
-        String commandStr = parts[0];
 
-        Command command = Command.fromString(commandStr);
+        //Сохраняем сообщение без команды
+        saveMessageText(message.getFrom(), message.getChat(), parts[1]);
+
+        Command command = Command.fromString(parts[0]);
         if (command == null) {
-            logger.debug("Неизвестная команда: {}", commandStr);
+            logger.debug("Неизвестная команда: {}", parts[0]);
             return;
         }
 
@@ -101,28 +108,27 @@ public class CommandDispatcher {
         }
     }
 
-    private void saveMessage(Message message) {
-        String text = message.getText();
-        try {
-            String userName;
-            String textToSave = text.split(" ", 2)[1];
 
-            if (message.getFrom().getUserName() == null)
-                userName = message.getFrom().getFirstName();
-            else
-                userName = message.getFrom().getUserName();
+    private void saveMessageText(User user, Chat chat, String text) {
+        String userName = getUserName(user);
+        Long userId = user.getId();
+        Long chatId = chat.getId();
 
-            String messageToSave = "Сообщение от: " + userName + " : " + textToSave;
-            String role = "user";
+        String messageToSave = "Сообщение от: " + userName + " : " + text;
 
-            aiService.saveMessage(message.getChatId(),
-                    message.getFrom().getId(),
-                    role,
-                    messageToSave);
-        }
-        catch (Exception e) {
-            logger.error("Ошибка сохранения сообщения в историю: {}", String.valueOf(e));
-        }
+        aiService.saveMessage(chatId,
+                userId,
+                USER_ROLE,
+                messageToSave);
+
+    }
+    private String getUserName(User user) {
+        String userName;
+        if (user.getUserName() == null)
+            userName = user.getFirstName();
+        else
+            userName = user.getUserName();
+        return userName;
     }
 
     // Хендлеры команд (каждый - 1 ответственность)

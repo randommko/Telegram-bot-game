@@ -46,7 +46,7 @@ public class AiService {
             return;
         }
 
-        saveMessage(chatId, userId, USER_ROLE, userQuestion);
+//        saveMessage(chatId, userId, USER_ROLE, userQuestion);
 
         ArrayNode history = getHistoryInChat(chatId);
         String aiAnswer = deepSeekClient.sendRequestToAi(history, answerTemperature);
@@ -56,6 +56,7 @@ public class AiService {
             saveMessage(chatId, AI_ID, AI_ASSISTANT_ROLE, aiAnswer);
         }
     }
+
     public void saveMessage(Long chatId, Long userId, String role, String messageToSave) {
         if (!chatHistory.containsKey(chatId))
             chatHistory.put(chatId, new ChatMessages(chatId));
@@ -83,7 +84,7 @@ public class AiService {
             messages.add(messageNode);
         }
 
-        logger.info("Подготовлена история сообщений для AI в чате {}, всего сообщений {}",
+        logger.info("Задаем вопрос AI. Подготовлена история сообщений в чате {}, всего сообщений {} в истории",
                 chatId, messages.size());
         return messages;
     }
