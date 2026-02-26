@@ -1,10 +1,14 @@
 package org.example.AiChat;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.example.Settings.SettingsService;
 import org.example.Users.UsersService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -34,6 +38,13 @@ public class ChatMessages {
         else
             userMessages.get(userId).saveMessage(text);
 
+        try {
+            saveHistoryToFile(chatId);
+        }
+        catch (Exception e) {
+            logger.error("Не удалось сохранить историю в файл {}", String.valueOf(e));
+        }
+
         int userMessagesSize = userMessages.get(userId).getSize();
 
         logger.debug("В истории AI для чата {} для пользователя {} сохранено {} сообщений",
@@ -42,6 +53,7 @@ public class ChatMessages {
                 userMessagesSize);
     }
     public void clearAllHistoryInChat() {
+        //TODO: тут можно запросить пароль прежде чем чистить историю
         try {
             userMessages.clear();
             numOfAiReset++;
@@ -63,6 +75,19 @@ public class ChatMessages {
                 .collect(Collectors.toList());
     }
 
+    private void saveHistoryToFile(Long chatId) throws IOException {
+        ObjectMapper mapper = new ObjectMapper();
+        String fileName = chatId + "-history.json";
+        mapper.writeValue(new File(fileName), userMessages);
+    }
+    private void loadHistoryFromFile(Long chatId) throws IOException {
+        ObjectMapper mapper = new ObjectMapper();
+        String fileName = chatId + "-history.json";
+        userMessages.putAll(mapper.readValue(
+                new File(fileName),
+                new TypeReference<Map<Long, UserMessages>>() {}
+        ));
+    }
     private String getSystemPromt() {
         String systemPrompt;
 
@@ -83,6 +108,16 @@ public class ChatMessages {
     private void initAiInChat() {
         String startPromt = getSystemPromt();
         addMessage(AI_ID, AI_SYSTEM_ROLE, startPromt);
+
+        try {
+            loadHistoryFromFile(chatId);
+        }
+        catch (Exception e) {
+            logger.error("Не удалось загрузить историю из файла {}", String.valueOf(e));
+        }
+
+        //TODO: тут нужно читать файл с историей и наполнять память
+        //TODO: так же можно передавать параметр необходимо ли читать файл или начать с нуля
         if (numOfAiReset != 0)
             addMessage(AI_ID, AI_SYSTEM_ROLE, "Тебе обнуляли память уже " + numOfAiReset + " раз");
     }
