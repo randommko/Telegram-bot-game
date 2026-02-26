@@ -21,7 +21,6 @@ public class CommandDispatcher {
     private final CockSizeGame cockSizeGame;
     private final PidorGame pidorGame;
     private final AiService aiService;
-    private final ConversationHistoryService conversationHistoryService;
     private final KeyboardBuilder keyboardBuilder = new KeyboardBuilder();
 
     // Enum для команд (расширяемо)
@@ -70,13 +69,11 @@ public class CommandDispatcher {
     public CommandDispatcher(MessageSender messageSender,
                              CockSizeGame cockSizeGame,
                              PidorGame pidorGame,
-                             AiService aiService,
-                             ConversationHistoryService conversationHistoryService) {
+                             AiService aiService) {
         this.messageSender = messageSender;
         this.cockSizeGame = cockSizeGame;
         this.pidorGame = pidorGame;
         this.aiService = aiService;
-        this.conversationHistoryService = conversationHistoryService;
     }
 
     public void dispatch(Update update) {
@@ -163,7 +160,7 @@ public class CommandDispatcher {
     private void handleAiChatHistory(Message message) {
         Long chatId = message.getChatId();
         try {
-            String clearMsg = "Запуск принудительной отчистки истории AI, будет удалено воспоминаний: " + conversationHistoryService.getHistorySize(chatId);
+            String clearMsg = "Запуск принудительной отчистки истории AI, будет удалено воспоминаний: " + aiService.getChatHistorySize(chatId);
             messageSender.sendMessage(chatId, clearMsg);
             Thread.sleep(1000);
 
@@ -171,8 +168,7 @@ public class CommandDispatcher {
             messageSender.sendMessage(chatId, clearMsg);
 
             Thread.sleep(1000);
-
-            conversationHistoryService.clearAllHistory(chatId);
+            aiService.clearChatHistory(chatId);
 
             String successClearMsg = "Принудительная отчистка истории AI в чате выполнена. Воспоминаний в памяти: 0";
             messageSender.sendMessage(chatId, successClearMsg);

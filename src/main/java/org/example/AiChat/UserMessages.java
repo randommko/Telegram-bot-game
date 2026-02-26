@@ -1,33 +1,47 @@
 package org.example.AiChat;
 
+import java.util.ArrayList;
+import java.util.List;
 
 public class UserMessages {
-    private final Messages messages;
-    private final String role;
+    private final List<messageInChat> messages;
+    private final String userRole;
 
-    public UserMessages(String role) {
-        this.role = role;
-        messages = new Messages();
+    public record messageInChat(String content, Long timestamp, String role) {
+        public messageInChat(String content, String role) {
+            this(content, System.currentTimeMillis(), role);
+        }
     }
 
-    public int saveMessage(String text) {
-        return messages.saveMessage(text);
+    public UserMessages(String role, String text) {
+        messages = new ArrayList<>();
+        this.userRole = role;
+        saveMessage(text);
     }
 
-    public Messages getMessages() {
+    public void saveMessage(String text) {
+        messages.add(new messageInChat(text, userRole));
+    }
+
+    public List<messageInChat> getMessages() {
         return messages;
     }
 
-    public String getRole() {
-        return role;
+    public int getSize() {
+        return messages.size();
     }
 
-    public int clearMessages () {
-        return messages.clearMessages();
+    public String getUserRole() {
+        return userRole;
     }
 
-    public int removeLastMessage() {
-        return messages.removeLastMessage();
+    public void clearMessages() {
+        messages.clear();
     }
 
+    public void removeLastMessage() {
+        if (!messages.isEmpty()) {
+            messages.remove(messages.size() - 1);
+        }
+    }
 }

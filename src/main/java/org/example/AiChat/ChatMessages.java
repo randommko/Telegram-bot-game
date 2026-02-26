@@ -6,6 +6,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static org.example.Settings.Settings.*;
 
@@ -13,43 +14,54 @@ public class ChatMessages {
     //Map - ID пользователя, список сообщений
     private final Map<Long, UserMessages> userMessages = new HashMap<>();
     private final Long chatId;
-    private final static Long aiId = 0L;
-    private final static String aiSystemRole = "system";
-    private final static String aiAssistantRole = "assistant";
 
     private static final Logger logger = LoggerFactory.getLogger(ChatMessages.class);
     private final SettingsService settings = new SettingsService();
 
     public ChatMessages(Long chatId) {
         this.chatId = chatId;
-        userMessages.put(aiId, new UserMessages(aiSystemRole));
+        userMessages.put(AI_ID, new UserMessages(AI_SYSTEM_ROLE, getSystemPromt()));
         initAiInChat();
     }
-    public void addMessage (Long userId, String role, String content) {
-        logger.debug("Добавление сообщения: chatName={}, userName={}, role={}, content={}",
-                chatId, getUserName(userId), role, content);
+
+    public void addMessage(Long userId, String role, String text) {
+        logger.info("Добавление сообщения: chatName={}, userName={}, role={}, content={}",
+                chatId, getUserName(userId), role, text);
 
         if (!userMessages.containsKey(userId))
-            userMessages.put(userId, new UserMessages(role));
+            userMessages.put(userId, new UserMessages(role, text));
+        else
+            userMessages.get(userId).saveMessage(text);
 
-        int userMessagesSize = userMessages.get(userId).saveMessage(content);
+        int userMessagesSize = userMessages.get(userId).getSize();
 
         logger.info("В истории AI для чата {} для пользователя {} сохранено {} сообщений",
                 chatId,
-                userId,
+                getUserName(userId),
                 userMessagesSize);
     }
-    public List<UserMessages> getAllMessagesInChat() {
-        //TODO: для всех пользователей в userMessages вернуть список сообщений объедененный в List и отсортированный
-        return null;
+
+    public void clearAllHistoryInChat() {
+        try {
+            userMessages.clear();
+            initAiInChat();
+            logger.info("Очищена память AI в чате {}", chatId);
+        } catch (Exception e) {
+            logger.error("Ошибка отчистки памяти AI в чате {}", chatId);
+        }
     }
-    public void  clearAllHistory() {
-        //TODO: удалить все сообщения всех пользователей и сделать заново initAiInChat()
-        initAiInChat();
+
+    public int getChatHistorySize() {
+        return userMessages.values().stream()
+                .mapToInt(UserMessages::getSize)
+                .sum();
     }
-    public int getHistorySize() {
-        //TODO: вернуть количество сообщений в userMessages
-        return 0;
+
+    public List<UserMessages.messageInChat> getAllMessagesInChat() {
+        return userMessages.values().stream()
+                .flatMap(userMsg -> userMsg.getMessages().stream())
+                .sorted(Comparator.comparing(UserMessages.messageInChat::timestamp))
+                .collect(Collectors.toList());
     }
 
     private String getSystemPromt() {
@@ -69,18 +81,16 @@ public class ChatMessages {
         }
         return systemPrompt;
     }
+
     private void initAiInChat() {
         String startPromt = getSystemPromt();
-        addMessage(aiId, aiSystemRole, startPromt);
-    }
-    private String getUserName(Long userId) {
-        String userName;
-        UsersService usersService = new UsersService();
-        if (userId == 0L)
-            userName = "AI Bot";
-        else
-            userName = usersService.getUserNameByID(userId);
-        return userName;
+        addMessage(AI_ID, AI_SYSTEM_ROLE, startPromt);
     }
 
+    private String getUserName(Long userId) {
+        UsersService usersService = new UsersService();
+        if (userId == 0L)
+            return "AI Bot";
+        return usersService.getUserNameByID(userId);
+    }
 }

@@ -40,7 +40,6 @@ public class TelegramBot extends TelegramLongPollingBot {
         CockSizeGame cockSizeGame = new CockSizeGame();
         PidorGame pidorGame = new PidorGame();
         HoroscopeService horoscopeService = new HoroscopeService();
-        ConversationHistoryService conversationHistoryService = new ConversationHistoryService();
         AiService aiService = new AiService(aiToken);
 
 
@@ -49,7 +48,7 @@ public class TelegramBot extends TelegramLongPollingBot {
         this.messageSender = new MessageSender(this);
         this.userChatManager = new UserChatManager(usersService, chatsService);
         this.commandDispatcher = new CommandDispatcher(messageSender, cockSizeGame,
-                pidorGame, aiService, conversationHistoryService);
+                pidorGame, aiService);
         this.callbackDispatcher = new CallbackDispatcher(
                 messageSender, horoscopeService, cockSizeGame);
         this.executor = (ThreadPoolExecutor) Executors.newCachedThreadPool();
