@@ -176,10 +176,8 @@ public class CommandDispatcher {
             Thread.sleep(1000);
             aiService.clearChatHistory(chatId);
 
-            String successClearMsg = "Принудительная отчистка истории AI в чате выполнена. Воспоминаний в памяти: 0";
+            String successClearMsg = "Принудительная отчистка истории AI в чате выполнена. Воспоминаний в памяти: 0.";
             messageSender.sendMessage(chatId, successClearMsg);
-
-            //TODO: сохранять в память количество сбрасований
 
             logger.info("Выполнена принудительная отчистка истории AI в чате: {}", message.getChat().getTitle());
         }

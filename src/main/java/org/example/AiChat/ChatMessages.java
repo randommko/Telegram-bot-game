@@ -14,12 +14,14 @@ public class ChatMessages {
     //Map - ID пользователя, список сообщений
     private final Map<Long, UserMessages> userMessages = new HashMap<>();
     private final Long chatId;
+    private Integer numOfAiReset;
 
     private static final Logger logger = LoggerFactory.getLogger(ChatMessages.class);
     private final SettingsService settings = new SettingsService();
 
     public ChatMessages(Long chatId) {
         this.chatId = chatId;
+        numOfAiReset = 0;
         initAiInChat();
     }
 
@@ -42,6 +44,7 @@ public class ChatMessages {
     public void clearAllHistoryInChat() {
         try {
             userMessages.clear();
+            numOfAiReset++;
             initAiInChat();
             logger.info("Очищена память AI в чате {}", chatId);
         } catch (Exception e) {
@@ -80,6 +83,8 @@ public class ChatMessages {
     private void initAiInChat() {
         String startPromt = getSystemPromt();
         addMessage(AI_ID, AI_SYSTEM_ROLE, startPromt);
+        if (numOfAiReset != 0)
+            addMessage(AI_ID, AI_SYSTEM_ROLE, "Тебе обнуляли память уже " + numOfAiReset + " раз");
     }
     private String getUserName(Long userId) {
         UsersService usersService = new UsersService();
