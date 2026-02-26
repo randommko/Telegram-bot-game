@@ -2,6 +2,7 @@ package org.example.AiChat;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.example.DataManager;
 import org.example.Settings.SettingsService;
 import org.example.Users.UsersService;
 import org.slf4j.Logger;
@@ -22,6 +23,7 @@ public class ChatMessages {
 
     private static final Logger logger = LoggerFactory.getLogger(ChatMessages.class);
     private final SettingsService settings = new SettingsService();
+    private final DataManager dataManager = new DataManager();
 
     public ChatMessages(Long chatId) {
         this.chatId = chatId;
@@ -37,13 +39,12 @@ public class ChatMessages {
             userMessages.put(userId, new UserMessages(role, text));
         else
             userMessages.get(userId).saveMessage(text);
-
-        try {
-            saveHistoryToFile(chatId);
-        }
-        catch (Exception e) {
-            logger.error("Не удалось сохранить историю в файл {}", String.valueOf(e));
-        }
+//        try {
+//            saveHistoryToFile(chatId);
+//        }
+//        catch (Exception e) {
+//            logger.error("Не удалось сохранить историю в файл {}", String.valueOf(e));
+//        }
 
         int userMessagesSize = userMessages.get(userId).getSize();
 
@@ -75,19 +76,6 @@ public class ChatMessages {
                 .collect(Collectors.toList());
     }
 
-    private void saveHistoryToFile(Long chatId) throws IOException {
-        ObjectMapper mapper = new ObjectMapper();
-        String fileName = chatId + "-history.json";
-        mapper.writeValue(new File(fileName), userMessages);
-    }
-    private void loadHistoryFromFile(Long chatId) throws IOException {
-        ObjectMapper mapper = new ObjectMapper();
-        String fileName = chatId + "-history.json";
-        userMessages.putAll(mapper.readValue(
-                new File(fileName),
-                new TypeReference<Map<Long, UserMessages>>() {}
-        ));
-    }
     private String getSystemPromt() {
         String systemPrompt;
 
@@ -108,13 +96,12 @@ public class ChatMessages {
     private void initAiInChat() {
         String startPromt = getSystemPromt();
         addMessage(AI_ID, AI_SYSTEM_ROLE, startPromt);
-
-        try {
-            loadHistoryFromFile(chatId);
-        }
-        catch (Exception e) {
-            logger.error("Не удалось загрузить историю из файла {}", String.valueOf(e));
-        }
+//        try {
+//            loadHistoryFromFile(chatId);
+//        }
+//        catch (Exception e) {
+//            logger.error("Не удалось загрузить историю из файла {}", String.valueOf(e));
+//        }
 
         //TODO: тут нужно читать файл с историей и наполнять память
         //TODO: так же можно передавать параметр необходимо ли читать файл или начать с нуля
