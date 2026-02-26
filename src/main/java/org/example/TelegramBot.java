@@ -28,8 +28,6 @@ public class TelegramBot extends TelegramLongPollingBot {
     private final CallbackDispatcher callbackDispatcher;
     private final ThreadPoolExecutor executor;
 
-
-
     public TelegramBot(String botToken, String aiToken) {
         this.botToken = botToken;
         instance = this;
@@ -42,8 +40,6 @@ public class TelegramBot extends TelegramLongPollingBot {
         HoroscopeService horoscopeService = new HoroscopeService();
         AiService aiService = new AiService(aiToken);
 
-
-
         // Фабрики диспетчеров
         this.messageSender = new MessageSender(this);
         this.userChatManager = new UserChatManager(usersService, chatsService);
@@ -53,23 +49,19 @@ public class TelegramBot extends TelegramLongPollingBot {
                 messageSender, horoscopeService, cockSizeGame);
         this.executor = (ThreadPoolExecutor) Executors.newCachedThreadPool();
     }
-
     @Override
     public String getBotUsername() {
         return "Викторина бот";
     }
-
     @Override
     public String getBotToken() {
         return botToken;
     }
-
     @Override
     public void onUpdateReceived(Update update) {
         CompletableFuture.runAsync(() -> processUpdate(update), executor);
         logger.debug("Активных потоков: {}", executor.getActiveCount());
     }
-
     private void processUpdate(Update update) {
         if (update.hasCallbackQuery()) {
             var callback = update.getCallbackQuery();
@@ -92,7 +84,6 @@ public class TelegramBot extends TelegramLongPollingBot {
 
         commandDispatcher.dispatch(update);
     }
-
     public static TelegramBot getInstance() {
         return instance;
     }

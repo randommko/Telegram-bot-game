@@ -10,13 +10,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.telegram.telegrambots.meta.api.objects.Message;
 
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import static org.example.Settings.Settings.*;
-
 
 public class AiService {
     private final Map<Long, ChatMessages> chatHistory = new HashMap<>();
@@ -28,7 +26,6 @@ public class AiService {
 
     private final Float answerTemperature = Float.valueOf(settings.getSettingValue(AI_ANSWER_TEMPERATURE));
 
-
     public AiService(String apiKey) {
         deepSeekClient = new DeepSeekClient(apiKey);
         TelegramBot bot = TelegramBot.getInstance();
@@ -39,14 +36,11 @@ public class AiService {
         String[] parts = message.getText().split(" ", 2);
         String userQuestion = parts.length > 1 ? parts[1] : "";
         Long chatId = message.getChatId();
-        Long userId = message.getFrom().getId();
 
         if (userQuestion.isBlank()) {
             sender.sendMessage(chatId, "Напиши свой вопрос после команды /ai");
             return;
         }
-
-//        saveMessage(chatId, userId, USER_ROLE, userQuestion);
 
         ArrayNode history = getHistoryInChat(chatId);
         String aiAnswer = deepSeekClient.sendRequestToAi(history, answerTemperature);
@@ -56,13 +50,19 @@ public class AiService {
             saveMessage(chatId, AI_ID, AI_ASSISTANT_ROLE, aiAnswer);
         }
     }
-
     public void saveMessage(Long chatId, Long userId, String role, String messageToSave) {
         if (!chatHistory.containsKey(chatId))
             chatHistory.put(chatId, new ChatMessages(chatId));
 
         chatHistory.get(chatId).addMessage(userId, role, messageToSave);
     }
+    public int getChatHistorySize(Long chatId) {
+        return chatHistory.get(chatId).getChatHistorySize();
+    }
+    public void clearChatHistory(Long chatId) {
+        chatHistory.get(chatId).clearAllHistoryInChat();
+    }
+
     private ArrayNode getHistoryInChat(Long chatId) {
         ChatMessages chatMessages = chatHistory.get(chatId);
         ObjectMapper objectMapper = new ObjectMapper();
@@ -72,7 +72,6 @@ public class AiService {
         }
 
         List<UserMessages.messageInChat> messagesList = chatMessages.getAllMessagesInChat();
-
 
         ArrayNode messages = objectMapper.createArrayNode();
 
@@ -84,15 +83,9 @@ public class AiService {
             messages.add(messageNode);
         }
 
-        logger.info("Задаем вопрос AI. Подготовлена история сообщений в чате {}, всего сообщений {} в истории",
+        logger.info("Задаем вопрос AI. Подготовлена история сообщений в чате {}, всего сообщений в истории: {}",
                 chatId, messages.size());
         return messages;
-    }
-    public int getChatHistorySize(Long chatId) {
-        return chatHistory.get(chatId).getChatHistorySize();
-    }
-    public void clearChatHistory(Long chatId) {
-        chatHistory.get(chatId).clearAllHistoryInChat();
     }
 
 

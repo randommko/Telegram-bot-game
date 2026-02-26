@@ -2,11 +2,14 @@ package org.example;
 
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.sql.DataSource;
 
 public class DataSourceConfig {
     private static DataSource dataSource;
+    private static final Logger logger = LoggerFactory.getLogger(DataSourceConfig.class);
 
     public static DataSource getDataSource() {
         return dataSource;
@@ -35,7 +38,13 @@ public class DataSourceConfig {
         config.addDataSourceProperty("prepStmtCacheSize", "250"); // Размер кэша для подготовленных запросов
         config.addDataSourceProperty("prepStmtCacheSqlLimit", "2048"); // Максимальный размер SQL-запроса в кэше
 
-        dataSource = new HikariDataSource(config);
+        try {
+            dataSource = new HikariDataSource(config);
+        }
+        catch (Exception e) {
+            logger.error("Ошибка подключения к БД: {}", String.valueOf(e));
+        }
+
     }
 
 

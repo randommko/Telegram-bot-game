@@ -101,8 +101,10 @@ public class HoroscopeService {
         if (response.statusCode() == 200) {
             return response.body(); // Возвращаем тело ответа
         } else {
+            logger.error("Ошибка при получении данных: {}", response.statusCode());
             throw new IOException("Ошибка при получении данных: " + response.statusCode());
         }
+
     }
 
 }

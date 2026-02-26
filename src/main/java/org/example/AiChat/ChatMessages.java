@@ -20,12 +20,11 @@ public class ChatMessages {
 
     public ChatMessages(Long chatId) {
         this.chatId = chatId;
-//        userMessages.put(AI_ID, new UserMessages(AI_SYSTEM_ROLE, getSystemPromt()));
         initAiInChat();
     }
 
     public void addMessage(Long userId, String role, String text) {
-        logger.info("Наполнение истории сообщений: chatName={}, userName={}, role={}, content={}",
+        logger.debug("Наполнение истории сообщений: chatName={}, userName={}, role={}, content={}",
                 chatId, getUserName(userId), role, text);
 
         if (!userMessages.containsKey(userId))
@@ -40,7 +39,6 @@ public class ChatMessages {
                 getUserName(userId),
                 userMessagesSize);
     }
-
     public void clearAllHistoryInChat() {
         try {
             userMessages.clear();
@@ -50,13 +48,11 @@ public class ChatMessages {
             logger.error("Ошибка отчистки памяти AI в чате {}", chatId);
         }
     }
-
     public int getChatHistorySize() {
         return userMessages.values().stream()
                 .mapToInt(UserMessages::getSize)
                 .sum();
     }
-
     public List<UserMessages.messageInChat> getAllMessagesInChat() {
         return userMessages.values().stream()
                 .flatMap(userMsg -> userMsg.getMessages().stream())
@@ -81,12 +77,10 @@ public class ChatMessages {
         }
         return systemPrompt;
     }
-
     private void initAiInChat() {
         String startPromt = getSystemPromt();
         addMessage(AI_ID, AI_SYSTEM_ROLE, startPromt);
     }
-
     private String getUserName(Long userId) {
         UsersService usersService = new UsersService();
         if (userId == 0L)

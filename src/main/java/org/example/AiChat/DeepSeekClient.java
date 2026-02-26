@@ -45,6 +45,7 @@ public class DeepSeekClient {
             return null;
         }
     }
+
     private String sendHttpRequest(ObjectNode requestBody) throws IOException, InterruptedException {
         String jsonBody = objectMapper.writeValueAsString(requestBody);
 
@@ -65,5 +66,4 @@ public class DeepSeekClient {
         ObjectNode respNode = objectMapper.readValue(response.body(), ObjectNode.class);
         return respNode.get("choices").get(0).get("message").get("content").asText().trim();
     }
-
 }
