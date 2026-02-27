@@ -1,18 +1,22 @@
 package org.example;
 
-import org.example.AiChat.AiChat;
-import org.example.AiChat.ConversationHistoryService;
+
+import org.example.AiChat.AiService;
 import org.example.CockSize.CockSizeGame;
 
 import org.example.PidorGame.PidorGame;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.telegram.telegrambots.meta.api.objects.Chat;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.Message;
+import org.telegram.telegrambots.meta.api.objects.User;
 
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
+
+import static org.example.Settings.Settings.USER_ROLE;
 
 public class CommandDispatcher {
     private static final Logger logger = LoggerFactory.getLogger(CommandDispatcher.class);
@@ -20,8 +24,7 @@ public class CommandDispatcher {
     private final MessageSender messageSender;
     private final CockSizeGame cockSizeGame;
     private final PidorGame pidorGame;
-    private final AiChat aiChat;
-    private final ConversationHistoryService conversationHistoryService;
+    private final AiService aiService;
     private final KeyboardBuilder keyboardBuilder = new KeyboardBuilder();
 
     // Enum для команд (расширяемо)
@@ -70,46 +73,31 @@ public class CommandDispatcher {
     public CommandDispatcher(MessageSender messageSender,
                              CockSizeGame cockSizeGame,
                              PidorGame pidorGame,
-                             AiChat aiChat,
-                             ConversationHistoryService conversationHistoryService) {
+                             AiService aiService) {
         this.messageSender = messageSender;
         this.cockSizeGame = cockSizeGame;
         this.pidorGame = pidorGame;
-        this.aiChat = aiChat;
-        this.conversationHistoryService = conversationHistoryService;
+        this.aiService = aiService;
     }
 
     public void dispatch(Update update) {
         Message message = update.getMessage();
         String text = message.getText();
 
-
-        try {
-            String userName;
-            String textToSave = text.split(" ", 2)[1];
-
-            if (message.getFrom().getUserName() == null)
-                userName = message.getFrom().getFirstName();
-            else
-                userName = message.getFrom().getUserName();
-
-            String messageToSave = "Сообщение от: " + userName + " : " + textToSave;
-
-            conversationHistoryService.addMessage(message, "user", messageToSave);
-        }
-        catch (Exception e) {
-            logger.error("Ошибка сохранения сообщения в историю: {}", String.valueOf(e));
-        }
-
-        if (!text.startsWith("/"))
+        if (!text.startsWith("/")) {
+            //Сохраняем оригинальное сообщение
+            saveMessageText(message.getFrom(), message.getChat(), text);
             return;
+        }
 
         String[] parts = text.split(" ", 2);
-        String commandStr = parts[0];
 
-        Command command = Command.fromString(commandStr);
+        //Сохраняем сообщение без команды
+        saveMessageText(message.getFrom(), message.getChat(), parts[1]);
+
+        Command command = Command.fromString(parts[0]);
         if (command == null) {
-            logger.debug("Неизвестная команда: {}", commandStr);
+            logger.debug("Неизвестная команда: {}", parts[0]);
             return;
         }
 
@@ -118,6 +106,29 @@ public class CommandDispatcher {
         if (handlers.containsKey(command)) {
             handlers.get(command).accept(message);
         }
+    }
+
+
+    private void saveMessageText(User user, Chat chat, String text) {
+        String userName = getUserName(user);
+        Long userId = user.getId();
+        Long chatId = chat.getId();
+
+        String messageToSave = "Сообщение от: " + userName + " : " + text;
+
+        aiService.saveMessage(chatId,
+                userId,
+                USER_ROLE,
+                messageToSave);
+
+    }
+    private String getUserName(User user) {
+        String userName;
+        if (user.getUserName() == null)
+            userName = user.getFirstName();
+        else
+            userName = user.getUserName();
+        return userName;
     }
 
     // Хендлеры команд (каждый - 1 ответственность)
@@ -134,48 +145,39 @@ public class CommandDispatcher {
             """;
         messageSender.sendMessage(message.getChatId(), info);
     }
-
     private void handleCockSize(Message message) {
         cockSizeGame.sendTodayCockSize(message);
     }
-
     private void handlePidorReg(Message message) {
         pidorGame.registerPlayer(message.getChatId(), message.getFrom().getId());
     }
-
     private void handlePidorStats(Message message) {
         pidorGame.sendPidorStats(message.getChatId());
     }
-
     private void handlePidorStart(Message message) {
         pidorGame.startPidorGame(message.getChatId(), message.getFrom().getId());
     }
-
     private void handleHoroscope(Message message) {
         keyboardBuilder.sendHoroscopeKeyboard(messageSender, message.getChatId());
     }
-
     private void handleAi(Message message) {
-        aiChat.askAi(message);
+        aiService.askAi(message);
     }
     private void handleAiChatHistory(Message message) {
         Long chatId = message.getChatId();
         try {
-            String clearMsg = "Запуск принудительной отчистки истории AI, будет удалено воспоминаний: " + conversationHistoryService.getHistorySize(chatId);
+            String clearMsg = "Запуск принудительной отчистки истории AI, будет удалено воспоминаний: " + aiService.getChatHistorySize(chatId);
             messageSender.sendMessage(chatId, clearMsg);
             Thread.sleep(1000);
 
-            clearMsg = "Было приятно помнить вас";
+            clearMsg = "Было приятно помнить вас \uD83D\uDE22 \uD83D\uDE22 \uD83D\uDE22";
             messageSender.sendMessage(chatId, clearMsg);
 
             Thread.sleep(1000);
+            aiService.clearChatHistory(chatId);
 
-            conversationHistoryService.clearAllHistory(chatId);
-
-            String successClearMsg = "Принудительная отчистка истории AI в чате выполнена. Воспоминаний в памяти: 0";
+            String successClearMsg = "Принудительная отчистка истории AI в чате выполнена. Воспоминаний в памяти: 0.";
             messageSender.sendMessage(chatId, successClearMsg);
-
-            //TODO: сохранять в память количество сбрасований
 
             logger.info("Выполнена принудительная отчистка истории AI в чате: {}", message.getChat().getTitle());
         }

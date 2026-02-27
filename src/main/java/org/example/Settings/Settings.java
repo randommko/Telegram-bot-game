@@ -10,4 +10,9 @@ public class Settings {
     public static final Long BOT_ID_PROD = 7332966399L;
     public static final Long BOT_ID_TEST = 7712595730L;
     public static final Long MY_CHAT_ID = -1001347887839L;
+    public final static Long AI_ID = 0L;
+    public final static String AI_SYSTEM_ROLE = "system";
+    public final static String AI_ASSISTANT_ROLE = "assistant";
+    public final static String USER_ROLE = "user";
+    public final static String DEEP_SEEK_BASE_URL = "https://api.deepseek.com/v1/chat/completions";
 }
