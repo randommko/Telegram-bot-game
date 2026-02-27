@@ -119,7 +119,7 @@ public class CommandDispatcher {
         Long userId = user.getId();
         Long chatId = chat.getId();
 
-        String messageToSave = "Сообщение от: " + userName + " : " + text;
+        String messageToSave = "Сообщение от: @" + userName + ": " + text;
 
         aiService.saveMessage(chatId,
                 userId,
