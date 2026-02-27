@@ -92,8 +92,13 @@ public class CommandDispatcher {
 
         String[] parts = text.split(" ", 2);
 
-        //Сохраняем сообщение без команды
-        saveMessageText(message.getFrom(), message.getChat(), parts[1]);
+        String commandText = parts[0]; // Команда всегда в первой части
+
+        // Проверяем, есть ли аргументы после команды
+        if (parts.length > 1) {
+            // Сохраняем текст после команды (аргументы)
+            saveMessageText(message.getFrom(), message.getChat(), parts[1]);
+        }
 
         Command command = Command.fromString(parts[0]);
         if (command == null) {
