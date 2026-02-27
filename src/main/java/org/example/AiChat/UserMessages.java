@@ -5,7 +5,6 @@ import java.util.List;
 
 public class UserMessages {
     private final List<messageInChat> messages;
-    private final String userRole;
 
     public record messageInChat(String content, Long timestamp, String role) {
         public messageInChat(String content, String role) {
@@ -15,11 +14,11 @@ public class UserMessages {
 
     public UserMessages(String role, String text) {
         messages = new ArrayList<>();
-        this.userRole = role;
-        saveMessage(text);
+
+        saveMessage(text, role);
     }
 
-    public void saveMessage(String text) {
+    public void saveMessage(String text, String userRole) {
         messages.add(new messageInChat(text, userRole));
     }
 
@@ -29,10 +28,6 @@ public class UserMessages {
 
     public int getSize() {
         return messages.size();
-    }
-
-    public String getUserRole() {
-        return userRole;
     }
 
     public void clearMessages() {

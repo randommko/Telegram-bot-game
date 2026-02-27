@@ -32,7 +32,7 @@ public class ChatMessages {
         if (!userMessages.containsKey(userId))
             userMessages.put(userId, new UserMessages(role, text));
         else
-            userMessages.get(userId).saveMessage(text);
+            userMessages.get(userId).saveMessage(text, role);
 
         int userMessagesSize = userMessages.get(userId).getSize();
 
