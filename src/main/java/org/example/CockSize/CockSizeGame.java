@@ -22,6 +22,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static org.example.Settings.Settings.RESOURCES_PATH;
+
 
 public class CockSizeGame {
     final CockSizeService service = new CockSizeService();
@@ -29,7 +31,7 @@ public class CockSizeGame {
     private final UsersService usersService = new UsersService();
     private final MessageSender sender;
     private final TelegramBot bot;
-    private static final String RESOURCES_PATH = "/bin/tg_bot/resources";
+
 
     public CockSizeGame() {
         bot = TelegramBot.getInstance();

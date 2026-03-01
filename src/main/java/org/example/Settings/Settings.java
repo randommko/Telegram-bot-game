@@ -15,4 +15,5 @@ public class Settings {
     public final static String AI_ASSISTANT_ROLE = "assistant";
     public final static String USER_ROLE = "user";
     public final static String DEEP_SEEK_BASE_URL = "https://api.deepseek.com/v1/chat/completions";
+    public static final String RESOURCES_PATH = "/bin/tg_bot/resources";
 }
